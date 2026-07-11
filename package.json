@@ -1,0 +1,18 @@
+{
+  "name": "multi-script-bot",
+  "version": "1.0.0",
+  "description": "Telegram Bot Multi Script VPN",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Kevin Aldair",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "firebase-admin": "^13.0.2",
+    "node-telegram-bot-api": "^0.66.0",
+    "uuid": "^11.0.3"
+  }
+}
