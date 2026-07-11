@@ -1,19 +1,14 @@
 import admin from "firebase-admin";
-
-import config from "./config.js";
-
 import fs from "fs";
 
 const serviceAccount = JSON.parse(
-fs.readFileSync(config.FIREBASE_CREDENTIALS, "utf8")
+    fs.readFileSync("firebase-admin.json", "utf8")
 );
 
 admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
 
-credential: admin.credential.cert(serviceAccount),
-
-databaseURL: serviceAccount.databaseURL
-
+    databaseURL: "https://keygenbpt-default-rtdb.firebaseio.com"
 });
 
 const db = admin.database();
