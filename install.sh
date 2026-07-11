@@ -141,14 +141,14 @@ menu(){
 banner
 
 echo "1) Instalar Bot"
-
 echo "2) Actualizar Bot"
-
 echo "3) Reiniciar Bot"
-
-echo "4) Desinstalar Bot"
-
-echo "5) Salir"
+echo "4) Ver Logs"
+echo "5) Cambiar Token"
+echo "6) Cambiar Owner ID"
+echo "7) Cambiar Firebase"
+echo "8) Desinstalar Bot"
+echo "9) Salir"
 
 echo
 read -p "Seleccione una opción: " OPTION
@@ -163,31 +163,54 @@ check_os
 install_packages
 install_node
 install_pm2
-
-echo
-echo -e "${GREEN}Preparando instalación...${NC}"
+configure_project
+install_project
 
 ;;
 
 2)
 
-echo "Actualización disponible en la Parte 3."
+update_bot
 
 ;;
 
 3)
 
-pm2 restart $PM2_NAME
+restart_bot
 
 ;;
 
 4)
 
-echo "Desinstalación disponible en la Parte 3."
+show_logs
 
 ;;
 
 5)
+
+change_token
+
+;;
+
+6)
+
+change_owner
+
+;;
+
+7)
+
+change_firebase
+
+;;
+
+8)
+
+uninstall_bot
+
+;;
+
+9)
 
 exit
 
@@ -195,17 +218,17 @@ exit
 
 *)
 
-echo "Opción inválida."
+echo "Opción inválida"
 sleep 2
-menu
 
 ;;
 
 esac
 
-}
-
+pause
 menu
+
+}
 # ==========================================
 # PARTE 2A
 # Configuración automática
@@ -243,22 +266,22 @@ echo -e "${YELLOW}Ahora pega el JSON completo de Firebase Admin SDK.${NC}"
 echo -e "${YELLOW}Cuando termines presiona CTRL+D${NC}"
 echo
 
-mkdir -p "$INSTALL_DIR"
-
-cat > "$INSTALL_DIR/firebase-admin.json"
-
-echo -e "${GREEN}Firebase guardado correctamente.${NC}"
-
 echo
 echo -e "${BLUE}Descargando proyecto...${NC}"
 
-if [ -d "$INSTALL_DIR/.git" ]; then
-    rm -rf "$INSTALL_DIR"
-fi
+rm -rf "$INSTALL_DIR"
 
 git clone "$REPO" "$INSTALL_DIR"
 
 cd "$INSTALL_DIR" || exit
+
+echo
+echo -e "${YELLOW}Pegue ahora el JSON completo de Firebase.${NC}"
+echo "Finalice con CTRL+D"
+
+cat > firebase-admin.json
+
+echo -e "${GREEN}Firebase guardado correctamente.${NC}"
 
 echo
 echo -e "${BLUE}Creando archivo .env...${NC}"
@@ -270,6 +293,8 @@ FIREBASE_CREDENTIALS=firebase-admin.json
 EOF
 
 echo -e "${GREEN}.env creado correctamente.${NC}"
+
+install_project
 
 }
 # ==========================================
@@ -441,3 +466,4 @@ rm -rf "$INSTALL_DIR"
 echo -e "${GREEN}Bot eliminado correctamente.${NC}"
 
 }
+menu
