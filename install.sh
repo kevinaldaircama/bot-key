@@ -272,3 +272,172 @@ EOF
 echo -e "${GREEN}.env creado correctamente.${NC}"
 
 }
+# ==========================================
+# PARTE 2B
+# Instalación automática del proyecto
+# ==========================================
+
+install_project() {
+
+echo
+echo -e "${BLUE}Instalando dependencias del proyecto...${NC}"
+
+cd "$INSTALL_DIR" || exit 1
+
+if [ ! -f package.json ]; then
+    echo -e "${RED}No se encontró package.json${NC}"
+    exit 1
+fi
+
+npm install
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Error al instalar dependencias.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}Dependencias instaladas.${NC}"
+
+echo
+echo -e "${BLUE}Iniciando el bot...${NC}"
+
+pm2 delete $PM2_NAME >/dev/null 2>&1
+
+pm2 start index.js \
+--name "$PM2_NAME"
+
+pm2 save
+
+pm2 startup systemd -u root --hp /root >/tmp/pm2startup.txt
+
+bash <(grep "sudo" /tmp/pm2startup.txt | sed 's/sudo //')
+
+echo
+echo -e "${GREEN}Bot iniciado correctamente.${NC}"
+
+pm2 status
+
+}
+# ==========================================
+# PARTE 3
+# Actualizar, Reiniciar y Desinstalar
+# ==========================================
+
+update_bot() {
+
+echo
+echo -e "${BLUE}Actualizando bot...${NC}"
+
+if [ ! -d "$INSTALL_DIR/.git" ]; then
+    echo -e "${RED}El bot no está instalado.${NC}"
+    return
+fi
+
+cd "$INSTALL_DIR" || return
+
+cp .env /tmp/multiscript.env
+
+if [ -f firebase-admin.json ]; then
+    cp firebase-admin.json /tmp/firebase-admin.json
+fi
+
+git reset --hard
+git pull
+
+npm install
+
+cp /tmp/multiscript.env .env
+
+if [ -f /tmp/firebase-admin.json ]; then
+    cp /tmp/firebase-admin.json firebase-admin.json
+fi
+
+pm2 restart $PM2_NAME
+
+echo
+echo -e "${GREEN}Actualización completada.${NC}"
+
+}
+
+restart_bot() {
+
+echo
+echo -e "${BLUE}Reiniciando bot...${NC}"
+
+pm2 restart $PM2_NAME
+
+echo -e "${GREEN}Bot reiniciado correctamente.${NC}"
+
+}
+
+show_logs() {
+
+pm2 logs $PM2_NAME
+
+}
+
+change_token() {
+
+if [ ! -f "$INSTALL_DIR/.env" ]; then
+    echo -e "${RED}No existe .env${NC}"
+    return
+fi
+
+read -p "Nuevo Token: " NEW_TOKEN
+
+sed -i "s|^BOT_TOKEN=.*|BOT_TOKEN=$NEW_TOKEN|" "$INSTALL_DIR/.env"
+
+pm2 restart $PM2_NAME
+
+echo -e "${GREEN}Token actualizado.${NC}"
+
+}
+
+change_owner() {
+
+if [ ! -f "$INSTALL_DIR/.env" ]; then
+    echo -e "${RED}No existe .env${NC}"
+    return
+fi
+
+read -p "Nuevo OWNER_ID: " NEW_OWNER
+
+sed -i "s|^OWNER_ID=.*|OWNER_ID=$NEW_OWNER|" "$INSTALL_DIR/.env"
+
+pm2 restart $PM2_NAME
+
+echo -e "${GREEN}Owner actualizado.${NC}"
+
+}
+
+change_firebase() {
+
+echo
+echo "Pegue el nuevo JSON Firebase."
+echo "Finalice con CTRL+D"
+
+cat > "$INSTALL_DIR/firebase-admin.json"
+
+pm2 restart $PM2_NAME
+
+echo -e "${GREEN}Firebase actualizado.${NC}"
+
+}
+
+uninstall_bot() {
+
+echo
+read -p "¿Seguro que desea eliminar el bot? [s/n]: " CONFIRM
+
+if [[ "$CONFIRM" != "s" ]]; then
+    return
+fi
+
+pm2 stop $PM2_NAME >/dev/null 2>&1
+pm2 delete $PM2_NAME >/dev/null 2>&1
+
+rm -rf "$INSTALL_DIR"
+
+echo -e "${GREEN}Bot eliminado correctamente.${NC}"
+
+}
