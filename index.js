@@ -3,6 +3,7 @@ import config from "./config.js";
 import "./firebase.js";
 
 import registerStart from "./handlers/start.js";
+import registerRequest from "./handlers/request.js";
 
 const bot = new TelegramBot(config.BOT_TOKEN, {
   polling: true
@@ -16,6 +17,7 @@ console.log("=================================");
 console.log("✅ Bot iniciado correctamente");
 
 registerStart(bot);
+registerRequest(bot);
 
 bot.on("polling_error", (error) => {
   console.log(error.message);
