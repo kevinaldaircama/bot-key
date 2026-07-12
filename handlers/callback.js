@@ -1,5 +1,9 @@
 import db from "../firebase.js";
 
+const pendingApprovals = new Map();
+
+export { pendingApprovals };
+
 export default function registerCallback(bot) {
 
     bot.on("callback_query", async (query) => {
@@ -7,63 +11,46 @@ export default function registerCallback(bot) {
         const data = query.data;
 
         // ==========================
-        // ACEPTAR SOLICITUD
+        // ACEPTAR
         // ==========================
 
         if (data.startsWith("accept_")) {
 
             const userId = data.split("_")[1];
 
-            const requestRef = db.ref(`requests/${userId}`);
-
-            if (!(await requestRef.get()).exists()) {
-
-                return bot.answerCallbackQuery(query.id, {
-                    text: "La solicitud ya no existe."
-                });
-
-            }
-
-            await db.ref(`users/${userId}`).update({
-                approved: true,
-                role: "admin"
-            });
-
-            await requestRef.remove();
+            pendingApprovals.set(String(query.from.id), userId);
 
             await bot.editMessageText(
 
-`✅ Usuario aprobado correctamente.
+`📅 Escribe la cantidad de días para el usuario.
 
-ID: ${userId}
+Ejemplos:
 
-Rol: Admin`,
+7
+30
+60
+90
+365
+
+O escribe:
+
+0
+
+para acceso ilimitado.`,
 
             {
+
                 chat_id: query.message.chat.id,
                 message_id: query.message.message_id
+
             });
-
-            await bot.sendMessage(
-
-                userId,
-
-`🎉 Tu solicitud fue aprobada.
-
-Ahora ya puedes utilizar el bot.
-
-Escribe nuevamente:
-
-/start`
-
-            );
 
             return bot.answerCallbackQuery(query.id);
 
         }
 
         // ==========================
-        // RECHAZAR SOLICITUD
+        // RECHAZAR
         // ==========================
 
         if (data.startsWith("reject_")) {
@@ -74,13 +61,13 @@ Escribe nuevamente:
 
             await bot.editMessageText(
 
-`❌ Solicitud rechazada.
-
-ID: ${userId}`,
+`❌ Solicitud rechazada correctamente.`,
 
             {
+
                 chat_id: query.message.chat.id,
                 message_id: query.message.message_id
+
             });
 
             await bot.sendMessage(
