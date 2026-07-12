@@ -60,11 +60,30 @@ Pulsa:
             usedAt: ""
 
         });
+// Contar Keys del usuario
 
+const keysSnapshot = await db.ref("keys").get();
+
+let totalKeys = 0;
+
+if (keysSnapshot.exists()) {
+
+    keysSnapshot.forEach((item) => {
+
+        if (item.val().owner === chatId) {
+            totalKeys++;
+        }
+
+    });
+
+}
+
+const roleName = user.role === "owner" ? "Dueño" : "Admin";
+        
         bot.sendMessage(
     chatId,
 
-`✅ 1 Key Generada (Admin)
+`✅ ${totalKeys} ${totalKeys === 1 ? "Key Generada" : "Keys Generadas"} (${roleName})
 
 🚀 Proyecto: KevinTech Multi Script
 
