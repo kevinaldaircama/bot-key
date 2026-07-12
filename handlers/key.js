@@ -91,7 +91,7 @@ const roleName = user.role === "owner" ? "Dueño" : "Admin";
 ${user.reseller}
 
 🤖 Bot Oficial:
-@TuBot
+@multiscriptkeygen_bot
 
 💻 Comando de Instalación:
 
