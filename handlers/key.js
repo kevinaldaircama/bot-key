@@ -32,10 +32,10 @@ Pulsa:
 
         }
 
-        const key = randomUUID()
-            .replace(/-/g, "")
-            .substring(0, 20)
-            .toUpperCase();
+        const key = "KEY-" + randomUUID()
+    .replace(/-/g, "")
+    .substring(0, 10)
+    .toUpperCase();
 
         const created = Date.now();
 
