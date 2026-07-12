@@ -80,7 +80,7 @@ if (keysSnapshot.exists()) {
 
 const roleName = user.role === "owner" ? "Dueño" : "Admin";
         
-        bot.sendMessage(
+        await bot.sendMessage(
     chatId,
 
 `✅ ${totalKeys} ${totalKeys === 1 ? "Key Generada" : "Keys Generadas"} (${roleName})
