@@ -1,98 +1,29 @@
-import db from "../firebase.js";
-import { randomUUID } from "crypto";
+import TelegramBot from "node-telegram-bot-api";
+import config from "./config.js";
 
-export default function registerKey(bot) {
+import registerStart from "./handlers/start.js";
+import registerRequest from "./handlers/request.js";
+import registerCallback from "./handlers/callback.js";
+import registerApprove from "./handlers/approve.js";
+import registerReseller from "./handlers/reseller.js";
+import registerKey from "./handlers/key.js";
 
-    bot.on("message", async (msg) => {
-
-        if (!msg.text) return;
-
-        if (msg.text !== "🔑 Crear Key") return;
-
-        const chatId = String(msg.chat.id);
-
-        const snap = await db.ref(`users/${chatId}`).get();
-
-        if (!snap.exists()) return;
-
-        const user = snap.val();
-
-        if (!user.approved) return;
-
-        if (user.role !== "owner" && user.role !== "admin") return;
-
-        if (!user.reseller || user.reseller.trim() === "") {
-
-            return bot.sendMessage(chatId,
-`❌ Primero configura tu nombre de Reseller.
-
-Pulsa:
-
-👥 Resellers`);
-
-        }
-
-        const key = randomUUID()
-            .replace(/-/g, "")
-            .substring(0, 20)
-            .toUpperCase();
-
-        const created = Date.now();
-
-        const expires = created + (2 * 60 * 60 * 1000);
-
-        await db.ref(`keys/${key}`).set({
-
-            key,
-
-            owner: chatId,
-
-            reseller: user.reseller,
-
-            used: false,
-
-            created,
-
-            expires,
-
-            usedBy: "",
-
-            usedAt: ""
-
-        });
-
-        bot.sendMessage(chatId,
-
-`━━━━━━━━━━━━━━━━━━
-
-🔑 MULTI SCRIPT VPN
-
-🔐 KEY
-
-\`${key}\`
-
-👤 Reseller
-
-${user.reseller}
-
-⏳ Expira
-
-2 horas o al primer uso
-
-🚀 Instalador
-
-\`\`\`bash
-bash <(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)
-\`\`\`
-
-━━━━━━━━━━━━━━━━━━`,
-
-{
-
-parse_mode:"Markdown"
-
+const bot = new TelegramBot(config.BOT_TOKEN, {
+    polling: true
 });
 
-    });
+console.clear();
 
-            }
+console.log("=================================");
+console.log("🚀 MULTI SCRIPT VPN BOT");
+console.log("=================================");
+console.log("✅ Bot iniciado correctamente");
+
+registerStart(bot);
+registerRequest(bot);
+registerCallback(bot);
+registerApprove(bot);
+registerReseller(bot);
+registerKey(bot);
+
+bot.on("polling_error", console.log);
