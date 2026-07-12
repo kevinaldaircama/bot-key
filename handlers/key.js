@@ -61,36 +61,30 @@ Pulsa:
 
         });
 
-        bot.sendMessage(chatId,
+        bot.sendMessage(
+    chatId,
 
-`━━━━━━━━━━━━━━━━━━
+`✅ 1 Key Generada (Admin)
 
-🔑 MULTI SCRIPT VPN
+🚀 Proyecto: KevinTech Multi Script
 
-🔐 KEY
-
-\`${key}\`
-
-👤 Reseller
-
+👤 Reseller:
 ${user.reseller}
 
-⏳ Expira
+🤖 Bot Oficial:
+@TuBot
 
-2 horas o al primer uso
+💻 Comando de Instalación:
 
-🚀 Instalador
+🔑 Key:
+${key}
 
 \`\`\`bash
-bash <(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)
+export INSTALL_KEY="${key}"; bash <(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)
 \`\`\`
-
-━━━━━━━━━━━━━━━━━━`,
-
+`,
 {
-
-parse_mode:"Markdown"
-
+    parse_mode: "Markdown"
 });
 
     });
