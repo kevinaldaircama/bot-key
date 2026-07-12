@@ -82,25 +82,26 @@ const roleName = user.role === "owner" ? "Dueño" : "Admin";
         
         await bot.sendMessage(
     chatId,
+`<b>✅ ${totalKeys} ${totalKeys === 1 ? "Key Generada" : "Keys Generadas"} (${roleName})</b>
 
-`✅ ${totalKeys} ${totalKeys === 1 ? "Key Generada" : "Keys Generadas"} (${roleName})
+🚀 <b>Proyecto:</b> KevinTech Multi Script
 
-🚀 Proyecto: KevinTech Multi Script
-
-👤 Reseller:
+👤 <b>Reseller:</b>
 ${user.reseller}
 
-🤖 Bot Oficial:
+🤖 <b>Bot Oficial:</b>
 @multiscriptkeygen_bot
 
-💻 Comando de Instalación:
+🔑 <b>Key</b>
 
-🔑 Key:
-${key}
+<code>${key}</code>
 
-export INSTALL_KEY="${key}"; bash <(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)`
-);
+💻 <b>Comando de instalación</b>
 
+<code>export INSTALL_KEY="${key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>`,
+{
+    parse_mode: "HTML"
+});
     });
 
                                    }
