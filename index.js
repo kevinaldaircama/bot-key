@@ -18,6 +18,7 @@ import registerHistory from "./handlers/history.js";
 import registerUsage from "./handlers/usage.js";
 import registerStatistics from "./handlers/statistics.js";
 import registerVPS from "./handlers/vps.js";
+import registerPlans from "./handlers/plans.js";
 
 const bot = new TelegramBot(config.BOT_TOKEN, {
     polling: true
@@ -50,6 +51,7 @@ registerHistory(bot);
 registerUsage(bot);
 registerStatistics(bot);
 registerVPS(bot);
+registerPlans(bot);
 
 // ==========================
 // ERRORES
