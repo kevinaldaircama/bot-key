@@ -2,14 +2,15 @@ import db from "../firebase.js";
 
 export default function registerInstaller(bot) {
 
-    bot.on("message", async (msg) => {
+    bot.on("callback_query", async (query) => {
 
-        if (!msg.text) return;
-        if (msg.text !== "🚀 Instalador") return;
+        if (query.data !== "menu_install") return;
+
+        await bot.answerCallbackQuery(query.id);
 
         try {
 
-            const chatId = String(msg.chat.id);
+            const chatId = String(query.message.chat.id);
 
             const snap = await db.ref(`users/${chatId}`).get();
 
@@ -27,15 +28,18 @@ export default function registerInstaller(bot) {
 
             if (keysSnap.exists()) {
 
-                keysSnap.forEach((item) => {
+                keysSnap.forEach(item => {
 
                     const key = item.val();
 
                     if (
                         key.owner === chatId &&
-                        key.used === false
+                        !key.used &&
+                        key.expires > Date.now()
                     ) {
+
                         disponibles++;
+
                     }
 
                 });
@@ -46,9 +50,9 @@ export default function registerInstaller(bot) {
                 ? "👑 Dueño"
                 : "🛡️ Admin";
 
-            await bot.sendMessage(chatId,
+            await bot.editMessageText(
 
-`<b>🚀 MULTI SCRIPT VPN</b>
+`🚀 <b>MULTI SCRIPT VPN</b>
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -62,7 +66,7 @@ ${user.reseller || "Sin configurar"}
 
 🔑 <b>Keys Disponibles</b>
 
-<b>${disponibles}</b>
+${disponibles}
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -76,7 +80,37 @@ ${user.reseller || "Sin configurar"}
 
             {
 
-                parse_mode: "HTML"
+                chat_id: chatId,
+
+                message_id: query.message.message_id,
+
+                parse_mode: "HTML",
+
+                reply_markup: {
+
+                    inline_keyboard: [
+
+                        [
+
+                            {
+                                text: "🔑 Crear Key",
+                                callback_data: "menu_key"
+                            }
+
+                        ],
+
+                        [
+
+                            {
+                                text: "🏠 Inicio",
+                                callback_data: "menu_home"
+                            }
+
+                        ]
+
+                    ]
+
+                }
 
             });
 
@@ -84,11 +118,8 @@ ${user.reseller || "Sin configurar"}
 
             console.log(err);
 
-            bot.sendMessage(msg.chat.id,
-                "❌ Error interno. Revisa la consola del VPS.");
-
         }
 
     });
 
-                            }
+            }
