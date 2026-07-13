@@ -68,7 +68,7 @@ ${user.reseller || "Sin configurar"}
 
 💻 <b>Instalador Oficial</b>
 
-<code>bash <(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>
+<code>bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>
 
 ━━━━━━━━━━━━━━━━━━
 
