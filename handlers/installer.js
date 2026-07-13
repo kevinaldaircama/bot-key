@@ -5,52 +5,48 @@ export default function registerInstaller(bot) {
     bot.on("message", async (msg) => {
 
         if (!msg.text) return;
-
         if (msg.text !== "🚀 Instalador") return;
 
-        const chatId = String(msg.chat.id);
+        try {
 
-        const snap = await db.ref(`users/${chatId}`).get();
+            const chatId = String(msg.chat.id);
 
-        if (!snap.exists()) return;
+            const snap = await db.ref(`users/${chatId}`).get();
 
-        const user = snap.val();
+            if (!snap.exists()) return;
 
-        if (!user.approved) return;
+            const user = snap.val();
 
-        if (user.role !== "owner" && user.role !== "admin") return;
+            if (!user.approved) return;
 
-        // Contar keys
-        const keys = await db.ref("keys").get();
+            if (user.role !== "owner" && user.role !== "admin") return;
 
-        let disponibles = 0;
+            const keysSnap = await db.ref("keys").get();
 
-        if (keys.exists()) {
+            let disponibles = 0;
 
-            keys.forEach(item => {
+            if (keysSnap.exists()) {
 
-                const key = item.val();
+                keysSnap.forEach((item) => {
 
-                if (
-                    key.owner === chatId &&
-                    !key.used &&
-                    key.expires > Date.now()
-                ) {
-                    disponibles++;
-                }
+                    const key = item.val();
 
-            });
+                    if (
+                        key.owner === chatId &&
+                        key.used === false
+                    ) {
+                        disponibles++;
+                    }
 
-        }
+                });
 
-        const role =
-            user.role === "owner"
+            }
+
+            const role = user.role === "owner"
                 ? "👑 Dueño"
                 : "🛡️ Admin";
 
-        await bot.sendMessage(
-
-            chatId,
+            await bot.sendMessage(chatId,
 
 `<b>🚀 MULTI SCRIPT VPN</b>
 
@@ -66,7 +62,7 @@ ${user.reseller || "Sin configurar"}
 
 🔑 <b>Keys Disponibles</b>
 
-${disponibles}
+<b>${disponibles}</b>
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -76,18 +72,23 @@ ${disponibles}
 
 ━━━━━━━━━━━━━━━━━━
 
-⚠️ Durante la instalación se solicitará una KEY válida.
-
-Las Keys vencen a las <b>2 horas</b> o al <b>primer uso</b>.`,
+⚠️ Durante la instalación se solicitará una KEY válida.`,
 
             {
 
                 parse_mode: "HTML"
 
-            }
+            });
 
-        );
+        } catch (err) {
+
+            console.log(err);
+
+            bot.sendMessage(msg.chat.id,
+                "❌ Error interno. Revisa la consola del VPS.");
+
+        }
 
     });
 
-}
+                            }
