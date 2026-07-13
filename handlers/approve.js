@@ -3,21 +3,27 @@ import { pendingApprovals } from "./callback.js";
 
 export default function registerApprove(bot) {
 
-    bot.on("message", async (msg) => {
+    bot.on("callback_query", async (query) => {
 
-        if (!msg.text) return;
+        if (!query.data.startsWith("days_")) return;
 
-        const ownerId = String(msg.from.id);
+        await bot.answerCallbackQuery(query.id);
 
-        if (!pendingApprovals.has(ownerId)) return;
+        const ownerId = String(query.from.id);
 
-        const days = Number(msg.text);
+        if (!pendingApprovals.has(ownerId)) {
 
-        if (isNaN(days) || days < 0) {
+            return bot.answerCallbackQuery(query.id, {
 
-            return bot.sendMessage(ownerId,
-                "❌ Escribe un número válido.\n\nEjemplo:\n30");
+                text: "La solicitud ya expiró.",
+
+                show_alert: true
+
+            });
+
         }
+
+        const days = Number(query.data.split("_")[1]);
 
         const userId = pendingApprovals.get(ownerId);
 
@@ -47,25 +53,101 @@ export default function registerApprove(bot) {
 
         pendingApprovals.delete(ownerId);
 
-        await bot.sendMessage(ownerId,
+        await bot.editMessageText(
 
-`✅ Usuario aprobado correctamente.
+`✅ <b>Usuario Aprobado</b>
 
-👤 ID: ${userId}
+━━━━━━━━━━━━━━━━━━
 
-📅 Duración: ${days == 0 ? "Ilimitado" : days + " días"}`);
+👤 <b>ID</b>
 
-        await bot.sendMessage(userId,
+<code>${userId}</code>
 
-`🎉 Tu solicitud fue aprobada.
+📅 <b>Duración</b>
 
-📅 Acceso:
+${days === 0 ? "♾️ Ilimitado" : `${days} días`}
 
-${days == 0 ? "Ilimitado" : days + " días"}
+🛡️ <b>Rol</b>
 
-Escribe nuevamente:
+Admin
 
-/start`);
+━━━━━━━━━━━━━━━━━━
+
+El usuario ya puede acceder al panel.`,
+
+        {
+
+            chat_id: query.message.chat.id,
+
+            message_id: query.message.message_id,
+
+            parse_mode: "HTML",
+
+            reply_markup: {
+
+                inline_keyboard: [
+
+                    [
+
+                        {
+                            text: "🏠 Inicio",
+                            callback_data: "menu_home"
+                        }
+
+                    ]
+
+                ]
+
+            }
+
+        });
+
+        await bot.sendMessage(
+
+            userId,
+
+`🎉 <b>¡Solicitud Aprobada!</b>
+
+━━━━━━━━━━━━━━━━━━
+
+✅ Ya tienes acceso al sistema.
+
+🛡️ <b>Rol</b>
+
+Admin
+
+📅 <b>Duración</b>
+
+${days === 0 ? "♾️ Ilimitado" : `${days} días`}
+
+━━━━━━━━━━━━━━━━━━
+
+Pulsa el botón para entrar al panel.`,
+
+            {
+
+                parse_mode: "HTML",
+
+                reply_markup: {
+
+                    inline_keyboard: [
+
+                        [
+
+                            {
+                                text: "🏠 Abrir Panel",
+                                callback_data: "menu_home"
+                            }
+
+                        ]
+
+                    ]
+
+                }
+
+            }
+
+        );
 
     });
 
