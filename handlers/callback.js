@@ -11,7 +11,7 @@ export default function registerCallback(bot) {
         const data = query.data;
 
         // ==========================
-        // ACEPTAR
+        // APROBAR
         // ==========================
 
         if (data.startsWith("accept_")) {
@@ -22,26 +22,84 @@ export default function registerCallback(bot) {
 
             await bot.editMessageText(
 
-`📅 Escribe la cantidad de días para el usuario.
+`✅ <b>Aprobar Usuario</b>
 
-Ejemplos:
+━━━━━━━━━━━━━━━━━━
 
-7
-30
-60
-90
-365
+Selecciona el tiempo de acceso para este usuario.
 
-O escribe:
-
-0
-
-para acceso ilimitado.`,
+━━━━━━━━━━━━━━━━━━`,
 
             {
 
                 chat_id: query.message.chat.id,
-                message_id: query.message.message_id
+
+                message_id: query.message.message_id,
+
+                parse_mode: "HTML",
+
+                reply_markup: {
+
+                    inline_keyboard: [
+
+                        [
+
+                            {
+                                text: "7 Días",
+                                callback_data: "days_7"
+                            },
+
+                            {
+                                text: "30 Días",
+                                callback_data: "days_30"
+                            }
+
+                        ],
+
+                        [
+
+                            {
+                                text: "60 Días",
+                                callback_data: "days_60"
+                            },
+
+                            {
+                                text: "90 Días",
+                                callback_data: "days_90"
+                            }
+
+                        ],
+
+                        [
+
+                            {
+                                text: "365 Días",
+                                callback_data: "days_365"
+                            }
+
+                        ],
+
+                        [
+
+                            {
+                                text: "♾️ Ilimitado",
+                                callback_data: "days_0"
+                            }
+
+                        ],
+
+                        [
+
+                            {
+                                text: "❌ Cancelar",
+                                callback_data: "cancel_request"
+                            }
+
+                        ]
+
+                    ]
+
+                }
 
             });
 
@@ -61,12 +119,38 @@ para acceso ilimitado.`,
 
             await bot.editMessageText(
 
-`❌ Solicitud rechazada correctamente.`,
+`❌ <b>Solicitud Rechazada</b>
+
+━━━━━━━━━━━━━━━━━━
+
+El usuario fue rechazado correctamente.
+
+━━━━━━━━━━━━━━━━━━`,
 
             {
 
                 chat_id: query.message.chat.id,
-                message_id: query.message.message_id
+
+                message_id: query.message.message_id,
+
+                parse_mode: "HTML",
+
+                reply_markup: {
+
+                    inline_keyboard: [
+
+                        [
+
+                            {
+                                text: "🏠 Inicio",
+                                callback_data: "menu_home"
+                            }
+
+                        ]
+
+                    ]
+
+                }
 
             });
 
@@ -74,9 +158,52 @@ para acceso ilimitado.`,
 
                 userId,
 
-`❌ Tu solicitud fue rechazada por el administrador.`
+`❌ Tu solicitud fue rechazada por el administrador.
+
+Puedes volver a intentarlo más adelante.`
 
             );
+
+            return bot.answerCallbackQuery(query.id);
+
+        }
+
+        // ==========================
+        // CANCELAR
+        // ==========================
+
+        if (data === "cancel_request") {
+
+            pendingApprovals.delete(String(query.from.id));
+
+            await bot.editMessageText(
+
+`❌ Operación cancelada.`,
+
+            {
+
+                chat_id: query.message.chat.id,
+
+                message_id: query.message.message_id,
+
+                reply_markup: {
+
+                    inline_keyboard: [
+
+                        [
+
+                            {
+                                text: "🏠 Inicio",
+                                callback_data: "menu_home"
+                            }
+
+                        ]
+
+                    ]
+
+                }
+
+            });
 
             return bot.answerCallbackQuery(query.id);
 
