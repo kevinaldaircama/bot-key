@@ -1,53 +1,68 @@
 import db from "../firebase.js";
 
-export default function registerHistory(bot){
+export default function registerHistory(bot) {
 
-bot.on("message",async(msg)=>{
+    bot.on("message", async (msg) => {
 
-if(msg.text!="📜 Historial") return;
+        if (!msg.text) return;
+        if (msg.text !== "📜 Historial") return;
 
-const chatId=String(msg.chat.id);
+        const chatId = String(msg.chat.id);
 
-const snap=await db.ref("keys").get();
+        const snap = await db.ref("keys").get();
 
-if(!snap.exists()){
+        if (!snap.exists()) {
+            return bot.sendMessage(chatId, "❌ No tienes historial.");
+        }
 
-return bot.sendMessage(chatId,"No hay historial.");
+        let text = "📜 <b>Historial de Keys</b>\n\n";
 
-}
+        let total = 0;
 
-let text="📜 Historial\n\n";
+        snap.forEach((item) => {
 
-let total=0;
+            const key = item.val();
 
-snap.forEach(item=>{
+            if (key.owner !== chatId) return;
 
-const k=item.val();
+            total++;
 
-if(k.owner==chatId){
+            const estado = key.used ? "🔴 Usada" : "🟢 Disponible";
 
-total++;
+            const fecha = new Date(key.created).toLocaleString("es-PE");
 
-text+=`🔑 ${k.key}
+            text +=
+`━━━━━━━━━━━━━━
+🔑 <code>${key.key}</code>
 
-👤 ${k.reseller}
+👤 <b>Reseller:</b>
+${key.reseller}
 
-${k.used?"✅ Usada":"🟢 Disponible"}
+📅 <b>Creada:</b>
+${fecha}
 
-\n`;
+📌 <b>Estado:</b>
+${estado}
 
-}
+`;
+        });
 
-});
+        if (total === 0) {
 
-if(total==0){
+            text += "No tienes Keys creadas.";
 
-text+="No tienes registros.";
+        }
 
-}
+        text += `━━━━━━━━━━━━━━
 
-bot.sendMessage(chatId,text);
+📊 Total: <b>${total}</b>`;
 
-});
+        bot.sendMessage(chatId, text, {
 
-}
+            parse_mode: "HTML"
+
+        });
+
+    });
+
+           }
