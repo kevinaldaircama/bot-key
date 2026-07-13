@@ -1,93 +1,139 @@
 import db from "../firebase.js";
 
-export default function registerUsage(bot){
+export default function registerUsage(bot) {
 
-bot.on("message",async(msg)=>{
+    bot.on("callback_query", async (query) => {
 
-if(!msg.text) return;
+        if (query.data !== "menu_usage") return;
 
-if(msg.text!="📈 Mi Uso") return;
+        await bot.answerCallbackQuery(query.id);
 
-const chatId=String(msg.chat.id);
+        const chatId = String(query.message.chat.id);
 
-const snap=await db.ref("keys").get();
+        const snap = await db.ref("keys").get();
 
-let total=0;
-let usadas=0;
-let disponibles=0;
-let expiradas=0;
+        let total = 0;
+        let usadas = 0;
+        let disponibles = 0;
+        let expiradas = 0;
 
-const now=Date.now();
+        const now = Date.now();
 
-if(snap.exists()){
+        if (snap.exists()) {
 
-snap.forEach(item=>{
+            snap.forEach(item => {
 
-const key=item.val();
+                const key = item.val();
 
-if(key.owner!==chatId) return;
+                if (key.owner !== chatId) return;
 
-total++;
+                total++;
 
-if(key.used){
+                if (key.used) {
 
-usadas++;
+                    usadas++;
 
-}else{
+                } else if (key.expires <= now) {
 
-if(key.expires<now){
+                    expiradas++;
 
-expiradas++;
+                } else {
 
-}else{
+                    disponibles++;
 
-disponibles++;
+                }
 
-}
+            });
 
-}
+        }
 
-});
+        const porcentaje = total > 0
+            ? Math.round((usadas / total) * 100)
+            : 0;
 
-}
+        await bot.editMessageText(
 
-let porcentaje=0;
+`📈 <b>MI USO</b>
 
-if(total>0){
+━━━━━━━━━━━━━━━━━━
 
-porcentaje=Math.round((usadas/total)*100);
+🔑 <b>Keys Generadas</b>
 
-}
+${total}
 
-bot.sendMessage(chatId,
+🟢 <b>Disponibles</b>
 
-`📈 <b>Mi Uso</b>
+${disponibles}
 
-━━━━━━━━━━━━━━
+🔴 <b>Usadas</b>
 
-🔑 Keys creadas:
-<b>${total}</b>
+${usadas}
 
-🟢 Disponibles:
-<b>${disponibles}</b>
+⌛ <b>Expiradas</b>
 
-🔴 Usadas:
-<b>${usadas}</b>
+${expiradas}
 
-⌛ Expiradas:
-<b>${expiradas}</b>
+━━━━━━━━━━━━━━━━━━
 
-📊 Uso:
-<b>${porcentaje}%</b>
+📊 <b>Porcentaje de Uso</b>
 
-━━━━━━━━━━━━━━`,
+${porcentaje}%
 
-{
+━━━━━━━━━━━━━━━━━━
 
-parse_mode:"HTML"
+🕒 <b>Última actualización</b>
 
-});
+${new Date().toLocaleString("es-PE")}`,
 
-});
+        {
+
+            chat_id: chatId,
+
+            message_id: query.message.message_id,
+
+            parse_mode: "HTML",
+
+            reply_markup: {
+
+                inline_keyboard: [
+
+                    [
+
+                        {
+                            text: "🔄 Actualizar",
+                            callback_data: "menu_usage"
+                        }
+
+                    ],
+
+                    [
+
+                        {
+                            text: "📜 Historial",
+                            callback_data: "menu_history"
+                        },
+                        {
+                            text: "🔑 Crear Key",
+                            callback_data: "menu_key"
+                        }
+
+                    ],
+
+                    [
+
+                        {
+                            text: "🏠 Inicio",
+                            callback_data: "menu_home"
+                        }
+
+                    ]
+
+                ]
+
+            }
+
+        });
+
+    });
 
 }
