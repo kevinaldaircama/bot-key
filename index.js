@@ -7,6 +7,9 @@ import registerCallback from "./handlers/callback.js";
 import registerApprove from "./handlers/approve.js";
 import registerReseller from "./handlers/reseller.js";
 import registerKey from "./handlers/key.js";
+import registerInstaller from "./handlers/installer.js";
+import registerHistory from "./handlers/history.js";
+import registerUsage from "./handlers/usage.js";
 
 const bot = new TelegramBot(config.BOT_TOKEN, {
     polling: true
@@ -25,5 +28,8 @@ registerCallback(bot);
 registerApprove(bot);
 registerReseller(bot);
 registerKey(bot);
+registerInstaller(bot);
+registerHistory(bot);
+registerUsage(bot);
 
 bot.on("polling_error", console.log);
