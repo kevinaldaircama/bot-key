@@ -4,14 +4,16 @@ const waitingReseller = new Map();
 
 export default function registerReseller(bot) {
 
-    // Botón 👥 Reseller
-    bot.on("message", async (msg) => {
+    // ==========================
+    // Botón 👥 Resellers
+    // ==========================
+    bot.on("callback_query", async (query) => {
 
-        if (!msg.text) return;
+        if (query.data !== "menu_reseller") return;
 
-        const chatId = String(msg.chat.id);
+        await bot.answerCallbackQuery(query.id);
 
-        if (msg.text !== "👥 Resellers") return;
+        const chatId = String(query.message.chat.id);
 
         const snap = await db.ref(`users/${chatId}`).get();
 
@@ -25,19 +27,55 @@ export default function registerReseller(bot) {
 
         waitingReseller.set(chatId, true);
 
-        bot.sendMessage(chatId,
+        await bot.editMessageText(
 
-`👤 Escribe el nombre del Reseller.
+`👥 <b>Configurar Reseller</b>
 
-Ejemplo:
+━━━━━━━━━━━━━━━━━━
 
-KevinTech
-VPN Premium
-Mi Empresa`);
+👤 Reseller actual
+
+<b>${user.reseller || "Sin configurar"}</b>
+
+━━━━━━━━━━━━━━━━━━
+
+✍️ Ahora escribe el nuevo nombre del Reseller.
+
+Ejemplos:
+
+• KevinTech
+• VPN Premium
+• Mi Empresa
+
+━━━━━━━━━━━━━━━━━━`,
+
+{
+
+chat_id: chatId,
+
+message_id: query.message.message_id,
+
+parse_mode:"HTML",
+
+reply_markup:{
+
+inline_keyboard:[
+
+[
+{text:"🏠 Inicio",callback_data:"menu_home"}
+]
+
+]
+
+}
+
+});
 
     });
 
-    // Guardar nombre
+    // ==========================
+    // Guardar Reseller
+    // ==========================
     bot.on("message", async (msg) => {
 
         if (!msg.text) return;
@@ -48,6 +86,12 @@ Mi Empresa`);
 
         const reseller = msg.text.trim();
 
+        if (reseller.length < 3) {
+
+            return bot.sendMessage(chatId,
+                "❌ El nombre debe tener al menos 3 caracteres.");
+        }
+
         waitingReseller.delete(chatId);
 
         await db.ref(`users/${chatId}`).update({
@@ -56,13 +100,39 @@ Mi Empresa`);
 
         });
 
-        bot.sendMessage(chatId,
+        await bot.sendMessage(
 
-`✅ Nombre del Reseller guardado.
+chatId,
 
-Nombre:
+`✅ <b>Reseller actualizado correctamente</b>
 
-${reseller}`);
+━━━━━━━━━━━━━━━━━━
+
+👤 Nuevo nombre
+
+<b>${reseller}</b>
+
+━━━━━━━━━━━━━━━━━━
+
+Ahora todas las Keys nuevas mostrarán este nombre.`,
+
+{
+
+parse_mode:"HTML",
+
+reply_markup:{
+
+inline_keyboard:[
+
+[
+{text:"🏠 Volver al Panel",callback_data:"menu_home"}
+]
+
+]
+
+}
+
+});
 
     });
 
