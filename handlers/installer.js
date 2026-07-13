@@ -20,23 +20,73 @@ export default function registerInstaller(bot) {
 
         if (user.role !== "owner" && user.role !== "admin") return;
 
-        bot.sendMessage(chatId,
+        // Contar keys
+        const keys = await db.ref("keys").get();
 
-`🚀 *Instalador Oficial*
+        let disponibles = 0;
 
-Utiliza el siguiente comando para instalar el Multi Script VPN.
+        if (keys.exists()) {
 
-\`\`\`bash
-bash <(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)
-\`\`\`
+            keys.forEach(item => {
 
-⚠️ Recuerda que durante la instalación se solicitará una KEY válida.
+                const key = item.val();
 
-`,{
+                if (
+                    key.owner === chatId &&
+                    !key.used &&
+                    key.expires > Date.now()
+                ) {
+                    disponibles++;
+                }
 
-parse_mode:"Markdown"
+            });
 
-});
+        }
+
+        const role =
+            user.role === "owner"
+                ? "👑 Dueño"
+                : "🛡️ Admin";
+
+        await bot.sendMessage(
+
+            chatId,
+
+`<b>🚀 MULTI SCRIPT VPN</b>
+
+━━━━━━━━━━━━━━━━━━
+
+${role}
+
+👤 <b>Reseller</b>
+
+${user.reseller || "Sin configurar"}
+
+━━━━━━━━━━━━━━━━━━
+
+🔑 <b>Keys Disponibles</b>
+
+${disponibles}
+
+━━━━━━━━━━━━━━━━━━
+
+💻 <b>Instalador Oficial</b>
+
+<code>bash <(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>
+
+━━━━━━━━━━━━━━━━━━
+
+⚠️ Durante la instalación se solicitará una KEY válida.
+
+Las Keys vencen a las <b>2 horas</b> o al <b>primer uso</b>.`,
+
+            {
+
+                parse_mode: "HTML"
+
+            }
+
+        );
 
     });
 
