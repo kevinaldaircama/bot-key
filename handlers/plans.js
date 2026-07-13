@@ -12,40 +12,44 @@ export default function registerPlans(bot) {
 
 ━━━━━━━━━━━━━━━━━━
 
-💎 <b>PLANES DISPONIBLES</b>
+💎 <b>PRECIOS PARA ADMIN</b>
 
-🥉 <b>Plan Básico</b>
-
-• 30 días
-• 1 VPS
-• Soporte básico
-
-💰 S/ XX
+👑 Obtén acceso al panel de administración y genera tus propias Keys.
 
 ━━━━━━━━━━━━━━━━━━
 
-🥈 <b>Plan Pro</b>
+📅 <b>7 Días</b>
+💵 <b>USD $5</b>
 
-• 90 días
-• 5 VPS
-• Soporte prioritario
+📅 <b>30 Días</b>
+💵 <b>USD $10</b>
 
-💰 S/ XX
+📅 <b>60 Días</b>
+💵 <b>USD $18</b>
+
+📅 <b>90 Días</b>
+💵 <b>USD $20</b>
+
+📅 <b>365 Días (1 Año)</b>
+💵 <b>USD $30</b>
+
+♾️ <b>Acceso Ilimitado</b>
+💵 <b>USD $100</b>
 
 ━━━━━━━━━━━━━━━━━━
 
-🥇 <b>Plan Premium</b>
+✅ Todos los planes incluyen:
 
-• 365 días
-• VPS ilimitados
-• Actualizaciones
-• Soporte Premium
-
-💰 S/ XX
+• Panel de Administración
+• Generación de Keys
+• Configuración de Reseller
+• Instalador Oficial
+• Gestión de Dominios
+• Soporte durante la vigencia
 
 ━━━━━━━━━━━━━━━━━━
 
-📩 Elige un plan y contáctanos.`,
+📩 ¿Deseas comprar un acceso Admin?`,
 
             {
 
@@ -59,7 +63,7 @@ export default function registerPlans(bot) {
 
                             {
 
-                                text: "🥉 Plan Básico",
+                                text: "💳 Comprar Acceso",
 
                                 url: "https://t.me/senseicamachito"
 
@@ -71,33 +75,9 @@ export default function registerPlans(bot) {
 
                             {
 
-                                text: "🥈 Plan Pro",
+                                text: "📩 unirme al grupo",
 
-                                url: "https://t.me/senseicamachito"
-
-                            }
-
-                        ],
-
-                        [
-
-                            {
-
-                                text: "🥇 Plan Premium",
-
-                                url: "https://t.me/senseicamachito"
-
-                            }
-
-                        ],
-
-                        [
-
-                            {
-
-                                text: "👤 Contactarme",
-
-                                url: "https://t.me/senseicamachito"
+                                url: "https://t.me/vpn_privanoxchat"
 
                             }
 
