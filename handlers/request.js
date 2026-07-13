@@ -5,89 +5,162 @@ export default function registerRequest(bot) {
 
     bot.on("callback_query", async (query) => {
 
-        const chatId = String(query.message.chat.id);
-
         if (query.data !== "request_access") return;
+
+        await bot.answerCallbackQuery(query.id);
+
+        const chatId = String(query.message.chat.id);
 
         const userRef = db.ref(`users/${chatId}`);
         const user = (await userRef.get()).val();
 
-        // Evitar solicitudes repetidas
         const requestRef = db.ref(`requests/${chatId}`);
 
+        // Ya existe una solicitud
         if ((await requestRef.get()).exists()) {
 
             return bot.answerCallbackQuery(query.id, {
+
                 text: "Ya enviaste una solicitud.",
+
                 show_alert: true
+
             });
 
         }
 
         await requestRef.set({
+
             id: chatId,
+
             name: user.name,
+
             username: user.username,
+
+            role: "user",
+
             createdAt: Date.now()
+
         });
+
+        // Mensaje al usuario
 
         await bot.editMessageText(
-`✅ Tu solicitud ha sido enviada al dueño con éxito.
 
-Por favor espera a que el dueño revise tu solicitud.
+`📨 <b>Solicitud Enviada</b>
 
-Recibirás un mensaje cuando seas aprobado.`,
+━━━━━━━━━━━━━━━━━━
+
+✅ Tu solicitud fue enviada correctamente.
+
+👤 <b>Nombre</b>
+
+${user.name}
+
+🆔 <b>ID</b>
+
+<code>${chatId}</code>
+
+━━━━━━━━━━━━━━━━━━
+
+⏳ Ahora solo debes esperar la aprobación del Dueño.
+
+Recibirás una notificación automáticamente.`,
+
         {
+
             chat_id: chatId,
-            message_id: query.message.message_id
-        });
 
-        // Avisar al dueño
+            message_id: query.message.message_id,
 
-        await bot.sendMessage(
+            parse_mode: "HTML",
 
-            config.OWNER_ID,
+            reply_markup: {
 
-`📨 Nueva solicitud
+                inline_keyboard: [
 
-👤 Nombre: ${user.name}
+                    [
 
-🆔 ID: ${chatId}
+                        {
 
-📛 Usuario: @${user.username || "Sin username"}
+                            text: "👤 Contactarme",
 
-¿Qué deseas hacer?`,
+                            url: "https://t.me/senseicamachito"
 
-            {
-
-                reply_markup: {
-
-                    inline_keyboard: [
-
-                        [
-
-                            {
-                                text: "✅ Aceptar",
-                                callback_data: `accept_${chatId}`
-                            },
-
-                            {
-                                text: "❌ Rechazar",
-                                callback_data: `reject_${chatId}`
-                            }
-
-                        ]
+                        }
 
                     ]
 
-                }
+                ]
 
             }
 
-        );
+        });
 
-        bot.answerCallbackQuery(query.id);
+        // Aviso al Dueño
+
+        await bot.sendMessage(
+
+config.OWNER_ID,
+
+`📨 <b>Nueva Solicitud</b>
+
+━━━━━━━━━━━━━━━━━━
+
+👤 <b>Nombre</b>
+
+${user.name}
+
+🆔 <b>ID</b>
+
+<code>${chatId}</code>
+
+📛 <b>Usuario</b>
+
+@${user.username || "Sin username"}
+
+📅 <b>Fecha</b>
+
+${new Date().toLocaleString("es-PE")}
+
+━━━━━━━━━━━━━━━━━━
+
+¿Qué deseas hacer?`,
+
+{
+
+parse_mode:"HTML",
+
+reply_markup:{
+
+inline_keyboard:[
+
+[
+
+{
+
+text:"✅ Aprobar",
+
+callback_data:`accept_${chatId}`
+
+},
+
+{
+
+text:"❌ Rechazar",
+
+callback_data:`reject_${chatId}`
+
+}
+
+]
+
+]
+
+}
+
+});
 
     });
 
-    }
+}
