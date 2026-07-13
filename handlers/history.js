@@ -2,67 +2,132 @@ import db from "../firebase.js";
 
 export default function registerHistory(bot) {
 
-    bot.on("message", async (msg) => {
+    bot.on("callback_query", async (query) => {
 
-        if (!msg.text) return;
-        if (msg.text !== "📜 Historial") return;
+        if (query.data !== "menu_history") return;
 
-        const chatId = String(msg.chat.id);
+        await bot.answerCallbackQuery(query.id);
+
+        const chatId = String(query.message.chat.id);
 
         const snap = await db.ref("keys").get();
 
-        if (!snap.exists()) {
-            return bot.sendMessage(chatId, "❌ No tienes historial.");
-        }
+        let text = `📜 <b>HISTORIAL DE KEYS</b>
 
-        let text = "📜 <b>Historial de Keys</b>\n\n";
+━━━━━━━━━━━━━━━━━━
+
+`;
 
         let total = 0;
 
-        snap.forEach((item) => {
+        if (snap.exists()) {
 
-            const key = item.val();
+            snap.forEach(item => {
 
-            if (key.owner !== chatId) return;
+                const key = item.val();
 
-            total++;
+                if (key.owner !== chatId) return;
 
-            const estado = key.used ? "🔴 Usada" : "🟢 Disponible";
+                total++;
 
-            const fecha = new Date(key.created).toLocaleString("es-PE");
+                const estado = key.used
+                    ? "🔴 Usada"
+                    : (key.expires <= Date.now()
+                        ? "⌛ Expirada"
+                        : "🟢 Disponible");
 
-            text +=
-`━━━━━━━━━━━━━━
-🔑 <code>${key.key}</code>
+                text +=
 
-👤 <b>Reseller:</b>
-${key.reseller}
+`🔑 <code>${key.key}</code>
 
-📅 <b>Creada:</b>
-${fecha}
+👤 ${key.reseller}
 
-📌 <b>Estado:</b>
-${estado}
+📅 ${new Date(key.created).toLocaleString("es-PE")}
+
+📌 ${estado}
+
+━━━━━━━━━━━━━━━━━━
 
 `;
-        });
 
-        if (total === 0) {
-
-            text += "No tienes Keys creadas.";
+            });
 
         }
 
-        text += `━━━━━━━━━━━━━━
+        if (total === 0) {
 
-📊 Total: <b>${total}</b>`;
+            text += "No tienes Keys generadas.\n\n";
 
-        bot.sendMessage(chatId, text, {
+        }
 
-            parse_mode: "HTML"
+        text += `📊 <b>Total:</b> ${total}`;
 
-        });
+        await bot.editMessageText(
+
+            text,
+
+            {
+
+                chat_id: chatId,
+
+                message_id: query.message.message_id,
+
+                parse_mode: "HTML",
+
+                reply_markup: {
+
+                    inline_keyboard: [
+
+                        [
+
+                            {
+
+                                text: "🔄 Actualizar",
+
+                                callback_data: "menu_history"
+
+                            }
+
+                        ],
+
+                        [
+
+                            {
+
+                                text: "🔑 Crear Key",
+
+                                callback_data: "menu_key"
+
+                            },
+
+                            {
+
+                                text: "📈 Mi Uso",
+
+                                callback_data: "menu_usage"
+
+                            }
+
+                        ],
+
+                        [
+
+                            {
+
+                                text: "🏠 Inicio",
+
+                                callback_data: "menu_home"
+
+                            }
+
+                        ]
+
+                    ]
+
+                }
+
+            });
 
     });
 
-           }
+}
