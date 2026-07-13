@@ -3,157 +3,168 @@ import config from "../config.js";
 
 export default function registerStart(bot) {
 
-bot.onText(/\/start/, async (msg) => {
+    bot.onText(/\/start/, async (msg) => {
 
-try {
+        try {
 
-const chatId = String(msg.chat.id);
-const name = msg.from.first_name || "";
-const username = msg.from.username || "";
+            const chatId = String(msg.chat.id);
+            const name = msg.from.first_name || "Usuario";
+            const username = msg.from.username || "Sin username";
 
-const userRef = db.ref(`users/${chatId}`);
-const snapshot = await userRef.get();
+            const userRef = db.ref(`users/${chatId}`);
 
-if (!snapshot.exists()) {
+            const snapshot = await userRef.get();
 
-await userRef.set({
-id: chatId,
-name,
-username,
-role: "user",
-approved: false,
-reseller: "",
-expire: "",
-createdAt: Date.now()
-});
+            if (!snapshot.exists()) {
+
+                await userRef.set({
+
+                    id: chatId,
+                    name,
+                    username,
+
+                    role: "user",
+
+                    approved: false,
+
+                    reseller: "",
+
+                    expire: "",
+
+                    createdAt: Date.now()
+
+                });
+
+            }
+
+            const data = (await userRef.get()).val();
+
+            // =============================
+            // DUEÑO
+            // =============================
+
+            if (chatId === config.OWNER_ID) {
+
+                await userRef.update({
+
+                    role: "owner",
+
+                    approved: true
+
+                });
+
+                return showOwnerPanel(bot, chatId, data);
+
+            }
+
+            // =============================
+            // ADMIN
+            // =============================
+
+            if (data.role === "admin" && data.approved) {
+
+                return showAdminPanel(bot, chatId, data);
+
+            }
+
+            // =============================
+            // USUARIO
+            // =============================
+
+            return showUserPanel(bot, chatId, data);
+
+        } catch (e) {
+
+            console.log(e);
+
+        }
+
+    });
 
 }
+// ==========================================
+// PANEL DUEÑO
+// ==========================================
 
-const data = (await userRef.get()).val();
+async function showOwnerPanel(bot, chatId, user) {
 
+    const keys = await db.ref("keys").get();
 
-// ==========================
-// DUEÑO
-// ==========================
+    let totalKeys = 0;
 
-if (chatId === config.OWNER_ID) {
+    if (keys.exists()) {
 
-await userRef.update({
-role: "owner",
-approved: true
-});
+        keys.forEach(item => {
 
-return bot.sendMessage(chatId,
+            if (item.val().owner === chatId) {
 
-`👑 *Panel del Dueño*
+                totalKeys++;
 
-Bienvenido *${name}*.
+            }
+
+        });
+
+    }
+
+    return bot.sendMessage(chatId,
+
+`👑 <b>MULTI SCRIPT VPN</b>
+
+━━━━━━━━━━━━━━━━━━
+
+👤 <b>Usuario</b>
+${user.name}
+
+🆔 <b>ID</b>
+<code>${chatId}</code>
+
+🎖️ <b>Rango</b>
+Dueño
+
+📅 <b>Acceso</b>
+Ilimitado
+
+👥 <b>Reseller</b>
+${user.reseller || "Sin configurar"}
+
+🔑 <b>Keys Generadas</b>
+${totalKeys}
+
+━━━━━━━━━━━━━━━━━━
 
 Seleccione una opción.`,
 
 {
-parse_mode: "Markdown",
 
-reply_markup: {
-keyboard: [
-
-["🔑 Crear Key"],
-
-["🚀 Instalador"],
-
-["🖥 Mis VPS"],
-
-["🌐 Dominio A","🧩 Dominio NS"],
-
-["📁 Mis Dominios"],
-
-["👥 Resellers"],
-
-["📊 Estadísticas"],
-
-["📜 Historial","📈 Mi Uso"]
-
-],
-resize_keyboard:true
-}
-
-});
-
-}
-
-
-// ==========================
-// ADMIN
-// ==========================
-
-if (data.role === "admin" && data.approved) {
-
-return bot.sendMessage(chatId,
-
-`👨‍💻 *Panel Admin*
-
-Bienvenido *${name}*.`,
-
-{
-
-parse_mode:"Markdown",
-
-reply_markup:{
-keyboard:[
-
-["🔑 Crear Key"],
-
-["🚀 Instalador"],
-
-["🖥 Mis VPS"],
-
-["🌐 Dominio A","🧩 Dominio NS"],
-
-["📁 Mis Dominios"],
-
-["👥 Resellers"],
-
-["📜 Historial","📈 Mi Uso"]
-
-],
-resize_keyboard:true
-}
-
-});
-
-}
-
-
-// ==========================
-// USUARIO
-// ==========================
-
-if (!data.approved) {
-
-return bot.sendMessage(chatId,
-
-`🚀 *Multi Script VPN Premium*
-
-Bienvenido.
-
-Este bot es de acceso privado para la creación de licencias VPN de alto rendimiento.
-
-Si deseas adquirir acceso al sistema, ser revendedor o comprar una llave, solicita acceso.`,
-
-{
-
-parse_mode:"Markdown",
+parse_mode:"HTML",
 
 reply_markup:{
 
 inline_keyboard:[
 
 [
-{text:"📨 Solicitar acceso",callback_data:"request_access"}
+{text:"🔑 Crear Key",callback_data:"menu_key"},
+{text:"🚀 Instalador",callback_data:"menu_install"}
 ],
 
 [
-{text:"👤 Contactarme",url:"https://t.me/senseicamachito"}
+{text:"🖥 Mis VPS",callback_data:"menu_vps"},
+{text:"📁 Mis Dominios",callback_data:"menu_domains"}
+],
+
+[
+{text:"🌐 Dominio A",callback_data:"menu_domain_a"},
+{text:"🧩 Dominio NS",callback_data:"menu_domain_ns"}
+],
+
+[
+{text:"👥 Resellers",callback_data:"menu_reseller"},
+{text:"📊 Estadísticas",callback_data:"menu_stats"}
+],
+
+[
+{text:"📜 Historial",callback_data:"menu_history"},
+{text:"📈 Mi Uso",callback_data:"menu_usage"}
 ]
 
 ]
@@ -165,37 +176,171 @@ inline_keyboard:[
 }
 
 
-// ==========================
-// RESELLER
-// ==========================
 
-if (data.role === "reseller") {
+// ==========================================
+// PANEL ADMIN
+// ==========================================
+
+async function showAdminPanel(bot, chatId, user){
+
+const keys=await db.ref("keys").get();
+
+let totalKeys=0;
+
+if(keys.exists()){
+
+keys.forEach(item=>{
+
+if(item.val().owner===chatId){
+
+totalKeys++;
+
+}
+
+});
+
+}
+
+let expire="Ilimitado";
+
+if(user.expire && user.expire!=""){
+
+const fecha=new Date(user.expire);
+
+expire=fecha.toLocaleDateString("es-PE");
+
+}
 
 return bot.sendMessage(chatId,
 
-`👤 *Panel Reseller*
+`🛡️ <b>MULTI SCRIPT VPN</b>
 
-Reseller:
+━━━━━━━━━━━━━━━━━━
 
-${data.reseller}`,
+👤 <b>Usuario</b>
+
+${user.name}
+
+🆔 <b>ID</b>
+
+<code>${chatId}</code>
+
+🎖️ <b>Rango</b>
+
+Admin
+
+📅 <b>Expira</b>
+
+${expire}
+
+👥 <b>Reseller</b>
+
+${user.reseller||"Sin configurar"}
+
+🔑 <b>Keys</b>
+
+${totalKeys}
+
+━━━━━━━━━━━━━━━━━━`,
 
 {
 
-parse_mode:"Markdown",
+parse_mode:"HTML",
 
 reply_markup:{
 
-keyboard:[
+inline_keyboard:[
 
-["🔑 Crear Key"],
-
-["📜 Historial"],
-
-["📈 Mi Uso"]
-
+[
+{text:"🔑 Crear Key",callback_data:"menu_key"},
+{text:"🚀 Instalador",callback_data:"menu_install"}
 ],
 
-resize_keyboard:true
+[
+{text:"🖥 Mis VPS",callback_data:"menu_vps"},
+{text:"📁 Mis Dominios",callback_data:"menu_domains"}
+],
+
+[
+{text:"🌐 Dominio A",callback_data:"menu_domain_a"},
+{text:"🧩 Dominio NS",callback_data:"menu_domain_ns"}
+],
+
+[
+{text:"👥 Resellers",callback_data:"menu_reseller"}
+],
+
+[
+{text:"📜 Historial",callback_data:"menu_history"},
+{text:"📈 Mi Uso",callback_data:"menu_usage"}
+]
+
+]
+
+}
+
+});
+
+               }
+// ==========================================
+// PANEL USUARIO
+// ==========================================
+
+async function showUserPanel(bot, chatId, user) {
+
+    if (user.approved) return;
+
+    return bot.sendMessage(chatId,
+
+`🚀 <b>MULTI SCRIPT VPN PREMIUM</b>
+
+━━━━━━━━━━━━━━━━━━
+
+👋 Bienvenido
+
+<b>${user.name}</b>
+
+🆔 <b>ID</b>
+
+<code>${chatId}</code>
+
+🔒 <b>Estado</b>
+
+Sin acceso
+
+━━━━━━━━━━━━━━━━━━
+
+Este bot es privado.
+
+Para utilizar el sistema debes solicitar acceso al administrador.
+
+Una vez aprobada tu solicitud podrás generar Keys, administrar dominios y utilizar todas las funciones del panel.
+
+━━━━━━━━━━━━━━━━━━`,
+
+{
+
+parse_mode:"HTML",
+
+reply_markup:{
+
+inline_keyboard:[
+
+[
+{
+text:"📨 Solicitar acceso",
+callback_data:"request_access"
+}
+],
+
+[
+{
+text:"👤 Contactarme",
+url:"https://t.me/senseicamachito"
+}
+]
+
+]
 
 }
 
@@ -203,12 +348,101 @@ resize_keyboard:true
 
 }
 
-} catch(err){
 
-console.log(err);
+// ==========================================
+// CALLBACK DEL PANEL
+// ==========================================
+
+export function registerMenuCallbacks(bot){
+
+bot.on("callback_query",async(query)=>{
+
+const chatId=String(query.message.chat.id);
+
+switch(query.data){
+
+case "menu_key":
+
+await bot.answerCallbackQuery(query.id,{
+text:"Abriendo Generador de Keys..."
+});
+
+break;
+
+case "menu_install":
+
+await bot.answerCallbackQuery(query.id,{
+text:"Abriendo Instalador..."
+});
+
+break;
+
+case "menu_vps":
+
+await bot.answerCallbackQuery(query.id,{
+text:"Abriendo Mis VPS..."
+});
+
+break;
+
+case "menu_domains":
+
+await bot.answerCallbackQuery(query.id,{
+text:"Abriendo Mis Dominios..."
+});
+
+break;
+
+case "menu_domain_a":
+
+await bot.answerCallbackQuery(query.id,{
+text:"Abriendo Dominio A..."
+});
+
+break;
+
+case "menu_domain_ns":
+
+await bot.answerCallbackQuery(query.id,{
+text:"Abriendo Dominio NS..."
+});
+
+break;
+
+case "menu_reseller":
+
+await bot.answerCallbackQuery(query.id,{
+text:"Abriendo Reseller..."
+});
+
+break;
+
+case "menu_stats":
+
+await bot.answerCallbackQuery(query.id,{
+text:"Abriendo Estadísticas..."
+});
+
+break;
+
+case "menu_history":
+
+await bot.answerCallbackQuery(query.id,{
+text:"Abriendo Historial..."
+});
+
+break;
+
+case "menu_usage":
+
+await bot.answerCallbackQuery(query.id,{
+text:"Abriendo Mi Uso..."
+});
+
+break;
 
 }
 
 });
 
-}
+  }
