@@ -61,11 +61,46 @@ export default function registerStart(bot) {
             // ADMIN
             // =============================
 
-            if (data.role === "admin" && data.approved) {
+            // =============================
+// ADMIN
+// =============================
 
-                return showAdminPanel(bot, chatId, data);
+if (data.role === "admin" && data.approved) {
 
-            }
+    // Verificar si el acceso venció
+    if (
+        data.expire &&
+        data.expire !== "" &&
+        data.expire !== "Ilimitado"
+    ) {
+
+        const expireTime = new Date(data.expire).getTime();
+
+        if (Date.now() >= expireTime) {
+
+            await userRef.update({
+
+                role: "user",
+
+                approved: false,
+
+                reseller: "",
+
+                expire: ""
+
+            });
+
+            const newData = (await userRef.get()).val();
+
+            return showUserPanel(bot, chatId, newData);
+
+        }
+
+    }
+
+    return showAdminPanel(bot, chatId, data);
+
+}
 
             // =============================
             // USUARIO
@@ -201,13 +236,22 @@ totalKeys++;
 
 }
 
-let expire="Ilimitado";
+let expire = "♾️ Ilimitado";
 
-if(user.expire && user.expire!=""){
+if (
+    user.expire &&
+    user.expire !== "" &&
+    user.expire !== "Ilimitado"
+) {
 
-const fecha=new Date(user.expire);
+    const fecha = new Date(user.expire);
 
-expire=fecha.toLocaleDateString("es-PE");
+    const dias = Math.ceil(
+        (fecha.getTime() - Date.now()) / 86400000
+    );
+
+    expire = `${fecha.toLocaleDateString("es-PE")}
+⏳ Restan ${dias} día${dias === 1 ? "" : "s"}`;
 
 }
 
@@ -364,7 +408,7 @@ switch(query.data){
 case "menu_key":
 
 await bot.answerCallbackQuery(query.id,{
-text:"Abriendo Generador de Keys..."
+text:"Generadon key esperé un momento..."
 });
 
 break;
