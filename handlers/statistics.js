@@ -2,13 +2,13 @@ import db from "../firebase.js";
 
 export default function registerStatistics(bot) {
 
-    bot.on("message", async (msg) => {
+    bot.on("callback_query", async (query) => {
 
-        if (!msg.text) return;
+        if (query.data !== "menu_stats") return;
 
-        if (msg.text !== "📊 Estadísticas") return;
+        await bot.answerCallbackQuery(query.id);
 
-        const chatId = String(msg.chat.id);
+        const chatId = String(query.message.chat.id);
 
         const userSnap = await db.ref(`users/${chatId}`).get();
 
@@ -18,8 +18,11 @@ export default function registerStatistics(bot) {
 
         if (user.role !== "owner") {
 
-            return bot.sendMessage(chatId,
-                "❌ Solo el dueño puede ver las estadísticas.");
+            return bot.answerCallbackQuery(query.id, {
+                text: "Solo el Dueño puede acceder.",
+                show_alert: true
+            });
+
         }
 
         const usersSnap = await db.ref("users").get();
@@ -37,17 +40,17 @@ export default function registerStatistics(bot) {
 
                 totalUsers++;
 
-                if (u.role === "admin") totalAdmins++;
-
                 if (u.role === "owner") totalOwners++;
+
+                if (u.role === "admin") totalAdmins++;
 
             });
 
         }
 
         let totalKeys = 0;
-        let usadas = 0;
         let disponibles = 0;
+        let usadas = 0;
         let expiradas = 0;
 
         const now = Date.now();
@@ -64,7 +67,7 @@ export default function registerStatistics(bot) {
 
                     usadas++;
 
-                } else if (key.expires < now) {
+                } else if (key.expires <= now) {
 
                     expiradas++;
 
@@ -78,43 +81,92 @@ export default function registerStatistics(bot) {
 
         }
 
-        bot.sendMessage(chatId,
+        const porcentaje = totalKeys > 0
+            ? Math.round((usadas / totalKeys) * 100)
+            : 0;
 
-`📊 <b>Estadísticas Globales</b>
+        await bot.editMessageText(
 
-━━━━━━━━━━━━━━
+`📊 <b>ESTADÍSTICAS GLOBALES</b>
 
-👥 Usuarios:
-<b>${totalUsers}</b>
+━━━━━━━━━━━━━━━━━━
 
-👑 Dueños:
-<b>${totalOwners}</b>
+👥 <b>Usuarios</b>
 
-🛡️ Admins:
-<b>${totalAdmins}</b>
+${totalUsers}
 
-━━━━━━━━━━━━━━
+👑 <b>Dueños</b>
 
-🔑 Keys:
-<b>${totalKeys}</b>
+${totalOwners}
 
-🟢 Disponibles:
-<b>${disponibles}</b>
+🛡️ <b>Admins</b>
 
-🔴 Usadas:
-<b>${usadas}</b>
+${totalAdmins}
 
-⌛ Expiradas:
-<b>${expiradas}</b>
+━━━━━━━━━━━━━━━━━━
 
-━━━━━━━━━━━━━━`,
+🔑 <b>Keys Totales</b>
 
-{
+${totalKeys}
 
-parse_mode:"HTML"
+🟢 <b>Disponibles</b>
 
-});
+${disponibles}
+
+🔴 <b>Usadas</b>
+
+${usadas}
+
+⌛ <b>Expiradas</b>
+
+${expiradas}
+
+📈 <b>Uso</b>
+
+${porcentaje}%
+
+━━━━━━━━━━━━━━━━━━
+
+🕒 Última actualización
+
+${new Date().toLocaleString("es-PE")}`,
+
+        {
+
+            chat_id: chatId,
+
+            message_id: query.message.message_id,
+
+            parse_mode: "HTML",
+
+            reply_markup: {
+
+                inline_keyboard: [
+
+                    [
+
+                        {
+                            text: "🔄 Actualizar",
+                            callback_data: "menu_stats"
+                        }
+
+                    ],
+
+                    [
+
+                        {
+                            text: "🏠 Inicio",
+                            callback_data: "menu_home"
+                        }
+
+                    ]
+
+                ]
+
+            }
+
+        });
 
     });
 
-          }
+}
