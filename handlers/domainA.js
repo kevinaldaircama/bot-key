@@ -100,7 +100,7 @@ parse_mode: "HTML"
 );
 
 });
-// ==============================
+  // ==============================
 // RECIBIR IP Y NOMBRE
 // ==============================
 
@@ -185,119 +185,8 @@ await bot.sendMessage(chatId,
 
 🌐 ${name}.${DOMAIN}
 📡 ${state.ip}`);
-// ==============================
-// CREAR REGISTRO EN CLOUDFLARE
-// ==============================
-
-try {
-
-const response = await fetch(
-`${API}/zones/${config.CLOUDFLARE_ZONE_ID}/dns_records`,
-{
-method: "POST",
-headers: {
-Authorization: `Bearer ${config.CLOUDFLARE_TOKEN}`,
-"Content-Type": "application/json"
-},
-body: JSON.stringify({
-
-type: "A",
-
-name: `${state.name}.${DOMAIN}`,
-
-content: state.ip,
-
-ttl: 1,
-
-proxied: true
-
-})
-}
-);
-
-const result = await response.json();
-
-if (!result.success) {
-
-delete usersState[chatId];
-
-return bot.sendMessage(chatId,
-
-`❌ Cloudflare devolvió un error.
-
-<code>${JSON.stringify(result.errors,null,2)}</code>`,
-
-{
-parse_mode:"HTML"
-});
-
-}
-
-// ==============================
-// GUARDAR EN FIREBASE
-// ==============================
-
-await db.ref(`domains/${chatId}/${state.name}`).set({
-
-recordId: result.result.id,
-
-type: "A",
-
-domain: `${state.name}.${DOMAIN}`,
-
-name: state.name,
-
-ip: state.ip,
-
-createdAt: Date.now()
-
-});
-
-// ==============================
-// RESPUESTA
-// ==============================
-
-await bot.sendMessage(chatId,
-
-`✅ <b>Registro creado correctamente</b>
-
-━━━━━━━━━━━━━━━━━━
-
-🌐 Dominio
-
-<code>${state.name}.${DOMAIN}</code>
-
-📡 IP
-
-<code>${state.ip}</code>
-
-☁️ Cloudflare
-
-Registro A activo.
-
-━━━━━━━━━━━━━━━━━━`,
-
-{
-parse_mode:"HTML"
-});
-
-delete usersState[chatId];
-
-} catch (err) {
-
-console.log(err);
-
-delete usersState[chatId];
-
-await bot.sendMessage(chatId,
-
-"❌ Error al conectar con Cloudflare.");
-
-}
-
-}
-
-});// ==============================
+  }
+  // ==============================
 // CREAR REGISTRO EN CLOUDFLARE
 // ==============================
 
