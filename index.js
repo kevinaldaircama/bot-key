@@ -20,6 +20,9 @@ import registerStatistics from "./handlers/statistics.js";
 import registerVPS from "./handlers/vps.js";
 import registerPlans from "./handlers/plans.js";
 import startExpireTask from "./tasks/expireUsers.js";
+import registerDomainA from "./handlers/domainA.js";
+import registerDomainNS from "./handlers/domainNS.js";
+import registerDomains from "./handlers/domains.js";
 
 const bot = new TelegramBot(config.BOT_TOKEN, {
     polling: true
@@ -54,7 +57,9 @@ registerStatistics(bot);
 registerVPS(bot);
 registerPlans(bot);
 startExpireTask(bot);
-
+registerDomainA(bot, config);
+registerDomainNS(bot, config);
+registerDomains(bot, config);
 // ==========================
 // ERRORES
 // ==========================
