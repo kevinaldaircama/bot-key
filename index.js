@@ -23,7 +23,7 @@ import startExpireTask from "./tasks/expireUsers.js";
 import registerDomainA from "./handlers/domainA.js";
 import registerDomainNS from "./handlers/domainNS.js";
 import registerDomains from "./handlers/domains.js";
-
+import registerSettings from "./handlers/settings.js";
 const bot = new TelegramBot(config.BOT_TOKEN, {
     polling: true
 });
@@ -52,6 +52,7 @@ registerReseller(bot);
 registerKey(bot);
 registerInstaller(bot);
 registerHistory(bot);
+registerSettings(bot);
 registerUsage(bot);
 registerStatistics(bot);
 registerVPS(bot);
