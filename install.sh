@@ -140,13 +140,13 @@ menu(){
 
 banner
 
-echo "1) Instalar Bot"
-echo "2) Actualizar Bot"
-echo "3) Reiniciar Bot"
-echo "4) Ver Logs"
-echo "5) Cambiar Token"
-echo "6) Cambiar Owner ID"
-echo "7) Cambiar Firebase"
+echo "1) Instalar / Actualizar Bot"
+echo "2) Reiniciar Bot"
+echo "3) Ver Logs"
+echo "4) Cambiar Token"
+echo "5) Cambiar Owner ID"
+echo "6) Cambiar Firebase"
+echo "7) Configurar Cloudflare"
 echo "8) Desinstalar Bot"
 echo "9) Salir"
 
@@ -163,44 +163,48 @@ check_os
 install_packages
 install_node
 install_pm2
-configure_project
-install_project
+
+if [ -d "$INSTALL_DIR/.git" ]; then
+    update_bot
+else
+    configure_project
+fi
 
 ;;
 
 2)
 
-update_bot
+restart_bot
 
 ;;
 
 3)
 
-restart_bot
+show_logs
 
 ;;
 
 4)
 
-show_logs
+change_token
 
 ;;
 
 5)
 
-change_token
+change_owner
 
 ;;
 
 6)
 
-change_owner
+change_firebase
 
 ;;
 
 7)
 
-change_firebase
+change_cloudflare
 
 ;;
 
@@ -262,6 +266,24 @@ while [[ -z "$OWNER_ID" ]]; do
 done
 
 echo
+
+read -p "Cloudflare API Token: " CLOUDFLARE_TOKEN
+
+while [[ -z "$CLOUDFLARE_TOKEN" ]]; do
+    echo -e "${RED}El Cloudflare Token es obligatorio.${NC}"
+    read -p "Cloudflare API Token: " CLOUDFLARE_TOKEN
+done
+
+echo
+
+read -p "Cloudflare Zone ID: " CLOUDFLARE_ZONE_ID
+
+while [[ -z "$CLOUDFLARE_ZONE_ID" ]]; do
+    echo -e "${RED}La Zone ID es obligatoria.${NC}"
+    read -p "Cloudflare Zone ID: " CLOUDFLARE_ZONE_ID
+done
+
+echo
 echo -e "${YELLOW}Ahora pega el JSON completo de Firebase Admin SDK.${NC}"
 echo -e "${YELLOW}Cuando termines presiona CTRL+D${NC}"
 echo
@@ -290,6 +312,9 @@ cat > .env <<EOF
 BOT_TOKEN=$BOT_TOKEN
 OWNER_ID=$OWNER_ID
 FIREBASE_CREDENTIALS=firebase-admin.json
+
+CLOUDFLARE_TOKEN=$CLOUDFLARE_TOKEN
+CLOUDFLARE_ZONE_ID=$CLOUDFLARE_ZONE_ID
 EOF
 
 echo -e "${GREEN}.env creado correctamente.${NC}"
@@ -464,6 +489,26 @@ pm2 delete $PM2_NAME >/dev/null 2>&1
 rm -rf "$INSTALL_DIR"
 
 echo -e "${GREEN}Bot eliminado correctamente.${NC}"
+
+}
+change_cloudflare() {
+
+if [ ! -f "$INSTALL_DIR/.env" ]; then
+    echo -e "${RED}No existe .env${NC}"
+    return
+fi
+
+read -p "Nuevo Cloudflare Token: " TOKEN
+
+read -p "Nuevo Zone ID: " ZONE
+
+sed -i "s|^CLOUDFLARE_TOKEN=.*|CLOUDFLARE_TOKEN=$TOKEN|" "$INSTALL_DIR/.env"
+
+sed -i "s|^CLOUDFLARE_ZONE_ID=.*|CLOUDFLARE_ZONE_ID=$ZONE|" "$INSTALL_DIR/.env"
+
+pm2 restart $PM2_NAME
+
+echo -e "${GREEN}Cloudflare actualizado correctamente.${NC}"
 
 }
 menu
