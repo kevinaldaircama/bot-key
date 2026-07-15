@@ -357,9 +357,9 @@ Sin acceso
 
 Este bot es privado.
 
-Para utilizar el sistema debes solicitar acceso al administrador.
+Para utilizar el sistema debes ver los /planes si te interesa concuerda con el dueño y solicita acceso al administrador y espera que te acepten.
 
-Una vez aprobada tu solicitud podrás generar Keys, administrar dominios y utilizar todas las funciones del panel.
+Una vez aprobada tu solicitud podrás generar Keys, administrar dominios y utilizar todas las funciones del panel hasta el tiempo contratado.
 
 ━━━━━━━━━━━━━━━━━━`,
 
@@ -417,7 +417,7 @@ break;
 case "menu_install":
 
 await bot.answerCallbackQuery(query.id,{
-text:"Abriendo Instalador..."
+text:"Abriendo Instalador espere un momento..."
 });
 
 break;
@@ -425,7 +425,7 @@ break;
 case "menu_vps":
 
 await bot.answerCallbackQuery(query.id,{
-text:"Abriendo Mis VPS..."
+text:"Abriendo VPS esperé un momento..."
 });
 
 break;
@@ -433,7 +433,7 @@ break;
 case "menu_domains":
 
 await bot.answerCallbackQuery(query.id,{
-text:"Abriendo Mis Dominios..."
+text:"Abriendo lista de Dominios..."
 });
 
 break;
@@ -441,7 +441,7 @@ break;
 case "menu_domain_a":
 
 await bot.answerCallbackQuery(query.id,{
-text:"Abriendo Dominio A..."
+text:"generando sistema de dominio A..."
 });
 
 break;
@@ -449,7 +449,7 @@ break;
 case "menu_domain_ns":
 
 await bot.answerCallbackQuery(query.id,{
-text:"Abriendo Dominio NS..."
+text:"Abriendo Dominio NS espere un momento..."
 });
 
 break;
@@ -457,7 +457,7 @@ break;
 case "menu_reseller":
 
 await bot.answerCallbackQuery(query.id,{
-text:"Abriendo Reseller..."
+text:"Abriendo Reseller espere un momento..."
 });
 
 break;
