@@ -65,6 +65,11 @@ export default function registerMenu(bot) {
                 bot.emit("menu:usage", chatId, query);
 
             break;
+                case "menu_settings":
+
+                bot.emit("menu:settings", chatId, query);
+
+            break;
 
         }
 
