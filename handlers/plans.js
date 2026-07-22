@@ -77,7 +77,7 @@ export default function registerPlans(bot) {
 
                                 text: "📩 unirme al grupo",
 
-                                url: "https://t.me/vpn_privanoxchat"
+                                url: "https://t.me/multiscriptofi"
 
                             }
 
