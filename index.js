@@ -24,6 +24,7 @@ import registerDomainA from "./handlers/domainA.js";
 import registerDomainNS from "./handlers/domainNS.js";
 import registerDomains from "./handlers/domains.js";
 import registerSettings from "./handlers/settings.js";
+import registerActivations from "./handlers/activations.js";
 const bot = new TelegramBot(config.BOT_TOKEN, {
     polling: true
 });
@@ -61,6 +62,7 @@ startExpireTask(bot);
 registerDomainA(bot, config);
 registerDomainNS(bot, config);
 registerDomains(bot, config);
+registerActivations(bot);
 // ==========================
 // ERRORES
 // ==========================
