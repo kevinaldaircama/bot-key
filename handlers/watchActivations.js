@@ -6,9 +6,15 @@ export default function registerActivations(bot) {
     db.ref("activations").on("child_added", async (snap) => {
         const data = snap.val();
 
-        if (!data || data.notified) return;
+        console.log("📥 Activación detectada:", snap.key);
 
-        const text = `🔔 NOTIFICACIÓN DE USO 🔔
+        if (!data) return;
+        if (data.notified === true) return;
+
+        try {
+            console.log("📤 Enviando mensaje a:", data.owner);
+
+            await bot.sendMessage(data.owner, `🔔 NOTIFICACIÓN DE USO 🔔
 
 ✅ Tu Token ha sido activado.
 
@@ -17,18 +23,15 @@ export default function registerActivations(bot) {
 🌐 IP Cliente: ${data.ip || "N/A"}
 🖥 Host: ${data.hostname || "N/A"}
 🐧 Sistema: ${data.os || "N/A"}
-📅 Fecha: ${data.date || "N/A"}`;
+📅 Fecha: ${data.date || "N/A"}`);
 
-        try {
-            await bot.sendMessage(data.owner, text);
+            await snap.ref.update({ notified: true });
 
-            await snap.ref.update({
-                notified: true
-            });
+            console.log("✅ Notificación enviada:", data.token);
 
-            console.log(`✅ Activación notificada: ${data.token}`);
         } catch (err) {
-            console.error("❌ Error enviando notificación:", err);
+            console.error("❌ Error:");
+            console.error(err.response?.body || err);
         }
     });
 }
