@@ -12,12 +12,12 @@ export default function registerActivations(bot) {
 
 ✅ Tu Token ha sido activado.
 
-👤 Reseller: ${data.reseller}
-🔑 Token: ${data.token}
-🌐 IP Cliente: ${data.ip}
-🖥 Host: ${data.hostname}
-🐧 Sistema: ${data.os}
-📅 Fecha: ${data.date}`;
+👤 Reseller: ${data.reseller || "N/A"}
+🔑 Token: ${data.token || "N/A"}
+🌐 IP Cliente: ${data.ip || "N/A"}
+🖥 Host: ${data.hostname || "N/A"}
+🐧 Sistema: ${data.os || "N/A"}
+📅 Fecha: ${data.date || "N/A"}`;
 
         try {
             await bot.sendMessage(data.owner, text);
@@ -25,8 +25,10 @@ export default function registerActivations(bot) {
             await snap.ref.update({
                 notified: true
             });
+
+            console.log(`✅ Activación notificada: ${data.token}`);
         } catch (err) {
-            console.error("Error enviando notificación:", err);
+            console.error("❌ Error enviando notificación:", err);
         }
     });
 }
