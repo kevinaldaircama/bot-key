@@ -1,18 +1,17 @@
-const admin = require("firebase-admin");
-const TelegramBot = require("node-telegram-bot-api");
+import { getDatabase, ref, onChildAdded, update } from "firebase/database";
+import { app } from "../firebase.js"; // o el archivo donde inicializas Firebase
 
-const bot = new TelegramBot(process.env.BOT_TOKEN);
+export default function registerActivations(bot) {
 
-const db = admin.database();
+    const db = getDatabase(app);
 
-db.ref("activations").on("child_added", async (snap) => {
+    onChildAdded(ref(db, "activations"), async (snap) => {
 
-    const data = snap.val();
+        const data = snap.val();
 
-    if (data.notified) return;
+        if (!data || data.notified) return;
 
-    const text =
-`🔔 NOTIFICACIÓN DE USO 🔔
+        const text = `🔔 NOTIFICACIÓN DE USO 🔔
 
 ✅ Tu Token ha sido activado.
 
@@ -28,18 +27,20 @@ db.ref("activations").on("child_added", async (snap) => {
 
 📅 Fecha: ${data.date}`;
 
-    try {
+        try {
 
-        await bot.sendMessage(data.owner, text);
+            await bot.sendMessage(data.owner, text);
 
-        await snap.ref.update({
-            notified: true
-        });
+            await update(snap.ref, {
+                notified: true
+            });
 
-    } catch (e) {
+        } catch (err) {
 
-        console.log(e);
+            console.log(err);
 
-    }
+        }
 
-});
+    });
+
+}
