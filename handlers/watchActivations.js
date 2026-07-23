@@ -1,12 +1,9 @@
-import { getDatabase, ref, onChildAdded, update } from "firebase/database";
-import { app } from "../firebase.js"; // o el archivo donde inicializas Firebase
+import db from "../firebase.js";
 
 export default function registerActivations(bot) {
+    console.log("🕒 Sistema de licencias iniciado.");
 
-    const db = getDatabase(app);
-
-    onChildAdded(ref(db, "activations"), async (snap) => {
-
+    db.ref("activations").on("child_added", async (snap) => {
         const data = snap.val();
 
         if (!data || data.notified) return;
@@ -16,31 +13,20 @@ export default function registerActivations(bot) {
 ✅ Tu Token ha sido activado.
 
 👤 Reseller: ${data.reseller}
-
 🔑 Token: ${data.token}
-
 🌐 IP Cliente: ${data.ip}
-
 🖥 Host: ${data.hostname}
-
 🐧 Sistema: ${data.os}
-
 📅 Fecha: ${data.date}`;
 
         try {
-
             await bot.sendMessage(data.owner, text);
 
-            await update(snap.ref, {
+            await snap.ref.update({
                 notified: true
             });
-
         } catch (err) {
-
-            console.log(err);
-
+            console.error("Error enviando notificación:", err);
         }
-
     });
-
 }
