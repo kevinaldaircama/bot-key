@@ -69,34 +69,35 @@ Pulsa el botón:
 
         }
 
-        const key = "KEY-" + randomUUID()
-            .replace(/-/g, "")
-            .substring(0, 10)
-            .toUpperCase();
+        const key = "kevintechmulti-script-" +
+    randomUUID()
+        .replace(/-/g, "")
+        .substring(0, 10)
+        .toUpperCase();
 
         const created = Date.now();
 
-        const expires = created + (2 * 60 * 60 * 1000);
+const deleteAt = created + (2 * 60 * 60 * 1000);
 
-        await db.ref(`keys/${key}`).set({
+await db.ref(`keys/${key}`).set({
 
-            key,
+    key,
 
-            owner: chatId,
+    owner: chatId,
 
-            reseller: user.reseller,
+    reseller: user.reseller,
 
-            used: false,
+    used: false,
 
-            created,
+    created,
 
-            expires,
+    deleteAt,
 
-            usedBy: "",
+    usedBy: "",
 
-            usedAt: ""
+    usedAt: ""
 
-        });
+});
 
         const keysSnapshot = await db.ref("keys").get();
 
@@ -152,9 +153,15 @@ ${totalKeys}
 
 ━━━━━━━━━━━━━━━━━━
 
-💻 <b>Instalador</b>
+💻 <b>Instalador con Key</b>
 
-<code>export INSTALL_KEY="${key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>`,
+<code>export INSTALL_KEY="${key}"; bash <(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>
+
+━━━━━━━━━━━━━━━━━━
+
+⚡ <b>Instalador Rápido</b>
+
+<code>bash <(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>`,
 
         {
 
