@@ -143,7 +143,9 @@ ${user.reseller}
 
 ⏳ <b>Expira</b>
 
-2 horas o al primer uso.
+🗑️ Eliminación automática
+
+La Key será eliminada después de 2 horas o al primer uso.
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -155,13 +157,13 @@ ${totalKeys}
 
 💻 <b>Instalador con Key</b>
 
-<code>export INSTALL_KEY="${key}"; bash <(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>
+<code>export INSTALL_KEY="${key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>
 
 ━━━━━━━━━━━━━━━━━━
 
-⚡ <b>Instalador Rápido</b>
+⚡ <b>Instalador sin key</b>
 
-<code>bash <(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>`,
+<code>bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>,
 
         {
 
