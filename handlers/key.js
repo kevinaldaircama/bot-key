@@ -163,8 +163,7 @@ ${totalKeys}
 
 ⚡ <b>Instalador sin key</b>
 
-<code>bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>,
-
+<code>bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>`,
         {
 
             chat_id: chatId,
