@@ -9,7 +9,7 @@ import registerHome from "./handlers/home.js";
 import registerRequest from "./handlers/request.js";
 import registerCallback from "./handlers/callback.js";
 import registerApprove from "./handlers/approve.js";
-
+import deleteExpiredKeys from "./handlers/deleteExpiredKeys.js";
 // Panel
 import registerReseller from "./handlers/reseller.js";
 import registerKey from "./handlers/key.js";
@@ -63,6 +63,9 @@ registerDomainA(bot, config);
 registerDomainNS(bot, config);
 registerDomains(bot, config);
 registerActivations(bot);
+deleteExpiredKeys();
+
+
 // ==========================
 // ERRORES
 // ==========================
