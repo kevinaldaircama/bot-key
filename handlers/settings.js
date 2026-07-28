@@ -1,5 +1,5 @@
 import db from "../firebase.js";    
-    
+import { pendingApprovals } from "./callback.js";    
 const messageState = {};    
 const userAction = {};    
     
@@ -18,12 +18,13 @@ show_alert:true
 });    
 }    
     
-const ownerOnly = [    
-"settings_users",    
-"users_allow",    
-"users_remove",    
-"users_ban"    
-];    
+const ownerOnly = [
+"settings_users",
+"users_allow",
+"users_remove",
+"users_ban",
+"users_unban"
+];
     
 if (ownerOnly.includes(query.data) && me.role !== "owner") {    
 return bot.answerCallbackQuery(query.id,{    
@@ -184,16 +185,23 @@ callback_data:"users_ban"
 }    
 ],    
     
-[    
-{    
-text:"❌ Quitar acceso",    
-callback_data:"users_remove"    
-},    
-{    
-text:"📋 Todos",    
-callback_data:"users_all"    
-}    
-],    
+[
+{
+text:"🔓 Desbanear",
+callback_data:"users_unban"
+},
+{
+text:"❌ Quitar acceso",
+callback_data:"users_remove"
+}
+],
+
+[
+{
+text:"📋 Todos",
+callback_data:"users_all"
+}
+],
     
 [    
 {    
@@ -265,7 +273,26 @@ parse_mode:"HTML"
 );    
     
 break;    
-    
+    case "users_unban":
+
+userAction[chatId] = "unban";
+
+await bot.answerCallbackQuery(query.id);
+
+await bot.sendMessage(
+chatId,
+
+`🔓 <b>DESBANEAR USUARIO</b>
+
+━━━━━━━━━━━━━━━━━━
+
+Envíe el ID del usuario.`,
+
+{
+parse_mode:"HTML"
+});
+
+break;
 // ===================================    
 // QUITAR ACCESO    
 // ===================================    
@@ -390,49 +417,90 @@ delete userAction[chatId];
   
 const userId = msg.text.trim();  
   
-const ref = db.ref(`users/${userId}`);  
-const snap = await ref.get();  
-  
-if (!snap.exists()) {  
-  
-return bot.sendMessage(  
-chatId,  
-"❌ Usuario no encontrado.",  
-{  
-parse_mode:"HTML"  
-}  
-);  
-  
-}  
+const ref = db.ref(`users/${userId}`);
+const snap = await ref.get();
+
+if (!snap.exists()) {
+
+    return bot.sendMessage(
+        chatId,
+        "❌ Usuario no encontrado.",
+        {
+            parse_mode:"HTML"
+        }
+    );
+
+}
+
+if (snap.val().banned) {
+    return bot.sendMessage(
+        chatId,
+        "❌ El usuario está baneado. Desbanéalo primero.",
+        {
+            parse_mode:"HTML"
+        }
+    );
+}
   
 switch (action) {  
   
-case "allow":  
-  
-await ref.update({  
-approved:true,  
-banned:false  
-});  
-  
-await bot.sendMessage(  
-  
-chatId,  
-  
-`✅ <b>Usuario autorizado</b>  
-  
-━━━━━━━━━━━━━━━━━━  
-  
-🆔 <code>${userId}</code>  
-  
-Ahora puede utilizar el bot.`,  
-  
-{  
-parse_mode:"HTML"  
-}  
-  
-);  
-  
-break;  
+case "allow":
+const user = snap.val();
+
+if (user.role === "admin") {
+    return bot.sendMessage(
+        chatId,
+        "⚠️ Ese usuario ya es administrador.",
+        { parse_mode: "HTML" }
+    );
+}
+
+pendingApprovals.set(String(msg.from.id), userId);
+
+await bot.sendMessage(
+chatId,
+
+`✅ <b>Aprobar Usuario</b>
+
+━━━━━━━━━━━━━━━━━━
+
+Selecciona el tiempo de acceso para este usuario.
+
+━━━━━━━━━━━━━━━━━━`,
+
+{
+parse_mode: "HTML",
+reply_markup: {
+inline_keyboard: [
+
+[
+{ text: "7 Días", callback_data: "days_7" },
+{ text: "30 Días", callback_data: "days_30" }
+],
+
+[
+{ text: "60 Días", callback_data: "days_60" },
+{ text: "90 Días", callback_data: "days_90" }
+],
+
+[
+{ text: "365 Días", callback_data: "days_365" }
+],
+
+[
+{ text: "♾️ Ilimitado", callback_data: "days_0" }
+],
+
+[
+{ text: "❌ Cancelar", callback_data: "cancel_request" }
+]
+
+]
+}
+}
+);
+
+break;
   
 case "ban":  
   
@@ -460,7 +528,28 @@ parse_mode:"HTML"
 );  
   
 break;  
-  
+  case "unban":
+
+await ref.update({
+banned:false
+});
+
+await bot.sendMessage(
+chatId,
+
+`🔓 <b>Usuario desbaneado</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🆔 <code>${userId}</code>
+
+El usuario puede volver a solicitar acceso.`,
+
+{
+parse_mode:"HTML"
+});
+
+break;
 case "remove":  
   
 await ref.update({  
@@ -567,4 +656,4 @@ parse_mode:"HTML"
 );  
   
 });  
-}
+} 
