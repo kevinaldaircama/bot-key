@@ -1,613 +1,570 @@
-import db from "../firebase.js";
-
-const messageState = {};
-
-export default function registerSettings(bot) {
-
-bot.on("callback_query", async (query) => {
-
-const chatId = String(query.message.chat.id);
-
-switch (query.data) {
-
-// ===================================
-// MENU CONFIGURACIÓN
-// ===================================
-
-case "menu_settings":
-
-await bot.answerCallbackQuery(query.id);
-
-await bot.editMessageText(
-
-`⚙️ <b>CONFIGURACIÓN</b>
-
-━━━━━━━━━━━━━━━━━━
-
-Seleccione una opción.`,
-
-{
-chat_id: chatId,
-message_id: query.message.message_id,
-parse_mode:"HTML",
-reply_markup:{
-inline_keyboard:[
-
-[
-{
-text:"📨 Mensajes",
-callback_data:"settings_messages"
-},
-{
-text:"👥 Usuarios",
-callback_data:"settings_users"
-}
-],
-
-[
-{
-text:"📊 Estadísticas",
-callback_data:"settings_stats"
-},
-{
-text:"📜 Historial",
-callback_data:"settings_history"
-}
-],
-
-[
-{
-text:"🔒 Seguridad",
-callback_data:"settings_security"
-},
-{
-text:"☁️ Cloudflare",
-callback_data:"settings_cloudflare"
-}
-],
-
-[
-{
-text:"⬅️ Volver",
-callback_data:"menu_home"
-}
-]
-
-]
-}
-}
-
-);
-
-break;
-
-// ===================================
-// MENSAJES
-// ===================================
-
-case "settings_messages":
-
-await bot.answerCallbackQuery(query.id);
-
-await bot.editMessageText(
-
-`📨 <b>MENSAJES</b>
-
-━━━━━━━━━━━━━━━━━━
-
-Seleccione una opción.`,
-
-{
-chat_id:chatId,
-message_id:query.message.message_id,
-parse_mode:"HTML",
-reply_markup:{
-inline_keyboard:[
-
-[
-{
-text:"📢 Enviar a Todos",
-callback_data:"broadcast_all"
-}
-],
-
-[
-{
-text:"⬅️ Volver",
-callback_data:"menu_settings"
-}
-]
-
-]
-}
-}
-
-);
-
-break;
-
-case "broadcast_all":
-
-messageState[chatId]=true;
-
-await bot.answerCallbackQuery(query.id);
-
-await bot.sendMessage(chatId,
-
-`📨 Envíe el mensaje que desea enviar a todos los usuarios.
-
-Puede usar HTML y emojis.`,
-
-{
-parse_mode:"HTML"
-});
-
-break;
-// ===================================
-// USUARIOS
-// ===================================
-
-case "settings_users":
-
-await bot.answerCallbackQuery(query.id);
-
-await bot.editMessageText(
-
-`👥 <b>GESTIÓN DE USUARIOS</b>
-
-━━━━━━━━━━━━━━━━━━
-
-Seleccione una opción.`,
-
-{
-chat_id:chatId,
-message_id:query.message.message_id,
-parse_mode:"HTML",
-reply_markup:{
-inline_keyboard:[
-
-[
-{
-text:"✅ Aprobados",
-callback_data:"users_approved"
-},
-{
-text:"❌ Rechazados",
-callback_data:"users_rejected"
-}
-],
-
-[
-{
-text:"⏳ Pendientes",
-callback_data:"users_pending"
-},
-{
-text:"📋 Todos",
-callback_data:"users_all"
-}
-],
-
-[
-{
-text:"⬅️ Volver",
-callback_data:"menu_settings"
-}
-]
-
-]
-}
-}
-
-);
-
-break;
-
-// ===================================
-// APROBADOS
-// ===================================
-
-case "users_approved":{
-
-const snap=await db.ref("users").get();
-
-let text=`✅ <b>USUARIOS APROBADOS</b>
-
-━━━━━━━━━━━━━━━━━━
-
-`;
-
-let total=0;
-
-if(snap.exists()){
-
-snap.forEach(item=>{
-
-const u=item.val();
-
-if(u.approved){
-
-total++;
-
-text+=`👤 ${u.name}
-🆔 <code>${u.id}</code>
-🎖 ${u.role}
-
-`;
-
-}
-
-});
-
-}
-
-text+=`\n━━━━━━━━━━━━━━━━━━
-Total: ${total}`;
-
-await bot.editMessageText(text,{
-
-chat_id:chatId,
-message_id:query.message.message_id,
-parse_mode:"HTML",
-
-reply_markup:{
-inline_keyboard:[
-[
-{
-text:"⬅️ Volver",
-callback_data:"settings_users"
-}
-]
-]
-}
-
-});
-
-break;
-
-}
-
-// ===================================
-// RECHAZADOS
-// ===================================
-
-case "users_rejected":{
-
-const snap=await db.ref("users").get();
-
-let text=`❌ <b>USUARIOS RECHAZADOS</b>
-
-━━━━━━━━━━━━━━━━━━
-
-`;
-
-let total=0;
-
-if(snap.exists()){
-
-snap.forEach(item=>{
-
-const u=item.val();
-
-if(!u.approved){
-
-total++;
-
-text+=`👤 ${u.name}
-🆔 <code>${u.id}</code>
-
-`;
-
-}
-
-});
-
-}
-
-text+=`\n━━━━━━━━━━━━━━━━━━
-Total: ${total}`;
-
-await bot.editMessageText(text,{
-
-chat_id:chatId,
-message_id:query.message.message_id,
-parse_mode:"HTML",
-
-reply_markup:{
-inline_keyboard:[
-[
-{
-text:"⬅️ Volver",
-callback_data:"settings_users"
-}
-]
-]
-}
-
-});
-
-break;
-
-}
-// ===================================
-// PENDIENTES
-// ===================================
-
-case "users_pending":{
-
-const snap=await db.ref("users").get();
-
-let text=`⏳ <b>USUARIOS PENDIENTES</b>
-
-━━━━━━━━━━━━━━━━━━
-
-`;
-
-let total=0;
-
-if(snap.exists()){
-
-snap.forEach(item=>{
-
-const u=item.val();
-
-if(!u.approved && u.role==="user"){
-
-total++;
-
-text+=`👤 ${u.name}
-🆔 <code>${u.id}</code>
-
-`;
-
-}
-
-});
-
-}
-
-text+=`\n━━━━━━━━━━━━━━━━━━
-Total: ${total}`;
-
-await bot.editMessageText(text,{
-
-chat_id:chatId,
-message_id:query.message.message_id,
-parse_mode:"HTML",
-
-reply_markup:{
-inline_keyboard:[
-[
-{
-text:"⬅️ Volver",
-callback_data:"settings_users"
-}
-]
-]
-}
-
-});
-
-break;
-
-}
-
-// ===================================
-// TODOS LOS USUARIOS
-// ===================================
-
-case "users_all":{
-
-const snap=await db.ref("users").get();
-
-let text=`👥 <b>TODOS LOS USUARIOS</b>
-
-━━━━━━━━━━━━━━━━━━
-
-`;
-
-let total=0;
-
-if(snap.exists()){
-
-snap.forEach(item=>{
-
-const u=item.val();
-
-total++;
-
-text+=`👤 ${u.name}
-🆔 <code>${u.id}</code>
-🎖 ${u.role}
-${u.approved?"✅":"❌"}
-
-`;
-
-});
-
-}
-
-text+=`\n━━━━━━━━━━━━━━━━━━
-Total: ${total}`;
-
-await bot.editMessageText(text,{
-
-chat_id:chatId,
-message_id:query.message.message_id,
-parse_mode:"HTML",
-
-reply_markup:{
-inline_keyboard:[
-[
-{
-text:"⬅️ Volver",
-callback_data:"settings_users"
-}
-]
-]
-}
-
-});
-
-break;
-
-}
-
-// ===================================
-// ESTADÍSTICAS
-// ===================================
-
-case "settings_stats":
-
-await bot.answerCallbackQuery(query.id);
-
-await bot.sendMessage(chatId,
-
-"📊 Estadísticas disponibles próximamente.",
-
-{
-parse_mode:"HTML"
-});
-
-break;
-
-// ===================================
-// HISTORIAL
-// ===================================
-
-case "settings_history":
-
-await bot.answerCallbackQuery(query.id);
-
-await bot.sendMessage(chatId,
-
-"📜 Historial disponible próximamente.",
-
-{
-parse_mode:"HTML"
-});
-
-break;
-
-// ===================================
-// SEGURIDAD
-// ===================================
-
-case "settings_security":
-
-await bot.answerCallbackQuery(query.id);
-
-await bot.sendMessage(chatId,
-
-"🔒 Panel de seguridad próximamente.",
-
-{
-parse_mode:"HTML"
-});
-
-break;
-
-// ===================================
-// CLOUDFLARE
-// ===================================
-
-case "settings_cloudflare":
-
-await bot.answerCallbackQuery(query.id);
-
-await bot.sendMessage(chatId,
-
-"☁️ Panel Cloudflare próximamente.",
-
-{
-parse_mode:"HTML"
-});
-
-break;
-default:
-break;
-// ===================================
-// FIN DEL SWITCH
-// ===================================
-
-}
-
-});
-
-// ===================================
-// ENVIAR MENSAJE A TODOS
-// ===================================
-
-bot.on("message", async (msg) => {
-
-const chatId = String(msg.chat.id);
-
-if (!messageState[chatId]) return;
-
-if (!msg.text) return;
-
-delete messageState[chatId];
-
-const snap = await db.ref("users").get();
-
-if (!snap.exists()) {
-
-return bot.sendMessage(chatId,
-"❌ No existen usuarios registrados.");
-
-}
-
-let enviados = 0;
-let errores = 0;
-
-const usuarios = [];
-
-snap.forEach(item => {
-
-usuarios.push(item.key);
-
-});
-
-for (const id of usuarios) {
-
-try {
-
-await bot.sendMessage(id, msg.text, {
-parse_mode: "HTML"
-});
-
-enviados++;
-
-} catch {
-
-errores++;
-
-}
-
-}
-
-await bot.sendMessage(chatId,
-
-`✅ <b>Mensaje enviado correctamente</b>
-
-━━━━━━━━━━━━━━━━━━
-
-📤 Enviados:
-<b>${enviados}</b>
-
-❌ Errores:
-<b>${errores}</b>
-
-━━━━━━━━━━━━━━━━━━`,
-
-{
-parse_mode:"HTML"
-});
-
-});
-
-// ===================================
-// FIN DEL MÓDULO
-// ===================================
-
+import db from "../firebase.js";    
+    
+const messageState = {};    
+const userAction = {};    
+    
+export default function registerSettings(bot) {    
+    
+bot.on("callback_query", async (query) => {    
+    
+const chatId = String(query.message.chat.id);    
+    
+const me = (await db.ref(`users/${chatId}`).get()).val();    
+    
+if (!me) {    
+return bot.answerCallbackQuery(query.id,{    
+text:"Acceso denegado.",    
+show_alert:true    
+});    
+}    
+    
+const ownerOnly = [    
+"settings_users",    
+"users_allow",    
+"users_remove",    
+"users_ban"    
+];    
+    
+if (ownerOnly.includes(query.data) && me.role !== "owner") {    
+return bot.answerCallbackQuery(query.id,{    
+text:"Solo el dueño puede administrar usuarios.",    
+show_alert:true    
+});    
+}    
+    
+switch (query.data) {    
+    
+// ===================================    
+// MENU CONFIGURACIÓN    
+// ===================================    
+    
+case "menu_settings":    
+    
+await bot.answerCallbackQuery(query.id);    
+    
+await bot.editMessageText(    
+    
+`⚙️ <b>CONFIGURACIÓN</b>    
+    
+━━━━━━━━━━━━━━━━━━    
+    
+Seleccione una opción.`,    
+    
+{    
+chat_id:chatId,    
+message_id:query.message.message_id,    
+parse_mode:"HTML",    
+reply_markup:{    
+inline_keyboard:[    
+    
+[    
+{    
+text:"📨 Mensajes",    
+callback_data:"settings_messages"    
+},    
+{    
+text:"👥 Usuarios",    
+callback_data:"settings_users"    
+}    
+],    
+    
+[    
+{    
+text:"⬅️ Volver",    
+callback_data:"menu_home"    
+}    
+]    
+    
+]    
+}    
+}    
+    
+);    
+    
+break;    
+    
+// ===================================    
+// MENSAJES    
+// ===================================    
+    
+case "settings_messages":    
+    
+await bot.answerCallbackQuery(query.id);    
+    
+await bot.editMessageText(    
+    
+`📨 <b>MENSAJES</b>    
+    
+━━━━━━━━━━━━━━━━━━    
+    
+Seleccione una opción.`,    
+    
+{    
+chat_id:chatId,    
+message_id:query.message.message_id,    
+parse_mode:"HTML",    
+reply_markup:{    
+inline_keyboard:[    
+    
+[    
+{    
+text:"📢 Enviar a Todos",    
+callback_data:"broadcast_all"    
+}    
+],    
+    
+[    
+{    
+text:"⬅️ Volver",    
+callback_data:"menu_settings"    
+}    
+]    
+    
+]    
+}    
+}    
+    
+);    
+    
+break;    
+case "broadcast_all":    
+    
+messageState[chatId] = true;    
+    
+await bot.answerCallbackQuery(query.id);    
+    
+await bot.sendMessage(    
+chatId,    
+    
+`📨 <b>ENVIAR MENSAJE GLOBAL</b>    
+    
+━━━━━━━━━━━━━━━━━━    
+    
+Escriba el mensaje que desea enviar a todos los usuarios.    
+    
+Puede utilizar HTML y emojis.`,    
+    
+{    
+parse_mode:"HTML"    
+});    
+    
+break;    
+    
+// ===================================    
+// GESTIÓN DE USUARIOS    
+// ===================================    
+    
+case "settings_users":    
+    
+await bot.answerCallbackQuery(query.id);    
+    
+await bot.editMessageText(    
+    
+`👥 <b>GESTIÓN DE USUARIOS</b>    
+    
+━━━━━━━━━━━━━━━━━━    
+    
+Seleccione una opción.`,    
+    
+{    
+chat_id:chatId,    
+message_id:query.message.message_id,    
+parse_mode:"HTML",    
+reply_markup:{    
+inline_keyboard:[    
+    
+[    
+{    
+text:"✅ Dar acceso",    
+callback_data:"users_allow"    
+},    
+{    
+text:"🚫 Banear",    
+callback_data:"users_ban"    
+}    
+],    
+    
+[    
+{    
+text:"❌ Quitar acceso",    
+callback_data:"users_remove"    
+},    
+{    
+text:"📋 Todos",    
+callback_data:"users_all"    
+}    
+],    
+    
+[    
+{    
+text:"⬅️ Volver",    
+callback_data:"menu_settings"    
+}    
+]    
+    
+]    
+}    
+}    
+    
+);    
+    
+break;    
+    
+// ===================================    
+// DAR ACCESO    
+// ===================================    
+    
+case "users_allow":    
+    
+userAction[chatId] = "allow";    
+    
+await bot.answerCallbackQuery(query.id);    
+    
+await bot.sendMessage(    
+    
+chatId,    
+    
+`✅ <b>DAR ACCESO</b>    
+    
+━━━━━━━━━━━━━━━━━━    
+    
+Envíe el ID del usuario.`,    
+    
+{    
+parse_mode:"HTML"    
+}    
+    
+);    
+    
+break;    
+    
+// ===================================    
+// BANEAR    
+// ===================================    
+    
+case "users_ban":    
+    
+userAction[chatId] = "ban";    
+    
+await bot.answerCallbackQuery(query.id);    
+    
+await bot.sendMessage(    
+    
+chatId,    
+    
+`🚫 <b>BANEAR USUARIO</b>    
+    
+━━━━━━━━━━━━━━━━━━    
+    
+Envíe el ID del usuario.`,    
+    
+{    
+parse_mode:"HTML"    
+}    
+    
+);    
+    
+break;    
+    
+// ===================================    
+// QUITAR ACCESO    
+// ===================================    
+    
+case "users_remove":    
+    
+userAction[chatId] = "remove";    
+    
+await bot.answerCallbackQuery(query.id);    
+    
+await bot.sendMessage(    
+    
+chatId,    
+    
+`❌ <b>QUITAR ACCESO</b>    
+    
+━━━━━━━━━━━━━━━━━━    
+    
+Envíe el ID del usuario.`,    
+    
+{    
+parse_mode:"HTML"    
+}    
+    
+);    
+    
+break;    
+// ===================================    
+// TODOS LOS USUARIOS    
+// ===================================    
+    
+case "users_all": {    
+    
+const snap = await db.ref("users").get();    
+    
+let text = `👥 <b>TODOS LOS USUARIOS</b>    
+    
+━━━━━━━━━━━━━━━━━━    
+    
+`;    
+    
+let total = 0;    
+    
+if (snap.exists()) {    
+    
+snap.forEach(item => {    
+    
+const u = item.val();    
+    
+total++;    
+    
+const estado = u.banned    
+? "🚫 Baneado"    
+: (u.approved ? "✅ Activo" : "❌ Sin acceso");    
+    
+text += `👤 ${u.name || "Sin nombre"}    
+🆔 <code>${item.key}</code>    
+🎖 ${u.role || "user"}    
+📌 ${estado}    
+    
+`;    
+    
+});    
+    
+}    
+    
+text += `━━━━━━━━━━━━━━━━━━    
+Total: <b>${total}</b>`;    
+    
+await bot.editMessageText(text, {    
+    
+chat_id: chatId,    
+message_id: query.message.message_id,    
+parse_mode: "HTML",    
+    
+reply_markup: {    
+inline_keyboard: [    
+[    
+{    
+text: "⬅️ Volver",    
+callback_data: "settings_users"    
+}    
+]    
+]    
+}    
+    
+});    
+    
+break;    
+    
+}    
+    
+// ===================================    
+// FIN DEL SWITCH    
+// ===================================    
+    
+default:    
+break;    
+    
+}    
+    
+});    
+   
+// ===================================  
+// PROCESAR ACCIONES Y MENSAJES  
+// ===================================  
+  
+bot.on("message", async (msg) => {  
+  
+const chatId = String(msg.chat.id);  
+  
+if (!msg.text) return;  
+  
+// ===================================  
+// DAR ACCESO / BANEAR / QUITAR ACCESO  
+// ===================================  
+  
+if (userAction[chatId]) {  
+  
+const action = userAction[chatId];  
+delete userAction[chatId];  
+  
+const userId = msg.text.trim();  
+  
+const ref = db.ref(`users/${userId}`);  
+const snap = await ref.get();  
+  
+if (!snap.exists()) {  
+  
+return bot.sendMessage(  
+chatId,  
+"❌ Usuario no encontrado.",  
+{  
+parse_mode:"HTML"  
+}  
+);  
+  
+}  
+  
+switch (action) {  
+  
+case "allow":  
+  
+await ref.update({  
+approved:true,  
+banned:false  
+});  
+  
+await bot.sendMessage(  
+  
+chatId,  
+  
+`✅ <b>Usuario autorizado</b>  
+  
+━━━━━━━━━━━━━━━━━━  
+  
+🆔 <code>${userId}</code>  
+  
+Ahora puede utilizar el bot.`,  
+  
+{  
+parse_mode:"HTML"  
+}  
+  
+);  
+  
+break;  
+  
+case "ban":  
+  
+await ref.update({  
+approved:false,  
+banned:true  
+});  
+  
+await bot.sendMessage(  
+  
+chatId,  
+  
+`🚫 <b>Usuario baneado</b>  
+  
+━━━━━━━━━━━━━━━━━━  
+  
+🆔 <code>${userId}</code>  
+  
+El usuario ha sido bloqueado.`,  
+  
+{  
+parse_mode:"HTML"  
+}  
+  
+);  
+  
+break;  
+  
+case "remove":  
+  
+await ref.update({  
+approved:false,  
+banned:false  
+});  
+  
+await bot.sendMessage(  
+  
+chatId,  
+  
+`❌ <b>Acceso eliminado</b>  
+  
+━━━━━━━━━━━━━━━━━━  
+  
+🆔 <code>${userId}</code>  
+  
+El usuario ya no tiene acceso.`,  
+  
+{  
+parse_mode:"HTML"  
+}  
+  
+);  
+  
+break;  
+  
+}  
+  
+return;  
+  
+}  
+  
+// ===================================  
+// MENSAJE GLOBAL  
+// ===================================  
+  
+if (!messageState[chatId]) return;  
+  
+delete messageState[chatId];  
+  
+const snap = await db.ref("users").get();  
+  
+if (!snap.exists()) {  
+  
+return bot.sendMessage(  
+chatId,  
+"❌ No existen usuarios registrados."  
+);  
+  
+}  
+  
+let enviados = 0;  
+let errores = 0;  
+  
+const usuarios = [];  
+  
+snap.forEach(item=>{  
+  
+const u = item.val();  
+  
+if (!u.banned) {  
+  
+usuarios.push(item.key);  
+  
+}  
+  
+});  
+  
+for (const id of usuarios) {  
+  
+try {  
+  
+await bot.sendMessage(id,msg.text,{  
+parse_mode:"HTML"  
+});  
+  
+enviados++;  
+  
+} catch {  
+  
+errores++;  
+  
+}  
+  
+}  
+  
+await bot.sendMessage(  
+  
+chatId,  
+  
+`✅ <b>Mensaje enviado</b>  
+  
+━━━━━━━━━━━━━━━━━━  
+  
+📤 Enviados: <b>${enviados}</b>  
+  
+❌ Errores: <b>${errores}</b>`,  
+  
+{  
+parse_mode:"HTML"  
+}  
+  
+);  
+  
+});  
 }
