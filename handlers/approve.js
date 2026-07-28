@@ -40,16 +40,18 @@ export default function registerApprove(bot) {
         }
 
         await db.ref(`users/${userId}`).update({
+    approved: true,
+    banned: false,
+    role: "admin",
+    expire
+});
 
-            approved: true,
+        const requestRef = db.ref(`requests/${userId}`);
+const requestSnap = await requestRef.get();
 
-            role: "admin",
-
-            expire
-
-        });
-
-        await db.ref(`requests/${userId}`).remove();
+if (requestSnap.exists()) {
+    await requestRef.remove();
+}
 
         pendingApprovals.delete(ownerId);
 
