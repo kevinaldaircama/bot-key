@@ -19,26 +19,51 @@ export default function registerStart(bot) {
 
                 await userRef.set({
 
-                    id: chatId,
-                    name,
-                    username,
+    id: chatId,
+    name,
+    username,
 
-                    role: "user",
+    role: "user",
 
-                    approved: false,
+    approved: false,
+    banned: false,
 
-                    reseller: "",
+    reseller: "",
 
-                    expire: "",
+    expire: "",
 
-                    createdAt: Date.now()
+    createdAt: Date.now()
 
-                });
+});
 
             }
 
             const data = (await userRef.get()).val();
+// =============================
+// USUARIO BANEADO
+// =============================
 
+if (data.banned && chatId !== config.OWNER_ID) {
+
+    return bot.sendMessage(chatId,
+
+`🚫 <b>ACCESO BLOQUEADO</b>
+
+━━━━━━━━━━━━━━━━━━
+
+👤 ${data.name}
+
+🆔 <code>${chatId}</code>
+
+⛔ Tu cuenta ha sido baneada por el propietario.
+
+Si crees que se trata de un error, comunícate con el dueño del bot.`,
+
+{
+    parse_mode: "HTML"
+});
+
+}
             // =============================
             // DUEÑO
             // =============================
