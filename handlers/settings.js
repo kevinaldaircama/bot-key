@@ -440,12 +440,10 @@ if (user.banned && action !== "unban") {
         "❌ El usuario está baneado. Desbanéalo primero."
     );
 }
-}
   
 switch (action) {  
   
 case "allow":
-const user = snap.val();
 
 if (user.role === "admin") {
     return bot.sendMessage(
