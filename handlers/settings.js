@@ -432,14 +432,14 @@ if (!snap.exists()) {
 
 }
 
-if (snap.val().banned) {
+const user = snap.val();
+
+if (user.banned && action !== "unban") {
     return bot.sendMessage(
         chatId,
-        "❌ El usuario está baneado. Desbanéalo primero.",
-        {
-            parse_mode:"HTML"
-        }
+        "❌ El usuario está baneado. Desbanéalo primero."
     );
+}
 }
   
 switch (action) {  
