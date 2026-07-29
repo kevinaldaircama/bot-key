@@ -163,50 +163,47 @@ ${totalKeys}
 
 ⚡ <b>Instalador sin key</b>
 
-<code>bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>`,
-        {
+<code>bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>
 
-            chat_id: chatId,
+━━━━━━━━━━━━━━━━━━
 
-            message_id: query.message.message_id,
+🐧 <b>Ubuntu recomendado</b>
 
-            parse_mode: "HTML",
+✅ Compatible hasta Ubuntu 24.04 LTS
 
-            reply_markup: {
+━━━━━━━━━━━━━━━━━━
 
-                inline_keyboard: [
+🔗 <b>Script con protocolos automáticos</b>
 
-                    [
-                        {
-                            text: "🔄 Crear otra Key",
-                            callback_data: "menu_key"
-                        }
-                    ],
-
-                    [
-                        {
-                            text: "📜 Historial",
-                            callback_data: "menu_history"
-                        },
-                        {
-                            text: "📈 Mi Uso",
-                            callback_data: "menu_usage"
-                        }
-                    ],
-
-                    [
-                        {
-                            text: "🏠 Inicio",
-                            callback_data: "menu_home"
-                        }
-                    ]
-
-                ]
-
-            }
-
-        });
-
-    });
-
-           }
+🌐 Antes de instalar, configura un subdominio que apunte a la IP de tu VPS mediante un registro <b>A</b> y asegúrate de que el <b>Proxy esté desactivado (DNS Only)</b>.
+{
+    chat_id: chatId,
+    message_id: query.message.message_id,
+    parse_mode: "HTML",
+    reply_markup: {
+        inline_keyboard: [
+            [
+                {
+                    text: "🔄 Crear otra Key",
+                    callback_data: "menu_key"
+                }
+            ],
+            [
+                {
+                    text: "📜 Historial",
+                    callback_data: "menu_history"
+                },
+                {
+                    text: "📈 Mi Uso",
+                    callback_data: "menu_usage"
+                }
+            ],
+            [
+                {
+                    text: "🏠 Inicio",
+                    callback_data: "menu_home"
+                }
+            ]
+        ]
+    }
+});
