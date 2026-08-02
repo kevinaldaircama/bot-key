@@ -155,13 +155,13 @@ ${totalKeys}
     
 ━━━━━━━━━━━━━━━━━━    
     
-💻 <b>Instalador con Key</b>    
+💻 <b>Instalador con Key (rápido)</b>    
     
 <code>export INSTALL_KEY="${key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>    
     
 ━━━━━━━━━━━━━━━━━━    
     
-⚡ <b>Instalador sin key</b>    
+⚡ <b>Instalador sin key (original)</b>    
     
 <code>bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>    
     
@@ -169,11 +169,11 @@ ${totalKeys}
     
 🐧 <b>Ubuntu recomendado</b>    
     
-✅ Compatible hasta Ubuntu 24.04 LTS    
+✅ Compatible para todas las versiones LTS    
     
 ━━━━━━━━━━━━━━━━━━    
     
-🔗 <b>Script con protocolos automáticos</b>    
+🔗 <b>Script con instalación con protocolos automáticos</b>    
     
 🌐 Antes de instalar, configura un subdominio que apunte a la IP de tu VPS mediante un registro <b>A</b> y asegúrate de que el <b>Proxy esté desactivado (DNS Only)</b>.`,
 {
