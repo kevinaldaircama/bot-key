@@ -392,26 +392,42 @@ Una vez aprobada tu solicitud podrás generar Keys, administrar dominios y utili
 
 parse_mode:"HTML",
 
-reply_markup:{
+reply_markup: {
+  inline_keyboard: [
 
-inline_keyboard:[
+    [
+      {
+        text: "📨 Solicitar acceso",
+        callback_data: "request_access"
+      }
+    ],
 
-[
-{
-text:"📨 Solicitar acceso",
-callback_data:"request_access"
-}
-],
+    [
+      {
+        text: "ℹ️ Información",
+        callback_data: "user_info"
+      },
+      {
+        text: "🆔 Mi ID",
+        callback_data: "user_id"
+      }
+    ],
 
-[
-{
-text:"👤 Contactarme",
-url:"https://t.me/senseicamachito"
-}
-]
+    [
+      {
+        text: "🎟 Canjear Cupón",
+        callback_data: "redeem_coupon"
+      }
+    ],
 
-]
+    [
+      {
+        text: "👤 Contactarme",
+        url: "https://t.me/senseicamachito"
+      }
+    ]
 
+  ]
 }
 
 });
