@@ -1,8 +1,107 @@
 import db from "../firebase.js";          
 import { pendingApprovals } from "./callback.js";          
 const messageState = {};          
-const userAction = {};          
-          
+const userAction = {};       
+const couponState = {};
+const couponData = {};   
+const USERS_PER_PAGE = 20;
+
+async function showUsersPage(bot, chatId, messageId, page = 0) {
+
+    const snap = await db.ref("users").get();
+
+    if (!snap.exists()) {
+        return bot.editMessageText(
+            "❌ No existen usuarios registrados.",
+            {
+                chat_id: chatId,
+                message_id: messageId
+            }
+        );
+    }
+
+    const users = [];
+
+    snap.forEach(item => {
+        users.push({
+            id: item.key,
+            ...item.val()
+        });
+    });
+
+    const totalUsers = users.length;
+    const totalPages = Math.max(1, Math.ceil(totalUsers / USERS_PER_PAGE));
+
+    if (page < 0) page = 0;
+    if (page >= totalPages) page = totalPages - 1;
+
+    const start = page * USERS_PER_PAGE;
+    const end = start + USERS_PER_PAGE;
+
+    let text = `👥 <b>TODOS LOS USUARIOS</b>
+
+━━━━━━━━━━━━━━━━━━
+
+`;
+
+    users.slice(start, end).forEach(u => {
+
+        const estado = u.banned
+            ? "🚫 Baneado"
+            : (u.approved ? "✅ Activo" : "❌ Sin acceso");
+
+        text +=
+`👤 ${u.name || "Sin nombre"}
+🆔 <code>${u.id}</code>
+🎖 ${u.role || "user"}
+📌 ${estado}
+
+`;
+    });
+
+    text += `━━━━━━━━━━━━━━━━━━
+
+👥 Total: <b>${totalUsers}</b>
+
+📄 Página <b>${page + 1}</b> de <b>${totalPages}</b>`;
+
+    const buttons = [];
+
+    if (page > 0) {
+        buttons.push({
+            text: "⬅️ Anterior",
+            callback_data: `users_page_${page - 1}`
+        });
+    }
+
+    if (page < totalPages - 1) {
+        buttons.push({
+            text: "➡️ Siguiente",
+            callback_data: `users_page_${page + 1}`
+        });
+    }
+
+    const keyboard = [];
+
+    if (buttons.length) keyboard.push(buttons);
+
+    keyboard.push([
+        {
+            text: "⬅️ Volver",
+            callback_data: "settings_users"
+        }
+    ]);
+
+    await bot.editMessageText(text, {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: "HTML",
+        reply_markup: {
+            inline_keyboard: keyboard
+        }
+    });
+
+}          
 export default function registerSettings(bot) {          
           
 bot.on("callback_query", async (query) => {          
@@ -68,7 +167,13 @@ text:"👥 Usuarios",
 callback_data:"settings_users"          
 }          
 ],          
-          
+[
+{
+text:"🎟 Cupones",
+callback_data:"settings_coupons"
+}
+],
+       
 [          
 {          
 text:"⬅️ Volver",          
@@ -319,79 +424,125 @@ parse_mode:"HTML"
           
 );          
           
-break;          
+break;        
+
+case "settings_coupons":
+
+await bot.answerCallbackQuery(query.id);
+
+await bot.editMessageText(
+
+`🎟 <b>GESTIÓN DE CUPONES</b>
+
+━━━━━━━━━━━━━━━━━━
+
+Seleccione una opción.`,
+
+{
+chat_id:chatId,
+message_id:query.message.message_id,
+parse_mode:"HTML",
+
+reply_markup:{
+inline_keyboard:[
+
+[
+{
+text:"➕ Crear Cupón",
+callback_data:"coupon_create"
+}
+],
+
+[
+{
+text:"📋 Ver Cupones",
+callback_data:"coupon_list"
+},
+{
+text:"🗑 Eliminar",
+callback_data:"coupon_delete"
+}
+],
+
+[
+{
+text:"⬅️ Volver",
+callback_data:"menu_settings"
+}
+]
+
+]
+}
+
+});
+
+break;  
+case "coupon_create":
+
+couponState[chatId] = "code";
+
+await bot.answerCallbackQuery(query.id);
+
+await bot.sendMessage(chatId,
+
+`🎟 <b>CREAR CUPÓN</b>
+
+━━━━━━━━━━━━━━━━━━
+
+Escribe el código del cupón.
+
+Ejemplo:
+
+<code>ktt</code>`,
+
+{
+parse_mode:"HTML"
+});
+
+break;
 // ===================================          
 // TODOS LOS USUARIOS          
 // ===================================          
           
-case "users_all": {          
-          
-const snap = await db.ref("users").get();          
-          
-let text = `👥 <b>TODOS LOS USUARIOS</b>          
-          
-━━━━━━━━━━━━━━━━━━          
-          
-`;          
-          
-let total = 0;          
-          
-if (snap.exists()) {          
-          
-snap.forEach(item => {          
-          
-const u = item.val();          
-          
-total++;          
-          
-const estado = u.banned          
-? "🚫 Baneado"          
-: (u.approved ? "✅ Activo" : "❌ Sin acceso");          
-          
-text += `👤 ${u.name || "Sin nombre"}          
-🆔 <code>${item.key}</code>          
-🎖 ${u.role || "user"}          
-📌 ${estado}          
-          
-`;          
-          
-});          
-          
-}          
-          
-text += `━━━━━━━━━━━━━━━━━━          
-Total: <b>${total}</b>`;          
-          
-await bot.editMessageText(text, {          
-          
-chat_id: chatId,          
-message_id: query.message.message_id,          
-parse_mode: "HTML",          
-          
-reply_markup: {          
-inline_keyboard: [          
-[          
-{          
-text: "⬅️ Volver",          
-callback_data: "settings_users"          
-}          
-]          
-]          
-}          
-          
-});          
-          
+case "users_all":
+
+await bot.answerCallbackQuery(query.id);
+
+await showUsersPage(
+    bot,
+    chatId,
+    query.message.message_id,
+    0
+);
+
+break;
+
+// ===============================
+// CAMBIO DE PÁGINA
+// ===============================
+
+default:
+
+if (query.data.startsWith("users_page_")) {
+
+    await bot.answerCallbackQuery(query.id);
+
+    const page = parseInt(
+        query.data.replace("users_page_", "")
+    );
+
+    await showUsersPage(
+        bot,
+        chatId,
+        query.message.message_id,
+        page
+    );
+
+    return;
+
+}
+
 break;          
-          
-}          
-          
-// ===================================          
-// FIN DEL SWITCH          
-// ===================================          
-          
-default:          
-break;          
-          
 }          
           
 });          
@@ -409,7 +560,97 @@ if (!msg.text) return;
 // ===================================        
 // DAR ACCESO / BANEAR / QUITAR ACCESO        
 // ===================================        
-        
+  // ===================================
+// CREAR CUPÓN
+// ===================================
+
+if (couponState[chatId]) {
+
+    const estado = couponState[chatId];
+
+    if (estado === "code") {
+
+        couponData[chatId] = {
+            code: msg.text.trim().toLowerCase()
+        };
+
+        couponState[chatId] = "days";
+
+        return bot.sendMessage(chatId,
+
+`📅 <b>DÍAS DEL CUPÓN</b>
+
+━━━━━━━━━━━━━━━━━━
+
+Escribe cuántos días otorgará.
+
+Ejemplo:
+
+7
+30
+90
+365`,
+
+{
+parse_mode:"HTML"
+});
+
+    }
+
+    if (estado === "days") {
+
+        const days = Number(msg.text);
+
+        if (isNaN(days) || days <= 0) {
+
+            return bot.sendMessage(chatId,
+            "❌ Ingresa un número válido.");
+        }
+
+        const code = couponData[chatId].code;
+
+        await db.ref(`coupons/${code}`).set({
+
+            code,
+
+            days,
+
+            uses: 1,
+
+            used: 0,
+
+            enabled: true,
+
+            createdAt: Date.now()
+
+        });
+
+        delete couponState[chatId];
+        delete couponData[chatId];
+
+        return bot.sendMessage(chatId,
+
+`✅ <b>CUPÓN CREADO</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🎟 Código:
+<code>${code}</code>
+
+📅 Días:
+<b>${days}</b>
+
+👥 Usos:
+<b>1</b>`,
+
+{
+parse_mode:"HTML"
+});
+
+    }
+
+}
+      
 if (userAction[chatId]) {        
         
 const action = userAction[chatId];        
