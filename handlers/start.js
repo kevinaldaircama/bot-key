@@ -663,7 +663,7 @@ bot.on("message", async (msg) => {
     await userRef.update({
         approved: true,
         banned: false,
-        role: "user",
+        role: "admin",
         expire: expireDate.toISOString()
     });
 
