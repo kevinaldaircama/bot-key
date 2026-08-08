@@ -623,12 +623,17 @@ Recibirás acceso una vez seas autorizado.`,
   
 {  
     parse_mode: "HTML"  
-});  
-  
-break;  
+});
+break;
 
+} // cierra el switch
+
+}); // cierra bot.on("callback_query")
+
+// ==========================================
+// CANJEAR CUPÓN
+// ==========================================
 bot.on("message", async (msg) => {
-
     const chatId = String(msg.chat.id);
 
     if (!msg.text) return;
@@ -651,11 +656,6 @@ bot.on("message", async (msg) => {
     }
 
     const userRef = db.ref(`users/${chatId}`);
-    const userSnap = await userRef.get();
-
-    if (!userSnap.exists()) {
-        return bot.sendMessage(chatId, "❌ Usuario no registrado.");
-    }
 
     const expireDate = new Date();
     expireDate.setDate(expireDate.getDate() + coupon.days);
@@ -671,28 +671,7 @@ bot.on("message", async (msg) => {
         used: (coupon.used || 0) + 1
     });
 
-    await bot.sendMessage(chatId,
-
-`🎉 <b>CUPÓN CANJEADO</b>
-
-━━━━━━━━━━━━━━━━━━
-
-🎟 Código:
-<code>${code}</code>
-
-📅 Acceso otorgado:
-<b>${coupon.days} día(s)</b>
-
-✅ Tu acceso ha sido activado correctamente.`,
-
-{
-    parse_mode: "HTML"
+    await bot.sendMessage(chatId, "🎉 Cupón canjeado correctamente. Ahora eres administrador.");
 });
 
-});
-
-}    
-    
-});    
-    
-  }
+} // cierra registerMenuCallbacks
