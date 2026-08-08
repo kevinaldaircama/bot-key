@@ -639,6 +639,7 @@ bot.on("message", async (msg) => {
     if (!msg.text) return;
 
     const code = msg.text.trim().toLowerCase();
+    
 // Solo aceptar códigos simples como ktt, promo123, etc.
 if (!/^[a-z0-9_-]{3,30}$/.test(code)) return;
     
