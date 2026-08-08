@@ -155,15 +155,15 @@ ${totalKeys}
     
 ━━━━━━━━━━━━━━━━━━    
     
-💻 <b>Instalador con Key (rápido)</b>    
+💻 <b>Instalador multi script (consola)</b>    
     
 <code>export INSTALL_KEY="${key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>    
     
 ━━━━━━━━━━━━━━━━━━    
     
-⚡ <b>Instalador sin key (original)</b>    
+⚡ <b>Instalador @sshprivanoxbot  (bot telegram)</b>    
     
-<code>bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>    
+<code>export INSTALL_KEY="${key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/privanox-code/main/install_go.sh))</code>    
     
 ━━━━━━━━━━━━━━━━━━    
     
@@ -175,7 +175,7 @@ ${totalKeys}
     
 🔗 <b>Script con instalación con protocolos automáticos</b>    
     
-🌐 Antes de instalar, configura un subdominio que apunte a la IP de tu VPS mediante un registro <b>A</b> y asegúrate de que el <b>Proxy esté desactivado (DNS Only)</b>.`,
+🌐 Antes de instalar la script (Kevin tech multi script), configura un subdominio que apunte a la IP de tu VPS mediante un registro <b>A</b> y asegúrate de que el <b>Proxy esté desactivado (DNS Only)</b>.`,
 {
     chat_id: chatId,
     message_id: query.message.message_id,
