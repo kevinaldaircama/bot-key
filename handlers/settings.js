@@ -544,6 +544,9 @@ text += `━━━━━━━━━━━━━━━━━━
 
 Total: <b>${total}</b>`;
 
+if (text.length > 4000) {
+    text = text.slice(0, 3900) + "\n\n... y más cupones";
+}
 await bot.editMessageText(text, {
     chat_id: chatId,
     message_id: query.message.message_id,
