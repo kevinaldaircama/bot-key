@@ -500,6 +500,89 @@ parse_mode:"HTML"
 });
 
 break;
+
+case "coupon_list": {
+
+await bot.answerCallbackQuery(query.id);
+
+const snap = await db.ref("coupons").get();
+
+let text = `🎟 <b>CUPONES REGISTRADOS</b>
+
+━━━━━━━━━━━━━━━━━━
+
+`;
+
+let total = 0;
+
+if (snap.exists()) {
+
+    snap.forEach(item => {
+
+        const c = item.val();
+
+        total++;
+
+        const estado = c.enabled ? "🟢 Activo" : "🔴 Desactivado";
+
+        text += `🎟 <b>${c.code}</b>
+📅 ${c.days} día(s)
+👥 ${c.used || 0}/${c.uses || 1}
+📌 ${estado}
+
+`;
+
+    });
+
+} else {
+
+    text += "No hay cupones registrados.\n\n";
+
+}
+
+text += `━━━━━━━━━━━━━━━━━━
+
+Total: <b>${total}</b>`;
+
+await bot.editMessageText(text, {
+    chat_id: chatId,
+    message_id: query.message.message_id,
+    parse_mode: "HTML",
+    reply_markup: {
+        inline_keyboard: [
+            [
+                {
+                    text: "⬅️ Volver",
+                    callback_data: "settings_coupons"
+                }
+            ]
+        ]
+    }
+});
+
+break;
+
+}
+
+case "coupon_delete":
+
+couponState[chatId] = "delete";
+
+await bot.answerCallbackQuery(query.id);
+
+await bot.sendMessage(chatId,
+
+`🗑 <b>ELIMINAR CUPÓN</b>
+
+━━━━━━━━━━━━━━━━━━
+
+Escribe el código del cupón que deseas eliminar.`,
+
+{
+parse_mode:"HTML"
+});
+
+break;
 // ===================================          
 // TODOS LOS USUARIOS          
 // ===================================          
@@ -567,7 +650,37 @@ if (!msg.text) return;
 if (couponState[chatId]) {
 
     const estado = couponState[chatId];
+if (estado === "delete") {
 
+    const code = msg.text.trim().toLowerCase();
+
+    const ref = db.ref(`coupons/${code}`);
+    const snap = await ref.get();
+
+    if (!snap.exists()) {
+
+        return bot.sendMessage(chatId,
+        "❌ Ese cupón no existe.");
+    }
+
+    await ref.remove();
+
+    delete couponState[chatId];
+
+    return bot.sendMessage(chatId,
+
+`🗑 <b>CUPÓN ELIMINADO</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🎟 Código:
+<code>${code}</code>`,
+
+{
+parse_mode:"HTML"
+});
+
+}
     if (estado === "code") {
 
         couponData[chatId] = {
