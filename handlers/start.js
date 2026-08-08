@@ -533,7 +533,7 @@ await bot.answerCallbackQuery(query.id);
     
 await bot.sendMessage(chatId,    
     
-`🤖 <b>BOT DE ADMINISTRACIÓN VPS / SSH / XRAY</b>    
+`🤖 <b>BOT DE ADMINISTRACIÓN VPS</b>    
     
 ━━━━━━━━━━━━━━━━━━    
     
@@ -546,8 +546,8 @@ await bot.sendMessage(chatId,
 🔹 <b>Generación de Keys</b>    
 • Creación automática de accesos.    
     
-🔹 <b>Instalación Remota</b>    
-• Instalación rápida sin acceso manual al VPS.    
+🔹 <b>Instalador oficial</b>    
+• Tendrás el instalador oficial.    
     
 🔹 <b>Multi Script</b>    
     
@@ -598,7 +598,7 @@ await bot.sendMessage(chatId,
 Escribe el código del cupón.    
     
 🎁 Nuevo usuario:    
-<code>ktt</code> = 0 día gratis`,    
+<code>ktt</code> = 1 día gratis`,    
     
 {    
     parse_mode: "HTML"    
