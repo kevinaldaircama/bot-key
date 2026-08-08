@@ -626,6 +626,71 @@ Recibirás acceso una vez seas autorizado.`,
 });  
   
 break;  
+
+bot.on("message", async (msg) => {
+
+    const chatId = String(msg.chat.id);
+
+    if (!msg.text) return;
+
+    const code = msg.text.trim().toLowerCase();
+
+    const couponRef = db.ref(`coupons/${code}`);
+    const couponSnap = await couponRef.get();
+
+    if (!couponSnap.exists()) return;
+
+    const coupon = couponSnap.val();
+
+    if (!coupon.enabled) {
+        return bot.sendMessage(chatId, "❌ Este cupón está desactivado.");
+    }
+
+    if ((coupon.used || 0) >= (coupon.uses || 1)) {
+        return bot.sendMessage(chatId, "❌ Este cupón ya fue utilizado.");
+    }
+
+    const userRef = db.ref(`users/${chatId}`);
+    const userSnap = await userRef.get();
+
+    if (!userSnap.exists()) {
+        return bot.sendMessage(chatId, "❌ Usuario no registrado.");
+    }
+
+    const expireDate = new Date();
+    expireDate.setDate(expireDate.getDate() + coupon.days);
+
+    await userRef.update({
+        approved: true,
+        banned: false,
+        role: "user",
+        expire: expireDate.toISOString()
+    });
+
+    await couponRef.update({
+        used: (coupon.used || 0) + 1
+    });
+
+    await bot.sendMessage(chatId,
+
+`🎉 <b>CUPÓN CANJEADO</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🎟 Código:
+<code>${code}</code>
+
+📅 Acceso otorgado:
+<b>${coupon.days} día(s)</b>
+
+✅ Tu acceso ha sido activado correctamente.`,
+
+{
+    parse_mode: "HTML"
+});
+
+});
+
 }    
     
 });    
