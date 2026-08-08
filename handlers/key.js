@@ -163,7 +163,7 @@ ${totalKeys}
     
 ⚡ <b>Instalador @sshprivanoxbot  (bot telegram)</b>    
     
-<code>export INSTALL_KEY="${key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/privanox-code/main/install_go.sh))</code>    
+<code>export INSTALL_KEY="${key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/privanox-code/main/install_go.sh)</code>    
     
 ━━━━━━━━━━━━━━━━━━    
     
