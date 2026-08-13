@@ -1,58 +1,60 @@
 import db from "../firebase.js";
 
 export default function registerUsage(bot) {
+  bot.on("callback_query", async (query) => {
+    if (query.data !== "menu_usage") return;
 
-    bot.on("callback_query", async (query) => {
+    await bot.answerCallbackQuery(query.id);
 
-        if (query.data !== "menu_usage") return;
+    const chatId = String(query.message.chat.id);
 
-        await bot.answerCallbackQuery(query.id);
+    // ===== KEYS =====
+    const keysSnap = await db.ref("keys").get();
 
-        const chatId = String(query.message.chat.id);
+    let total = 0;
+    let disponibles = 0;
 
-        const snap = await db.ref("keys").get();
+    const now = Date.now();
 
-        let total = 0;
-        let usadas = 0;
-        let disponibles = 0;
-        let expiradas = 0;
+    if (keysSnap.exists()) {
+      keysSnap.forEach(item => {
+        const key = item.val();
 
-        const now = Date.now();
+        if (key.owner !== chatId) return;
 
-        if (snap.exists()) {
+        total++;
 
-            snap.forEach(item => {
-
-                const key = item.val();
-
-                if (key.owner !== chatId) return;
-
-                total++;
-
-                if (key.used) {
-
-                    usadas++;
-
-                } else if (key.expires <= now) {
-
-                    expiradas++;
-
-                } else {
-
-                    disponibles++;
-
-                }
-
-            });
-
+        if (!key.used && key.expires > now) {
+          disponibles++;
         }
+      });
+    }
 
-        const porcentaje = total > 0
-            ? Math.round((usadas / total) * 100)
-            : 0;
+    // ===== DOMINIOS =====
+    const domainsSnap = await db.ref(`domains/${chatId}`).get();
 
-        await bot.editMessageText(
+    let totalDominios = 0;
+    let dominiosA = 0;
+    let dominiosNS = 0;
 
+    if (domainsSnap.exists()) {
+      const data = domainsSnap.val();
+
+      for (const key in data) {
+        if (key === "ns") continue;
+        dominiosA++;
+      }
+
+      if (data.ns) {
+        for (const key in data.ns) {
+          dominiosNS++;
+        }
+      }
+
+      totalDominios = dominiosA + dominiosNS;
+    }
+
+    await bot.editMessageText(
 `📈 <b>MI USO</b>
 
 ━━━━━━━━━━━━━━━━━━
@@ -65,75 +67,42 @@ ${total}
 
 ${disponibles}
 
-🔴 <b>Usadas</b>
+🌐 <b>Dominios Totales</b>
 
-${usadas}
+${totalDominios}
 
-⌛ <b>Expiradas</b>
+🅰️ <b>Registros A</b>
 
-${expiradas}
+${dominiosA}
 
-━━━━━━━━━━━━━━━━━━
+🧩 <b>Registros NS</b>
 
-📊 <b>Porcentaje de Uso</b>
-
-${porcentaje}%
+${dominiosNS}
 
 ━━━━━━━━━━━━━━━━━━
 
 🕒 <b>Última actualización</b>
 
 ${new Date().toLocaleString("es-PE")}`,
-
-        {
-
-            chat_id: chatId,
-
-            message_id: query.message.message_id,
-
-            parse_mode: "HTML",
-
-            reply_markup: {
-
-                inline_keyboard: [
-
-                    [
-
-                        {
-                            text: "🔄 Actualizar",
-                            callback_data: "menu_usage"
-                        }
-
-                    ],
-
-                    [
-
-                        {
-                            text: "📜 Historial",
-                            callback_data: "menu_history"
-                        },
-                        {
-                            text: "🔑 Crear Key",
-                            callback_data: "menu_key"
-                        }
-
-                    ],
-
-                    [
-
-                        {
-                            text: "🏠 Inicio",
-                            callback_data: "menu_home"
-                        }
-
-                    ]
-
-                ]
-
-            }
-
-        });
-
-    });
-
+      {
+        chat_id: chatId,
+        message_id: query.message.message_id,
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: "🔄 Actualizar", callback_data: "menu_usage" }
+            ],
+            [
+              { text: "📜 Historial", callback_data: "menu_history" },
+              { text: "🔑 Crear Key", callback_data: "menu_key" }
+            ],
+            [
+              { text: "🏠 Inicio", callback_data: "menu_home" }
+            ]
+          ]
+        }
+      }
+    );
+  });
 }
