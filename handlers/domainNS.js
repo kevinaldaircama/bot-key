@@ -44,7 +44,7 @@ callback_data: "domain_ns_create"
 [  
 {  
 text: "📋 Mis Registros NS",  
-callback_data: "domain_ns_list"  
+callback_data: "menu_domains"  
 }  
 ],  
   
