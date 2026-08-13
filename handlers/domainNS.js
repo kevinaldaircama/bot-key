@@ -240,7 +240,12 @@ target: `${state.target}.${DOMAIN}`,
 createdAt: Date.now()  
   
 });  
-  
+  await db.ref(`history/${chatId}`).push({
+  type: "DOMINIO_NS",
+  domain: `${nsName}.${DOMAIN}`,
+  target: `${target}.${DOMAIN}`,
+  time: Date.now()
+});
 // ==============================  
 // RESPUESTA  
 // ==============================  
