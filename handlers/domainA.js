@@ -225,7 +225,11 @@ try {
         ip: state.ip,
         createdAt: Date.now()
     });
-
+await db.ref(`history/${chatId}`).push({
+  type: "DOMINIO_A",
+  domain: `${state.name}.${DOMAIN}`,
+  time: Date.now()
+});
     delete usersState[chatId];
 
     return bot.sendMessage(
