@@ -302,7 +302,7 @@ bot.on("message", async (msg) => {
           name: `${nuevo}.socialstreaming.xyz`,      
           content: item.ip,      
           ttl: 1,      
-          proxied: true      
+          proxied: false      
         })      
       });      
       
@@ -338,7 +338,7 @@ bot.on("message", async (msg) => {
           name: item.domain,      
           content: nuevaIP,      
           ttl: 1,      
-          proxied: true      
+          proxied: false      
         })      
       });      
       
