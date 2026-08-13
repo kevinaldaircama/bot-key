@@ -605,7 +605,7 @@ Error:
             {
                 parse_mode: "HTML"
             }
-        );
-    }
-}
+            );
+        }
+    });
 }
