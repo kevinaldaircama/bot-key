@@ -221,12 +221,14 @@ inline_keyboard:[
 {text:"👥 Resellers",callback_data:"menu_reseller"},    
 {text:"📊 Estadísticas",callback_data:"menu_stats"}    
 ],    
-    
+        
 [    
 {text:"📜 Historial",callback_data:"menu_history"},    
-{text:"📈 Mi Uso",callback_data:"menu_usage"},    
+{text:"📈 Mi Uso",callback_data:"menu_usage"}, 
+],
+[    
 {text:"⚙️ Configuración",callback_data:"menu_settings"}    
-]    
+]
     
 ]    
     
