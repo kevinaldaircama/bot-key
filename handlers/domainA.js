@@ -50,7 +50,7 @@ callback_data: "domain_a_create"
 [
 {
 text: "📋 Mis Registros",
-callback_data: "domain_a_list"
+callback_data: "menu_domains"
 }
 ],
 
@@ -198,7 +198,7 @@ try {
                 name: `${state.name}.${DOMAIN}`,
                 content: state.ip,
                 ttl: 1,
-                proxied: true
+                proxied: false
             })
         }
     );
