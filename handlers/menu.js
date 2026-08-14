@@ -11,19 +11,7 @@ export default function registerMenu(bot) {
                 bot.emit("menu:key", chatId, query);
 
             break;
-
-            case "menu_install":
-
-                bot.emit("menu:install", chatId, query);
-
-            break;
-
-            case "menu_vps":
-
-                bot.emit("menu:vps", chatId, query);
-
-            break;
-
+                
             case "menu_domains":
 
                 bot.emit("menu:domains", chatId, query);
