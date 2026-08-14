@@ -533,7 +533,7 @@ Código:
         });
 
         await bot.sendMessage(
-            chatId,
+    chatId,
 `✅ <b>INSTALACIÓN COMPLETADA</b>
 
 ━━━━━━━━━━━━━━━━━━
@@ -552,32 +552,43 @@ Código:
 
 ━━━━━━━━━━━━━━━━━━
 
-🟢 KevinTech Multi Script instalado.
+🟢 KevinTech Multi Script instalado correctamente.
 
-Escribe <code>menu</code> en la VPS.`,
-            {
-                parse_mode: "HTML",
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            {
-                                text: "📜 Historial",
-                                callback_data: "menu_history"
-                            }
-                        ],
-                        [
-                            {
-                                text: "🏠 Inicio",
-                                callback_data: "menu_home"
-                            }
-                        ]
-                    ]
-                }
-            }
-        );
+La VPS se reiniciará automáticamente en unos segundos.`,
+    {
+        parse_mode: "HTML",
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: "📜 Historial",
+                        callback_data: "menu_history"
+                    }
+                ],
+                [
+                    {
+                        text: "🏠 Inicio",
+                        callback_data: "menu_home"
+                    }
+                ]
+            ]
+        }
+    }
+);
 
-        await db.ref(`keys/${key}`).remove();
+// Reiniciar la VPS automáticamente
+try {
+    await sshExec({
+        host,
+        username,
+        password,
+        command: "reboot"
+    });
+} catch (_) {
+    // Es normal que la conexión SSH se cierre durante el reinicio
+}
 
+await db.ref(`keys/${key}`).remove();
     } catch (err) {
 
         console.log("INSTALLER ERROR:", err);
