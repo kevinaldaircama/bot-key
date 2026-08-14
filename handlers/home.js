@@ -78,11 +78,6 @@ inline_keyboard:[
 
 [
 {text:"🔑 Crear Key",callback_data:"menu_key"},
-{text:"🚀 Instalador",callback_data:"menu_install"}
-],
-
-[
-{text:"🖥 Mis VPS",callback_data:"menu_vps"},
 {text:"📁 Mis Dominios",callback_data:"menu_domains"}
 ],
 
@@ -152,14 +147,9 @@ inline_keyboard:[
 
 [
 {text:"🔑 Crear Key",callback_data:"menu_key"},
-{text:"🚀 Instalador",callback_data:"menu_install"}
-],
-
-[
-{text:"🖥 Mis VPS",callback_data:"menu_vps"},
 {text:"📁 Mis Dominios",callback_data:"menu_domains"}
 ],
-
+    
 [
 {text:"🌐 Dominio A",callback_data:"menu_domain_a"},
 {text:"🧩 Dominio NS",callback_data:"menu_domain_ns"}
