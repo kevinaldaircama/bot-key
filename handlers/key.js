@@ -3,74 +3,61 @@ import { randomUUID } from "crypto";
 
 export default function registerKey(bot) {
 
-    // ==============================
+    // =========================================================
     // GENERAR KEY
-    // ==============================
+    // =========================================================
 
-    bot.on("callback_query", async (query) => {
-
-        if (query.data !== "menu_key") return;
-
-        await bot.answerCallbackQuery(query.id);
-
-        const chatId = String(query.message.chat.id);
+    async function generateKey(chatId) {
 
         const snap = await db.ref(`users/${chatId}`).get();
 
-        if (!snap.exists()) return;
+        if (!snap.exists()) {
+            return {
+                ok: false,
+                message: "❌ Usuario no registrado."
+            };
+        }
 
         const user = snap.val();
 
+        // =====================================================
+        // VERIFICAR APROBACIÓN
+        // =====================================================
+
         if (!user.approved) {
-            return bot.answerCallbackQuery(query.id, {
-                text: "No tienes acceso.",
-                show_alert: true
-            });
+            return {
+                ok: false,
+                message: "❌ No tienes acceso."
+            };
         }
 
+        // =====================================================
+        // VERIFICAR ROL
+        // =====================================================
+
         if (user.role !== "owner" && user.role !== "admin") {
-            return bot.answerCallbackQuery(query.id, {
-                text: "No autorizado.",
-                show_alert: true
-            });
+            return {
+                ok: false,
+                message: "❌ No autorizado."
+            };
         }
+
+        // =====================================================
+        // VERIFICAR RESELLER
+        // =====================================================
 
         if (!user.reseller || user.reseller.trim() === "") {
 
-            return bot.editMessageText(
-`❌ <b>Debes configurar primero tu nombre de Reseller.</b>
-
-Pulsa el botón:
-
-👥 <b>Resellers</b>`,
-
-            {
-                chat_id: chatId,
-                message_id: query.message.message_id,
-                parse_mode: "HTML",
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            {
-                                text: "👥 Resellers",
-                                callback_data: "menu_reseller"
-                            }
-                        ],
-                        [
-                            {
-                                text: "🏠 Inicio",
-                                callback_data: "menu_home"
-                            }
-                        ]
-                    ]
-                }
-            });
-
+            return {
+                ok: false,
+                resellerMissing: true,
+                message: "❌ Debes configurar primero tu nombre de Reseller."
+            };
         }
 
-        // ==============================
+        // =====================================================
         // GENERAR KEY
-        // ==============================
+        // =====================================================
 
         const key =
             "kevintechmulti-script-" +
@@ -81,11 +68,12 @@ Pulsa el botón:
 
         const created = Date.now();
 
+        // 2 HORAS
         const deleteAt = created + (2 * 60 * 60 * 1000);
 
-        // ==============================
+        // =====================================================
         // GUARDAR KEY
-        // ==============================
+        // =====================================================
 
         await db.ref(`keys/${key}`).set({
 
@@ -107,9 +95,9 @@ Pulsa el botón:
 
         });
 
-        // ==============================
-        // GUARDAR HISTORIAL
-        // ==============================
+        // =====================================================
+        // HISTORIAL
+        // =====================================================
 
         await db.ref(`history/${chatId}`).push({
 
@@ -117,13 +105,13 @@ Pulsa el botón:
 
             value: key,
 
-            time: Date.now()
+            time: created
 
         });
 
-        // ==============================
+        // =====================================================
         // CONTAR KEYS
-        // ==============================
+        // =====================================================
 
         const keysSnapshot = await db.ref("keys").get();
 
@@ -133,42 +121,136 @@ Pulsa el botón:
 
             keysSnapshot.forEach(item => {
 
-                if (item.val().owner === chatId) {
+                const data = item.val();
 
+                if (
+                    data.owner === chatId &&
+                    data.deleteAt &&
+                    data.deleteAt > Date.now()
+                ) {
                     totalKeys++;
-
                 }
 
             });
 
         }
 
+        // =====================================================
+        // NOMBRE DEL ROL
+        // =====================================================
+
         const roleName =
             user.role === "owner"
                 ? "👑 Dueño"
                 : "🛡️ Admin";
 
-        // ==============================
-        // MOSTRAR KEY
-        // ==============================
+        return {
 
-        await bot.editMessageText(
+            ok: true,
+
+            key,
+
+            user,
+
+            roleName,
+
+            totalKeys
+
+        };
+
+    }
+
+
+    // =========================================================
+    // MOSTRAR KEY
+    // =========================================================
+
+    async function sendGeneratedKey(chatId) {
+
+        const result = await generateKey(chatId);
+
+        // =====================================================
+        // ERROR
+        // =====================================================
+
+        if (!result.ok) {
+
+            if (result.resellerMissing) {
+
+                return bot.sendMessage(
+
+                    chatId,
+
+`❌ <b>Debes configurar primero tu nombre de Reseller.</b>
+
+Pulsa el botón:
+
+👥 <b>Resellers</b>`,
+
+                    {
+                        parse_mode: "HTML",
+
+                        reply_markup: {
+
+                            inline_keyboard: [
+
+                                [
+                                    {
+                                        text: "👥 Resellers",
+                                        callback_data: "menu_reseller"
+                                    }
+                                ],
+
+                                [
+                                    {
+                                        text: "🏠 Inicio",
+                                        callback_data: "menu_home"
+                                    }
+                                ]
+
+                            ]
+
+                        }
+
+                    }
+
+                );
+
+            }
+
+            return bot.sendMessage(
+                chatId,
+                result.message,
+                {
+                    parse_mode: "HTML"
+                }
+            );
+
+        }
+
+        // =====================================================
+        // MOSTRAR KEY
+        // =====================================================
+
+        return bot.sendMessage(
+
+            chatId,
 
 `<b>🔑 KEY GENERADA CORRECTAMENTE</b>
 
 ━━━━━━━━━━━━━━━━━━
 
-${roleName}
+${result.roleName}
 
 👤 <b>Reseller</b>
 
-${user.reseller}
+${result.user.reseller}
 
 ━━━━━━━━━━━━━━━━━━
 
 🔑 <b>Key</b>
 
-<code>${key}</code>
+<code>${result.key}</code>
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -180,21 +262,21 @@ La Key será eliminada después de 2 horas o al primer uso.
 
 ━━━━━━━━━━━━━━━━━━
 
-📊 <b>Total de Keys</b>
+📊 <b>Total de Keys activas</b>
 
-${totalKeys}
-
-━━━━━━━━━━━━━━━━━━
-
-💻 <b>Instalador multi script (consola)</b>
-
-<code>export INSTALL_KEY="${key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>
+${result.totalKeys}
 
 ━━━━━━━━━━━━━━━━━━
 
-⚡ <b>Instalador @sshprivanoxbot (bot telegram)</b>
+💻 <b>Instalador multi script</b>
 
-<code>export INSTALL_KEY="${key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/privanox-code/main/install_go.sh)</code>
+<code>export INSTALL_KEY="${result.key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>
+
+━━━━━━━━━━━━━━━━━━
+
+⚡ <b>Instalador @sshprivanoxbot</b>
+
+<code>export INSTALL_KEY="${result.key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/privanox-code/main/install_go.sh)</code>
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -204,137 +286,439 @@ ${totalKeys}
 
 ━━━━━━━━━━━━━━━━━━
 
-🔗 <b>Script con instalación con protocolos automáticos</b>
+🔗 <b>Instalación con protocolos automáticos</b>
 
-🌐 Antes de instalar la script (Kevin tech multi script), configura un subdominio que apunte a la IP de tu VPS mediante un registro <b>A</b> y asegúrate de que el <b>Proxy esté desactivado (DNS Only)</b>.`,
+🌐 Antes de instalar <b>Kevin Tech Multi Script</b>, configura un subdominio que apunte a la IP de tu VPS mediante un registro <b>A</b>.
 
-        {
-            chat_id: chatId,
-            message_id: query.message.message_id,
-            parse_mode: "HTML",
+⚠️ Asegúrate de que el Proxy esté desactivado:
 
-            reply_markup: {
+<b>DNS Only</b>`,
 
-                inline_keyboard: [
+            {
 
-                    [
-                        {
-                            text: "🗑 Revocar Key",
-                            callback_data: `key_revoke_${key}`
-                        }
-                    ],
+                parse_mode: "HTML",
 
-                    [
-                        {
-                            text: "🔄 Crear otra Key",
-                            callback_data: "menu_key"
-                        }
-                    ],
+                reply_markup: {
 
-                    [
-                        {
-                            text: "📜 Historial",
-                            callback_data: "menu_history"
-                        },
-                        {
-                            text: "📈 Mi Uso",
-                            callback_data: "menu_usage"
-                        }
-                    ],
+                    inline_keyboard: [
 
-                    [
-                        {
-                            text: "🏠 Inicio",
-                            callback_data: "menu_home"
-                        }
+                        [
+                            {
+                                text: "🗑 Revocar Key",
+                                callback_data:
+                                    `key_revoke_${result.key}`
+                            }
+                        ],
+
+                        [
+                            {
+                                text: "🔄 Crear otra Key",
+                                callback_data: "menu_key"
+                            }
+                        ],
+
+                        [
+                            {
+                                text: "📜 Historial",
+                                callback_data: "menu_history"
+                            },
+
+                            {
+                                text: "📈 Mi Uso",
+                                callback_data: "menu_usage"
+                            }
+                        ],
+
+                        [
+                            {
+                                text: "🏠 Inicio",
+                                callback_data: "menu_home"
+                            }
+                        ]
+
                     ]
 
-                ]
+                }
 
             }
 
-        }
-
         );
+
+    }
+
+
+    // =========================================================
+    // COMANDO /KEY
+    // =========================================================
+
+    bot.onText(/^\/key(?:@\w+)?$/i, async (msg) => {
+
+        const chatId = String(msg.chat.id);
+
+        try {
+
+            await sendGeneratedKey(chatId);
+
+        } catch (error) {
+
+            console.error("❌ ERROR /key:", error);
+
+            await bot.sendMessage(
+                chatId,
+                "❌ Ocurrió un error al generar la Key."
+            );
+
+        }
 
     });
 
 
-    // ==============================
-    // REVOCAR KEY
-    // ==============================
+    // =========================================================
+    // BOTÓN GENERAR KEY
+    // =========================================================
 
     bot.on("callback_query", async (query) => {
 
-        if (!query.data.startsWith("key_revoke_")) return;
-
-        await bot.answerCallbackQuery(query.id);
+        if (query.data !== "menu_key") return;
 
         const chatId = String(query.message.chat.id);
 
-        const key = query.data.replace("key_revoke_", "");
+        try {
 
-        const ref = db.ref(`keys/${key}`);
+            await bot.answerCallbackQuery(query.id);
 
-        const snap = await ref.get();
+            // =================================================
+            // GENERAR
+            // =================================================
 
-        // ==============================
-        // VERIFICAR SI EXISTE
-        // ==============================
+            const result = await generateKey(chatId);
 
-        if (!snap.exists()) {
+            // =================================================
+            // ERROR
+            // =================================================
 
-            return bot.answerCallbackQuery(query.id, {
+            if (!result.ok) {
 
-                text: "❌ La key ya fue eliminada."
+                if (result.resellerMissing) {
 
-            });
+                    return bot.editMessageText(
+
+`❌ <b>Debes configurar primero tu nombre de Reseller.</b>
+
+Pulsa el botón:
+
+👥 <b>Resellers</b>`,
+
+                        {
+
+                            chat_id: chatId,
+
+                            message_id:
+                                query.message.message_id,
+
+                            parse_mode: "HTML",
+
+                            reply_markup: {
+
+                                inline_keyboard: [
+
+                                    [
+                                        {
+                                            text: "👥 Resellers",
+                                            callback_data:
+                                                "menu_reseller"
+                                        }
+                                    ],
+
+                                    [
+                                        {
+                                            text: "🏠 Inicio",
+                                            callback_data:
+                                                "menu_home"
+                                        }
+                                    ]
+
+                                ]
+
+                            }
+
+                        }
+
+                    );
+
+                }
+
+                return bot.answerCallbackQuery(
+
+                    query.id,
+
+                    {
+
+                        text: result.message,
+
+                        show_alert: true
+
+                    }
+
+                );
+
+            }
+
+            // =================================================
+            // MOSTRAR RESULTADO
+            // =================================================
+
+            await bot.editMessageText(
+
+`<b>🔑 KEY GENERADA CORRECTAMENTE</b>
+
+━━━━━━━━━━━━━━━━━━
+
+${result.roleName}
+
+👤 <b>Reseller</b>
+
+${result.user.reseller}
+
+━━━━━━━━━━━━━━━━━━
+
+🔑 <b>Key</b>
+
+<code>${result.key}</code>
+
+━━━━━━━━━━━━━━━━━━
+
+⏳ <b>Expira</b>
+
+🗑️ Eliminación automática
+
+La Key será eliminada después de 2 horas o al primer uso.
+
+━━━━━━━━━━━━━━━━━━
+
+📊 <b>Total de Keys activas</b>
+
+${result.totalKeys}
+
+━━━━━━━━━━━━━━━━━━
+
+💻 <b>Instalador multi script</b>
+
+<code>export INSTALL_KEY="${result.key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>
+
+━━━━━━━━━━━━━━━━━━
+
+⚡ <b>Instalador @sshprivanoxbot</b>
+
+<code>export INSTALL_KEY="${result.key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/privanox-code/main/install_go.sh)</code>
+
+━━━━━━━━━━━━━━━━━━
+
+🐧 <b>Ubuntu recomendado</b>
+
+✅ Compatible para todas las versiones LTS
+
+━━━━━━━━━━━━━━━━━━
+
+🔗 <b>Instalación con protocolos automáticos</b>
+
+🌐 Configura un subdominio apuntando a la IP de tu VPS mediante un registro <b>A</b>.
+
+⚠️ Proxy desactivado:
+
+<b>DNS Only</b>`,
+
+                {
+
+                    chat_id: chatId,
+
+                    message_id:
+                        query.message.message_id,
+
+                    parse_mode: "HTML",
+
+                    reply_markup: {
+
+                        inline_keyboard: [
+
+                            [
+                                {
+                                    text: "🗑 Revocar Key",
+                                    callback_data:
+                                        `key_revoke_${result.key}`
+                                }
+                            ],
+
+                            [
+                                {
+                                    text: "🔄 Crear otra Key",
+                                    callback_data:
+                                        "menu_key"
+                                }
+                            ],
+
+                            [
+                                {
+                                    text: "📜 Historial",
+                                    callback_data:
+                                        "menu_history"
+                                },
+
+                                {
+                                    text: "📈 Mi Uso",
+                                    callback_data:
+                                        "menu_usage"
+                                }
+                            ],
+
+                            [
+                                {
+                                    text: "🏠 Inicio",
+                                    callback_data:
+                                        "menu_home"
+                                }
+                            ]
+
+                        ]
+
+                    }
+
+                }
+
+            );
+
+        } catch (error) {
+
+            console.error(
+                "❌ ERROR menu_key:",
+                error
+            );
+
+            await bot.answerCallbackQuery(
+
+                query.id,
+
+                {
+
+                    text: "❌ Error al generar la Key.",
+
+                    show_alert: true
+
+                }
+
+            );
 
         }
 
-        const data = snap.val();
+    });
 
-        // ==============================
-        // VERIFICAR PROPIETARIO
-        // ==============================
 
-        if (data.owner !== chatId) {
+    // =========================================================
+    // REVOCAR KEY
+    // =========================================================
 
-            return bot.answerCallbackQuery(query.id, {
+    bot.on("callback_query", async (query) => {
 
-                text: "❌ No puedes revocar esta key.",
-
-                show_alert: true
-
-            });
-
+        if (
+            !query.data ||
+            !query.data.startsWith("key_revoke_")
+        ) {
+            return;
         }
 
-        // ==============================
-        // ELIMINAR KEY
-        // ==============================
+        const chatId =
+            String(query.message.chat.id);
 
-        await ref.remove();
+        const key =
+            query.data.replace(
+                "key_revoke_",
+                ""
+            );
 
-        // ==============================
-        // GUARDAR HISTORIAL
-        // ==============================
+        try {
 
-        await db.ref(`history/${chatId}`).push({
+            await bot.answerCallbackQuery(
+                query.id
+            );
 
-            type: "KEY_REVOCADA",
+            const ref =
+                db.ref(`keys/${key}`);
 
-            value: key,
+            const snap =
+                await ref.get();
 
-            time: Date.now()
+            // =================================================
+            // KEY NO EXISTE
+            // =================================================
 
-        });
+            if (!snap.exists()) {
 
-        // ==============================
-        // CONFIRMACIÓN
-        // ==============================
+                return bot.answerCallbackQuery(
 
-        await bot.editMessageText(
+                    query.id,
+
+                    {
+                        text:
+                            "❌ La key ya fue eliminada.",
+                        show_alert: true
+                    }
+
+                );
+
+            }
+
+            const data = snap.val();
+
+            // =================================================
+            // VERIFICAR PROPIETARIO
+            // =================================================
+
+            if (data.owner !== chatId) {
+
+                return bot.answerCallbackQuery(
+
+                    query.id,
+
+                    {
+                        text:
+                            "❌ No puedes revocar esta key.",
+                        show_alert: true
+                    }
+
+                );
+
+            }
+
+            // =================================================
+            // ELIMINAR
+            // =================================================
+
+            await ref.remove();
+
+            // =================================================
+            // HISTORIAL
+            // =================================================
+
+            await db
+                .ref(`history/${chatId}`)
+                .push({
+
+                    type:
+                        "KEY_REVOCADA",
+
+                    value:
+                        key,
+
+                    time:
+                        Date.now()
+
+                });
+
+            // =================================================
+            // CONFIRMACIÓN
+            // =================================================
+
+            await bot.editMessageText(
 
 `🗑 <b>KEY REVOCADA</b>
 
@@ -342,52 +726,95 @@ ${totalKeys}
 
 🔑 <code>${key}</code>
 
-✅ La key fue eliminada correctamente.
+━━━━━━━━━━━━━━━━━━
 
-━━━━━━━━━━━━━━━━━━`,
+✅ La key fue eliminada correctamente.`,
 
-        {
+                {
 
-            chat_id: chatId,
+                    chat_id:
+                        chatId,
 
-            message_id: query.message.message_id,
+                    message_id:
+                        query.message.message_id,
 
-            parse_mode: "HTML",
+                    parse_mode:
+                        "HTML",
 
-            reply_markup: {
+                    reply_markup: {
 
-                inline_keyboard: [
+                        inline_keyboard: [
 
-                    [
-                        {
-                            text: "🔄 Crear otra Key",
-                            callback_data: "menu_key"
-                        }
-                    ],
+                            [
+                                {
+                                    text:
+                                        "🔄 Crear otra Key",
 
-                    [
-                        {
-                            text: "📜 Historial",
-                            callback_data: "menu_history"
-                        },
-                        {
-                            text: "📈 Mi Uso",
-                            callback_data: "menu_usage"
-                        }
-                    ],
+                                    callback_data:
+                                        "menu_key"
+                                }
+                            ],
 
-                    [
-                        {
-                            text: "🏠 Inicio",
-                            callback_data: "menu_home"
-                        }
-                    ]
+                            [
+                                {
+                                    text:
+                                        "📜 Historial",
 
-                ]
+                                    callback_data:
+                                        "menu_history"
+                                },
 
-            }
+                                {
+                                    text:
+                                        "📈 Mi Uso",
 
-        });
+                                    callback_data:
+                                        "menu_usage"
+                                }
+                            ],
+
+                            [
+                                {
+                                    text:
+                                        "🏠 Inicio",
+
+                                    callback_data:
+                                        "menu_home"
+                                }
+                            ]
+
+                        ]
+
+                    }
+
+                }
+
+            );
+
+        } catch (error) {
+
+            console.error(
+                "❌ ERROR revocando key:",
+                error
+            );
+
+            await bot.answerCallbackQuery(
+
+                query.id,
+
+                {
+
+                    text:
+                        "❌ Error al revocar la Key.",
+
+                    show_alert:
+                        true
+
+                }
+
+            );
+
+        }
 
     });
 
