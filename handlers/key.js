@@ -8,7 +8,7 @@ export default function registerKey(bot) {
     // =========================================================
 
     const WEBAPP_URL =
-        "https://TU-DOMINIO.com/index.html";
+        "https://kevinaldaircama.github.io/bot-key/";
 
     const REQUIRED_ADS = 5;
 
