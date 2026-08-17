@@ -17,24 +17,87 @@ export default function registerKey(bot) {
 
 
     // =========================================================
+    // ESCAPAR HTML
+    // =========================================================
+
+    function escapeHTML(text) {
+
+        return String(text || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+    }
+
+
+    // =========================================================
+    // OBTENER RESELLER AUTOMÁTICO
+    // =========================================================
+
+    function getReseller(msg) {
+
+        if (
+            msg &&
+            msg.from &&
+            msg.from.username
+        ) {
+
+            return `@${msg.from.username}`;
+
+        }
+
+        if (
+            msg &&
+            msg.from &&
+            msg.from.first_name
+        ) {
+
+            const firstName =
+                msg.from.first_name;
+
+            const lastName =
+                msg.from.last_name || "";
+
+            const fullName =
+                `${firstName} ${lastName}`.trim();
+
+            return fullName;
+
+        }
+
+        return "Usuario";
+
+    }
+
+
+    // =========================================================
     // GENERAR KEY
     // =========================================================
 
-    async function generateKey(chatId) {
+    async function generateKey(
+        chatId,
+        telegramUser = null
+    ) {
 
         const snap =
             await db.ref(`users/${chatId}`).get();
+
 
         if (!snap.exists()) {
 
             return {
                 ok: false,
-                message: "❌ Usuario no registrado."
+                message:
+                    "❌ Usuario no registrado."
             };
 
         }
 
-        const user = snap.val();
+
+        const user =
+            snap.val();
 
 
         // =====================================================
@@ -48,7 +111,10 @@ export default function registerKey(bot) {
             user.adsKeyUnlocked === true;
 
 
-        if (!normalAccess && !adAccess) {
+        if (
+            !normalAccess &&
+            !adAccess
+        ) {
 
             return {
                 ok: false,
@@ -70,27 +136,44 @@ export default function registerKey(bot) {
 
             return {
                 ok: false,
-                message: "❌ No autorizado."
+                message:
+                    "❌ No autorizado."
             };
 
         }
 
 
         // =====================================================
-        // RESELLER
+        // RESELLER AUTOMÁTICO
         // =====================================================
+
+        let reseller =
+            "Usuario";
+
 
         if (
-            !user.reseller ||
-            user.reseller.trim() === ""
+            telegramUser &&
+            telegramUser.username
         ) {
 
-            return {
-                ok: false,
-                resellerMissing: true
-            };
+            reseller =
+                `@${telegramUser.username}`;
+
+        } else if (
+            telegramUser &&
+            telegramUser.first_name
+        ) {
+
+            reseller =
+                `${telegramUser.first_name} ${
+                    telegramUser.last_name || ""
+                }`.trim();
 
         }
+
+
+        reseller =
+            escapeHTML(reseller);
 
 
         // =====================================================
@@ -104,11 +187,14 @@ export default function registerKey(bot) {
                 .substring(0, 10)
                 .toUpperCase();
 
+
         const created =
             Date.now();
 
+
         const deleteAt =
-            created + KEY_LIFETIME;
+            created +
+            KEY_LIFETIME;
 
 
         // =====================================================
@@ -121,36 +207,43 @@ export default function registerKey(bot) {
 
                 key,
 
-                owner: chatId,
+                owner:
+                    chatId,
 
-                reseller: user.reseller,
+                reseller,
 
-                used: false,
+                used:
+                    false,
 
                 created,
 
                 deleteAt,
 
-                usedBy: "",
+                usedBy:
+                    "",
 
-                usedAt: ""
+                usedAt:
+                    ""
 
             });
 
 
         // =====================================================
         // HISTORIAL
-        // =====================================================
+        // =========================================================
 
         await db
             .ref(`history/${chatId}`)
             .push({
 
-                type: "KEY_GENERADA",
+                type:
+                    "KEY_GENERADA",
 
-                value: key,
+                value:
+                    key,
 
-                time: created
+                time:
+                    created
 
             });
 
@@ -162,25 +255,32 @@ export default function registerKey(bot) {
         const keysSnapshot =
             await db.ref("keys").get();
 
+
         let totalKeys = 0;
 
-        if (keysSnapshot.exists()) {
 
-            keysSnapshot.forEach(item => {
+        if (
+            keysSnapshot.exists()
+        ) {
 
-                const data =
-                    item.val();
+            keysSnapshot.forEach(
+                item => {
 
-                if (
-                    data.owner === chatId &&
-                    data.deleteAt > Date.now()
-                ) {
+                    const data =
+                        item.val();
 
-                    totalKeys++;
+
+                    if (
+                        data.owner === chatId &&
+                        data.deleteAt > Date.now()
+                    ) {
+
+                        totalKeys++;
+
+                    }
 
                 }
-
-            });
+            );
 
         }
 
@@ -191,19 +291,26 @@ export default function registerKey(bot) {
 
         const roleName =
             user.role === "owner"
+
                 ? "👑 Dueño"
+
                 : user.role === "admin"
+
                     ? "🛡️ Admin"
+
                     : "🎁 Acceso por anuncios";
 
 
         return {
 
-            ok: true,
+            ok:
+                true,
 
             key,
 
             user,
+
+            reseller,
 
             roleName,
 
@@ -218,73 +325,33 @@ export default function registerKey(bot) {
     // MOSTRAR KEY
     // =========================================================
 
-    async function showKey(chatId) {
+    async function showKey(
+        msg
+    ) {
+
+        const chatId =
+            String(msg.chat.id);
+
 
         try {
 
             const result =
-                await generateKey(chatId);
+                await generateKey(
+                    chatId,
+                    msg.from
+                );
 
 
             // =================================================
             // SIN ACCESO
             // =================================================
 
-            if (result.noAccess) {
+            if (
+                result.noAccess
+            ) {
 
-                return sendAdRequired(chatId);
-
-            }
-
-
-            // =================================================
-            // RESELLER FALTANTE
-            // =================================================
-
-            if (result.resellerMissing) {
-
-                return bot.sendMessage(
-
-                    chatId,
-
-`❌ <b>Debes configurar primero tu nombre de Reseller.</b>
-
-Pulsa el botón:
-
-👥 <b>Resellers</b>`,
-
-                    {
-
-                        parse_mode: "HTML",
-
-                        reply_markup: {
-
-                            inline_keyboard: [
-
-                                [
-                                    {
-                                        text: "👥 Resellers",
-
-                                        callback_data:
-                                            "menu_reseller"
-                                    }
-                                ],
-
-                                [
-                                    {
-                                        text: "🏠 Inicio",
-
-                                        callback_data:
-                                            "menu_home"
-                                    }
-                                ]
-
-                            ]
-
-                        }
-
-                    }
-
+                return sendAdRequired(
+                    chatId
                 );
 
             }
@@ -294,7 +361,9 @@ Pulsa el botón:
             // ERROR
             // =================================================
 
-            if (!result.ok) {
+            if (
+                !result.ok
+            ) {
 
                 return bot.sendMessage(
 
@@ -303,7 +372,8 @@ Pulsa el botón:
                     result.message,
 
                     {
-                        parse_mode: "HTML"
+                        parse_mode:
+                            "HTML"
                     }
 
                 );
@@ -327,7 +397,7 @@ ${result.roleName}
 
 👤 <b>Reseller</b>
 
-${result.user.reseller}
+${result.reseller}
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -380,13 +450,15 @@ ${result.totalKeys}
 
                 {
 
-                    parse_mode: "HTML",
+                    parse_mode:
+                        "HTML",
 
                     reply_markup: {
 
                         inline_keyboard: [
 
                             [
+
                                 {
                                     text:
                                         "🗑 Revocar Key",
@@ -394,9 +466,11 @@ ${result.totalKeys}
                                     callback_data:
                                         `key_revoke_${result.key}`
                                 }
+
                             ],
 
                             [
+
                                 {
                                     text:
                                         "🔄 Crear otra Key",
@@ -404,9 +478,11 @@ ${result.totalKeys}
                                     callback_data:
                                         "menu_key"
                                 }
+
                             ],
 
                             [
+
                                 {
                                     text:
                                         "📜 Historial",
@@ -422,16 +498,7 @@ ${result.totalKeys}
                                     callback_data:
                                         "menu_usage"
                                 }
-                            ],
 
-                            [
-                                {
-                                    text:
-                                        "🏠 Inicio",
-
-                                    callback_data:
-                                        "menu_home"
-                                }
                             ]
 
                         ]
@@ -442,12 +509,15 @@ ${result.totalKeys}
 
             );
 
-        } catch (error) {
+        } catch (
+            error
+        ) {
 
             console.error(
                 "ERROR GENERANDO KEY:",
                 error
             );
+
 
             return bot.sendMessage(
 
@@ -466,7 +536,9 @@ ${result.totalKeys}
     // MOSTRAR WEBAPP DE ANUNCIOS
     // =========================================================
 
-    async function sendAdRequired(chatId) {
+    async function sendAdRequired(
+        chatId
+    ) {
 
         return bot.sendMessage(
 
@@ -494,21 +566,28 @@ Al completar los 5 anuncios podrás generar tu Key.
 
             {
 
-                parse_mode: "HTML",
+                parse_mode:
+                    "HTML",
 
                 reply_markup: {
 
                     inline_keyboard: [
 
                         [
+
                             {
                                 text:
                                     "🎬 VER 5 ANUNCIOS",
 
                                 web_app: {
-                                    url: WEBAPP_URL
+
+                                    url:
+                                        WEBAPP_URL
+
                                 }
+
                             }
+
                         ]
 
                     ]
@@ -530,19 +609,25 @@ Al completar los 5 anuncios podrás generar tu Key.
 
         /^\/start(?:@\w+)?(?:\s+(.+))?$/i,
 
-        async (msg, match) => {
+        async (
+            msg,
+            match
+        ) => {
 
             const chatId =
                 String(msg.chat.id);
 
+
             const startParam =
-                match && match[1]
+                match &&
+                match[1]
                     ? match[1].trim()
                     : "";
 
 
-            // Solo procesar:
-            // /start adscompleted
+            // =================================================
+            // SOLO PROCESAR ADSCOMPLETED
+            // =================================================
 
             if (
                 startParam !==
@@ -561,13 +646,18 @@ Al completar los 5 anuncios podrás generar tu Key.
                 // =============================================
 
                 const userRef =
-                    db.ref(`users/${chatId}`);
+                    db.ref(
+                        `users/${chatId}`
+                    );
+
 
                 const snap =
                     await userRef.get();
 
 
-                if (!snap.exists()) {
+                if (
+                    !snap.exists()
+                ) {
 
                     return bot.sendMessage(
 
@@ -603,7 +693,9 @@ Al completar los 5 anuncios podrás generar tu Key.
                 // =============================================
 
                 await db
-                    .ref(`history/${chatId}`)
+                    .ref(
+                        `history/${chatId}`
+                    )
                     .push({
 
                         type:
@@ -658,6 +750,7 @@ Ahora puedes generar tu Key.
                             inline_keyboard: [
 
                                 [
+
                                     {
                                         text:
                                             "🔑 GENERAR KEY",
@@ -665,16 +758,7 @@ Ahora puedes generar tu Key.
                                         callback_data:
                                             "menu_key"
                                     }
-                                ],
 
-                                [
-                                    {
-                                        text:
-                                            "🏠 Inicio",
-
-                                        callback_data:
-                                            "menu_home"
-                                    }
                                 ]
 
                             ]
@@ -685,12 +769,15 @@ Ahora puedes generar tu Key.
 
                 );
 
-            } catch (error) {
+            } catch (
+                error
+            ) {
 
                 console.error(
                     "ADS START ERROR:",
                     error
                 );
+
 
                 await bot.sendMessage(
 
@@ -715,12 +802,13 @@ Ahora puedes generar tu Key.
 
         /^\/key(?:@\w+)?$/i,
 
-        async (msg) => {
+        async (
+            msg
+        ) => {
 
-            const chatId =
-                String(msg.chat.id);
-
-            await showKey(chatId);
+            await showKey(
+                msg
+            );
 
         }
 
@@ -735,7 +823,9 @@ Ahora puedes generar tu Key.
 
         "callback_query",
 
-        async (query) => {
+        async (
+            query
+        ) => {
 
             if (
                 query.data !==
@@ -762,7 +852,11 @@ Ahora puedes generar tu Key.
 
                 const result =
                     await generateKey(
-                        chatId
+
+                        chatId,
+
+                        query.from
+
                     );
 
 
@@ -770,7 +864,9 @@ Ahora puedes generar tu Key.
                 // SIN ACCESO
                 // =============================================
 
-                if (result.noAccess) {
+                if (
+                    result.noAccess
+                ) {
 
                     return sendAdRequired(
                         chatId
@@ -780,72 +876,12 @@ Ahora puedes generar tu Key.
 
 
                 // =============================================
-                // RESELLER
-                // =============================================
-
-                if (
-                    result.resellerMissing
-                ) {
-
-                    return bot.editMessageText(
-
-`❌ <b>Debes configurar primero tu nombre de Reseller.</b>
-
-Pulsa:
-
-👥 <b>Resellers</b>`,
-
-                        {
-
-                            chat_id:
-                                chatId,
-
-                            message_id:
-                                query.message.message_id,
-
-                            parse_mode:
-                                "HTML",
-
-                            reply_markup: {
-
-                                inline_keyboard: [
-
-                                    [
-                                        {
-                                            text:
-                                                "👥 Resellers",
-
-                                            callback_data:
-                                                "menu_reseller"
-                                        }
-                                    ],
-
-                                    [
-                                        {
-                                            text:
-                                                "🏠 Inicio",
-
-                                            callback_data:
-                                                "menu_home"
-                                        }
-                                    ]
-
-                                ]
-
-                            }
-
-                        }
-
-                    );
-
-                }
-
-
-                // =============================================
                 // ERROR
                 // =============================================
 
-                if (!result.ok) {
+                if (
+                    !result.ok
+                ) {
 
                     return bot.answerCallbackQuery(
 
@@ -880,7 +916,7 @@ ${result.roleName}
 
 👤 <b>Reseller</b>
 
-${result.user.reseller}
+${result.reseller}
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -931,6 +967,7 @@ ${result.totalKeys}
                             inline_keyboard: [
 
                                 [
+
                                     {
                                         text:
                                             "🗑 Revocar Key",
@@ -938,9 +975,11 @@ ${result.totalKeys}
                                         callback_data:
                                             `key_revoke_${result.key}`
                                     }
+
                                 ],
 
                                 [
+
                                     {
                                         text:
                                             "🔄 Crear otra Key",
@@ -948,16 +987,27 @@ ${result.totalKeys}
                                         callback_data:
                                             "menu_key"
                                     }
+
                                 ],
 
                                 [
+
                                     {
                                         text:
-                                            "🏠 Inicio",
+                                            "📜 Historial",
 
                                         callback_data:
-                                            "menu_home"
+                                            "menu_history"
+                                    },
+
+                                    {
+                                        text:
+                                            "📈 Mi Uso",
+
+                                        callback_data:
+                                            "menu_usage"
                                     }
+
                                 ]
 
                             ]
@@ -968,10 +1018,12 @@ ${result.totalKeys}
 
                 );
 
-            } catch (error) {
+            } catch (
+                error
+            ) {
 
                 console.error(
-                    "menu_key:",
+                    "MENU KEY ERROR:",
                     error
                 );
 
@@ -990,9 +1042,13 @@ ${result.totalKeys}
 
         "message",
 
-        async (msg) => {
+        async (
+            msg
+        ) => {
 
-            if (!msg.web_app_data) {
+            if (
+                !msg.web_app_data
+            ) {
 
                 return;
 
@@ -1026,7 +1082,7 @@ ${result.totalKeys}
 
 
                 // =============================================
-                // VALIDAR 5 ANUNCIOS
+                // VALIDAR ANUNCIOS
                 // =============================================
 
                 if (
@@ -1046,11 +1102,13 @@ ${result.totalKeys}
 
 
                 // =============================================
-                // GUARDAR DESBLOQUEO
+                // GUARDAR ACCESO
                 // =============================================
 
                 await db
-                    .ref(`users/${chatId}`)
+                    .ref(
+                        `users/${chatId}`
+                    )
                     .update({
 
                         adsCompleted:
@@ -1070,7 +1128,9 @@ ${result.totalKeys}
                 // =============================================
 
                 await db
-                    .ref(`history/${chatId}`)
+                    .ref(
+                        `history/${chatId}`
+                    )
                     .push({
 
                         type:
@@ -1111,7 +1171,7 @@ Ahora puedes generar tu Key.
 
 ━━━━━━━━━━━━━━━━━━
 
-🔑 Pulsa el botón:
+🔑 Pulsa:
 
 <b>GENERAR KEY</b>`,
 
@@ -1125,6 +1185,7 @@ Ahora puedes generar tu Key.
                             inline_keyboard: [
 
                                 [
+
                                     {
                                         text:
                                             "🔑 GENERAR KEY",
@@ -1132,16 +1193,7 @@ Ahora puedes generar tu Key.
                                         callback_data:
                                             "menu_key"
                                     }
-                                ],
 
-                                [
-                                    {
-                                        text:
-                                            "🏠 Inicio",
-
-                                        callback_data:
-                                            "menu_home"
-                                    }
                                 ]
 
                             ]
@@ -1152,7 +1204,9 @@ Ahora puedes generar tu Key.
 
                 );
 
-            } catch (error) {
+            } catch (
+                error
+            ) {
 
                 console.error(
                     "WEBAPP DATA ERROR:",
@@ -1174,7 +1228,9 @@ Ahora puedes generar tu Key.
 
         "callback_query",
 
-        async (query) => {
+        async (
+            query
+        ) => {
 
             if (
                 !query.data ||
@@ -1218,7 +1274,9 @@ Ahora puedes generar tu Key.
                     await ref.get();
 
 
-                if (!snap.exists()) {
+                if (
+                    !snap.exists()
+                ) {
 
                     return bot.answerCallbackQuery(
 
@@ -1272,7 +1330,7 @@ Ahora puedes generar tu Key.
 
 
                 // =============================================
-                // ELIMINAR
+                // ELIMINAR KEY
                 // =============================================
 
                 await ref.remove();
@@ -1332,6 +1390,7 @@ Ahora puedes generar tu Key.
                             inline_keyboard: [
 
                                 [
+
                                     {
                                         text:
                                             "🔄 Crear otra Key",
@@ -1339,16 +1398,7 @@ Ahora puedes generar tu Key.
                                         callback_data:
                                             "menu_key"
                                     }
-                                ],
 
-                                [
-                                    {
-                                        text:
-                                            "🏠 Inicio",
-
-                                        callback_data:
-                                            "menu_home"
-                                    }
                                 ]
 
                             ]
@@ -1359,7 +1409,9 @@ Ahora puedes generar tu Key.
 
                 );
 
-            } catch (error) {
+            } catch (
+                error
+            ) {
 
                 console.error(
                     "REVOKE ERROR:",
