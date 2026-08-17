@@ -13,11 +13,9 @@ import deleteExpiredKeys from "./handlers/deleteExpiredKeys.js";
 // Panel
 import registerReseller from "./handlers/reseller.js";
 import registerKey from "./handlers/key.js";
-import registerInstaller from "./handlers/installer.js";
 import registerHistory from "./handlers/history.js";
 import registerUsage from "./handlers/usage.js";
 import registerStatistics from "./handlers/statistics.js";
-import registerVPS from "./handlers/vps.js";
 import registerPlans from "./handlers/plans.js";
 import startExpireTask from "./tasks/expireUsers.js";
 import registerDomainA from "./handlers/domainA.js";
@@ -51,12 +49,10 @@ registerApprove(bot);
 
 registerReseller(bot);
 registerKey(bot);
-registerInstaller(bot);
 registerHistory(bot);
 registerSettings(bot);
 registerUsage(bot);
 registerStatistics(bot);
-registerVPS(bot);
 registerPlans(bot);
 startExpireTask(bot);
 registerDomainA(bot, config);
