@@ -464,9 +464,9 @@ ${result.totalKeys}
 
     async function sendAdRequired(chatId) {
 
-        return bot.sendMessage(
+    return bot.sendMessage(
 
-            chatId,
+        chatId,
 
 `<b>🔐 ACCESO POR ANUNCIOS</b>
 
@@ -488,45 +488,32 @@ Al completar los 5 anuncios podrás generar tu Key.
 
 ━━━━━━━━━━━━━━━━━━`,
 
-            {
+        {
+            parse_mode: "HTML",
 
-                parse_mode: "HTML",
+            reply_markup: {
 
-                reply_markup: {
+                inline_keyboard: [
 
-                    inline_keyboard: [
+                    [
+                        {
+                            text: "🎬 VER 5 ANUNCIOS",
 
-                        [
-                            {
-                                text:
-                                    "🎬 VER 5 ANUNCIOS",
-
-                                web_app: {
-                                    url:
-                                        WEBAPP_URL
-                                }
+                            web_app: {
+                                url: WEBAPP_URL
                             }
-                        ],
-
-                        [
-                            {
-                                text:
-                                    "🏠 Inicio",
-
-                                callback_data:
-                                    "menu_home"
-                            }
-                        ]
-
+                        }
                     ]
 
-                }
+                ]
 
             }
 
-        );
+        }
 
-    }
+    );
+
+}
 
 
     // =========================================================
