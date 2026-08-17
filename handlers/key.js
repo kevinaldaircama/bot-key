@@ -17,12 +17,13 @@ export default function registerKey(bot) {
 
 
     // =========================================================
-    // OBTENER NOMBRE DE TELEGRAM
+    // OBTENER RESELLER AUTOMÁTICAMENTE
     // =========================================================
 
     function getTelegramName(msg) {
 
-        const user = msg.from || {};
+        const user =
+            msg.from || {};
 
         if (user.username) {
             return `@${user.username}`;
@@ -41,38 +42,15 @@ export default function registerKey(bot) {
 
 
     // =========================================================
-    // OBTENER RESELLER
-    // =========================================================
-
-    async function getReseller(chatId) {
-
-        const snap =
-            await db.ref(`users/${chatId}`).get();
-
-        if (!snap.exists()) {
-            return "Usuario";
-        }
-
-        const user =
-            snap.val();
-
-        return (
-            user.reseller ||
-            user.username ||
-            user.firstName ||
-            "Usuario"
-        );
-    }
-
-
-    // =========================================================
-    // VERIFICAR USUARIO
+    // OBTENER USUARIO
     // =========================================================
 
     async function getUser(chatId) {
 
         const snap =
-            await db.ref(`users/${chatId}`).get();
+            await db
+                .ref(`users/${chatId}`)
+                .get();
 
         if (!snap.exists()) {
             return null;
@@ -83,10 +61,72 @@ export default function registerKey(bot) {
 
 
     // =========================================================
-    // GENERAR KEY
+    // OBTENER RESELLER
     // =========================================================
 
-    async function generateKey(chatId) {
+    async function getReseller(chatId) {
+
+        const user =
+            await getUser(chatId);
+
+        if (!user) {
+            return "Usuario";
+        }
+
+        /*
+         * Si ya existe reseller en Firebase
+         * lo utilizamos.
+         */
+
+        if (
+            user.reseller &&
+            String(user.reseller).trim() !== ""
+        ) {
+
+            return String(
+                user.reseller
+            ).trim();
+
+        }
+
+        /*
+         * Si no existe todavía,
+         * utilizamos el username/nombre
+         * que fue guardado al registrar
+         * al usuario.
+         */
+
+        if (
+            user.username &&
+            String(user.username).trim() !== ""
+        ) {
+
+            return `@${String(
+                user.username
+            ).replace(/^@/, "")}`;
+
+        }
+
+        if (
+            user.firstName &&
+            String(user.firstName).trim() !== ""
+        ) {
+
+            return String(
+                user.firstName
+            ).trim();
+
+        }
+
+        return "Usuario";
+    }
+
+
+    // =========================================================
+    // VERIFICAR ACCESO
+    // =========================================================
+
+    async function checkAccess(chatId) {
 
         const user =
             await getUser(chatId);
@@ -94,33 +134,171 @@ export default function registerKey(bot) {
         if (!user) {
 
             return {
-                ok: false,
-                message: "❌ Usuario no registrado."
+
+                ok:
+                    false,
+
+                message:
+                    "❌ Usuario no registrado."
+
             };
 
         }
 
 
         // =====================================================
-        // ADS OBLIGATORIO
+        // OWNER
         // =====================================================
 
-        if (user.adsKeyUnlocked !== true) {
+        if (
+            user.role === "owner"
+        ) {
 
             return {
-                ok: false,
-                noAccess: true
+
+                ok:
+                    true,
+
+                bypassAds:
+                    true,
+
+                user
+
             };
 
         }
 
 
         // =====================================================
-        // OBTENER RESELLER AUTOMÁTICAMENTE
+        // ADMIN
+        // =====================================================
+
+        if (
+            user.role === "admin"
+        ) {
+
+            return {
+
+                ok:
+                    true,
+
+                bypassAds:
+                    true,
+
+                user
+
+            };
+
+        }
+
+
+        // =====================================================
+        // USUARIO NORMAL
+        // =====================================================
+
+        if (
+            user.adsKeyUnlocked === true
+        ) {
+
+            return {
+
+                ok:
+                    true,
+
+                bypassAds:
+                    false,
+
+                user
+
+            };
+
+        }
+
+
+        // =====================================================
+        // NECESITA ADS
+        // =====================================================
+
+        return {
+
+            ok:
+                false,
+
+            noAccess:
+                true,
+
+            user
+
+        };
+
+    }
+
+
+    // =========================================================
+    // GENERAR KEY
+    // =========================================================
+
+    async function generateKey(chatId) {
+
+        const access =
+            await checkAccess(chatId);
+
+
+        // =====================================================
+        // USUARIO NO EXISTE
+        // =====================================================
+
+        if (
+            !access.user
+        ) {
+
+            return {
+
+                ok:
+                    false,
+
+                message:
+                    "❌ Usuario no registrado."
+
+            };
+
+        }
+
+
+        // =====================================================
+        // SIN ACCESO
+        // =====================================================
+
+        if (
+            !access.ok &&
+            access.noAccess
+        ) {
+
+            return {
+
+                ok:
+                    false,
+
+                noAccess:
+                    true
+
+            };
+
+        }
+
+
+        const user =
+            access.user;
+
+
+        // =====================================================
+        // RESELLER
         // =====================================================
 
         const reseller =
-            await getReseller(chatId);
+            await getReseller(
+                chatId
+            );
 
 
         // =====================================================
@@ -140,7 +318,8 @@ export default function registerKey(bot) {
 
 
         const deleteAt =
-            created + KEY_LIFETIME;
+            created +
+            KEY_LIFETIME;
 
 
         // =====================================================
@@ -201,42 +380,55 @@ export default function registerKey(bot) {
         // =====================================================
 
         const keysSnapshot =
-            await db.ref("keys").get();
+            await db
+                .ref("keys")
+                .get();
 
 
         let totalKeys = 0;
 
 
-        if (keysSnapshot.exists()) {
+        if (
+            keysSnapshot.exists()
+        ) {
 
-            keysSnapshot.forEach(item => {
+            keysSnapshot.forEach(
+                item => {
 
-                const data =
-                    item.val();
+                    const data =
+                        item.val();
 
-                if (
-                    data.owner === chatId &&
-                    data.deleteAt > Date.now()
-                ) {
+                    if (
+                        data.owner ===
+                            chatId &&
+                        data.deleteAt >
+                            Date.now()
+                    ) {
 
-                    totalKeys++;
+                        totalKeys++;
+
+                    }
 
                 }
-
-            });
+            );
 
         }
 
 
         // =====================================================
-        // ROL
+        // NOMBRE DEL ROL
         // =====================================================
 
         const roleName =
+
             user.role === "owner"
+
                 ? "👑 Dueño"
+
                 : user.role === "admin"
+
                     ? "🛡️ Admin"
+
                     : "🎁 Acceso por anuncios";
 
 
@@ -264,7 +456,9 @@ export default function registerKey(bot) {
     // MOSTRAR ADS
     // =========================================================
 
-    async function sendAdRequired(chatId) {
+    async function sendAdRequired(
+        chatId
+    ) {
 
         return bot.sendMessage(
 
@@ -274,6 +468,8 @@ export default function registerKey(bot) {
 
 ━━━━━━━━━━━━━━━━━━
 
+No tienes acceso Premium.
+
 Para generar una Key gratuita debes completar:
 
 🎬 <b>5 anuncios</b>
@@ -282,11 +478,11 @@ Para generar una Key gratuita debes completar:
 
 🎁 <b>Recompensa</b>
 
-Al completar los 5 anuncios podrás generar tu Key.
+Después de completar los 5 anuncios podrás generar tu Key.
 
 ━━━━━━━━━━━━━━━━━━
 
-⚠️ Debes completar los 5 anuncios antes de continuar.`,
+⚠️ Completa los anuncios para continuar.`,
 
             {
 
@@ -330,19 +526,25 @@ Al completar los 5 anuncios podrás generar tu Key.
     // MOSTRAR KEY
     // =========================================================
 
-    async function showKey(chatId) {
+    async function showKey(
+        chatId
+    ) {
 
         try {
 
             const result =
-                await generateKey(chatId);
+                await generateKey(
+                    chatId
+                );
 
 
             // =================================================
-            // ADS NO COMPLETADO
+            // NECESITA ADS
             // =================================================
 
-            if (result.noAccess) {
+            if (
+                result.noAccess
+            ) {
 
                 return sendAdRequired(
                     chatId
@@ -355,7 +557,9 @@ Al completar los 5 anuncios podrás generar tu Key.
             // ERROR
             // =================================================
 
-            if (!result.ok) {
+            if (
+                !result.ok
+            ) {
 
                 return bot.sendMessage(
 
@@ -364,8 +568,10 @@ Al completar los 5 anuncios podrás generar tu Key.
                     result.message,
 
                     {
+
                         parse_mode:
                             "HTML"
+
                     }
 
                 );
@@ -538,12 +744,16 @@ Configura un subdominio apuntando a la IP de tu VPS mediante un registro <b>A</b
 
         /^\/key(?:@\w+)?$/i,
 
-        async (msg) => {
+        async msg => {
 
             const chatId =
-                String(msg.chat.id);
+                String(
+                    msg.chat.id
+                );
 
-            await showKey(chatId);
+            await showKey(
+                chatId
+            );
 
         }
 
@@ -551,20 +761,22 @@ Configura un subdominio apuntando a la IP de tu VPS mediante un registro <b>A</b
 
 
     // =========================================================
-    // BOTÓN GENERAR KEY
+    // BOTÓN menu_key
     // =========================================================
 
     bot.on(
 
         "callback_query",
 
-        async (query) => {
+        async query => {
 
             if (
                 query.data !==
                 "menu_key"
             ) {
+
                 return;
+
             }
 
 
@@ -588,10 +800,12 @@ Configura un subdominio apuntando a la IP de tu VPS mediante un registro <b>A</b
 
 
                 // =============================================
-                // ADS
+                // NECESITA ADS
                 // =============================================
 
-                if (result.noAccess) {
+                if (
+                    result.noAccess
+                ) {
 
                     return sendAdRequired(
                         chatId
@@ -604,7 +818,9 @@ Configura un subdominio apuntando a la IP de tu VPS mediante un registro <b>A</b
                 // ERROR
                 // =============================================
 
-                if (!result.ok) {
+                if (
+                    !result.ok
+                ) {
 
                     return bot.answerCallbackQuery(
 
@@ -765,22 +981,28 @@ ${result.totalKeys}
 
 
     // =========================================================
-    // RECIBIR RESULTADO DE WEBAPP
+    // RESULTADO DE LA WEBAPP
     // =========================================================
 
     bot.on(
 
         "message",
 
-        async (msg) => {
+        async msg => {
 
-            if (!msg.web_app_data) {
+            if (
+                !msg.web_app_data
+            ) {
+
                 return;
+
             }
 
 
             const chatId =
-                String(msg.chat.id);
+                String(
+                    msg.chat.id
+                );
 
 
             try {
@@ -792,19 +1014,21 @@ ${result.totalKeys}
 
 
                 // =============================================
-                // VERIFICAR ACCIÓN
+                // ACCIÓN
                 // =============================================
 
                 if (
                     data.action !==
                     "ads_completed"
                 ) {
+
                     return;
+
                 }
 
 
                 // =============================================
-                // VERIFICAR CANTIDAD
+                // CANTIDAD DE ANUNCIOS
                 // =============================================
 
                 if (
@@ -816,7 +1040,7 @@ ${result.totalKeys}
 
                         chatId,
 
-                        "❌ No se completaron los 5 anuncios."
+                        "❌ Debes completar los 5 anuncios."
 
                     );
 
@@ -837,7 +1061,9 @@ ${result.totalKeys}
                     await userRef.get();
 
 
-                if (!snap.exists()) {
+                if (
+                    !snap.exists()
+                ) {
 
                     return bot.sendMessage(
 
@@ -850,8 +1076,32 @@ ${result.totalKeys}
                 }
 
 
+                const user =
+                    snap.val();
+
+
                 // =============================================
-                // GUARDAR DESBLOQUEO
+                // OWNER / ADMIN
+                // =============================================
+
+                if (
+                    user.role === "owner" ||
+                    user.role === "admin"
+                ) {
+
+                    return bot.sendMessage(
+
+                        chatId,
+
+                        "ℹ️ Tu cuenta ya tiene acceso directo a las Keys."
+
+                    );
+
+                }
+
+
+                // =============================================
+                // DESBLOQUEAR
                 // =============================================
 
                 await userRef.update({
@@ -912,11 +1162,11 @@ ${result.totalKeys}
 
 Tu acceso gratuito ha sido desbloqueado.
 
-Ahora puedes generar tu Key.
+Ya puedes generar tu Key.
 
 ━━━━━━━━━━━━━━━━━━
 
-🔑 Pulsa el botón para continuar.`,
+🔑 Pulsa el botón para generar tu Key.`,
 
                     {
 
@@ -973,7 +1223,7 @@ Ahora puedes generar tu Key.
 
         "callback_query",
 
-        async (query) => {
+        async query => {
 
             if (
                 !query.data ||
@@ -981,7 +1231,9 @@ Ahora puedes generar tu Key.
                     "key_revoke_"
                 )
             ) {
+
                 return;
+
             }
 
 
@@ -1019,7 +1271,9 @@ Ahora puedes generar tu Key.
                 // KEY NO EXISTE
                 // =============================================
 
-                if (!snap.exists()) {
+                if (
+                    !snap.exists()
+                ) {
 
                     return bot.answerCallbackQuery(
 
@@ -1045,7 +1299,7 @@ Ahora puedes generar tu Key.
 
 
                 // =============================================
-                // VERIFICAR PROPIETARIO
+                // PROPIETARIO
                 // =============================================
 
                 if (
