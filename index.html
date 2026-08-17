@@ -860,58 +860,28 @@
 
     function sendSuccessAndClose() {
 
-        try {
+    try {
 
-            /*
-             * Telegram WebApp sendData
-             *
-             * El bot recibirá:
-             *
-             * ads_completed = 5
-             */
+        tg.sendData(
+            JSON.stringify({
 
-            tg.sendData(
-                JSON.stringify({
+                action: "ads_completed",
 
-                    action: "ads_completed",
+                ads: 5
 
-                    ads: TOTAL_ADS
+            })
+        );
 
-                })
-            );
+    } catch (error) {
 
-        } catch (error) {
-
-            console.error(
-                "sendData error:",
-                error
-            );
-
-        }
-
-
-        /*
-         * Como respaldo abrimos el bot
-         */
-
-        setTimeout(() => {
-
-            try {
-
-                tg.openTelegramLink(
-                    "https://t.me/multiscriptkeygen_bot?start=adscompleted"
-                );
-
-            } catch (e) {
-
-                window.location.href =
-                    "https://t.me/multiscriptkeygen_bot?start=adscompleted";
-
-            }
-
-        }, 500);
+        console.error(
+            "sendData error:",
+            error
+        );
 
     }
+
+}
 
 
     /* =========================================================
