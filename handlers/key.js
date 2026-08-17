@@ -44,7 +44,6 @@ export default function registerKey(bot) {
         const normalAccess =
             user.approved === true;
 
-
         const adAccess =
             user.adsKeyUnlocked === true;
 
@@ -105,17 +104,15 @@ export default function registerKey(bot) {
                 .substring(0, 10)
                 .toUpperCase();
 
-
         const created =
             Date.now();
-
 
         const deleteAt =
             created + KEY_LIFETIME;
 
 
         // =====================================================
-        // GUARDAR
+        // GUARDAR KEY
         // =====================================================
 
         await db
@@ -159,15 +156,13 @@ export default function registerKey(bot) {
 
 
         // =====================================================
-        // CONTAR KEYS
+        // CONTAR KEYS ACTIVAS
         // =====================================================
 
         const keysSnapshot =
             await db.ref("keys").get();
 
-
         let totalKeys = 0;
-
 
         if (keysSnapshot.exists()) {
 
@@ -189,6 +184,10 @@ export default function registerKey(bot) {
 
         }
 
+
+        // =====================================================
+        // NOMBRE DEL ROL
+        // =====================================================
 
         const roleName =
             user.role === "owner"
@@ -233,9 +232,7 @@ export default function registerKey(bot) {
 
             if (result.noAccess) {
 
-                return sendAdRequired(
-                    chatId
-                );
+                return sendAdRequired(chatId);
 
             }
 
@@ -300,18 +297,22 @@ Pulsa el botón:
             if (!result.ok) {
 
                 return bot.sendMessage(
+
                     chatId,
+
                     result.message,
+
                     {
                         parse_mode: "HTML"
                     }
+
                 );
 
             }
 
 
             // =================================================
-            // KEY
+            // MOSTRAR KEY
             // =================================================
 
             return bot.sendMessage(
@@ -449,8 +450,11 @@ ${result.totalKeys}
             );
 
             return bot.sendMessage(
+
                 chatId,
+
                 "❌ Error interno al generar la Key."
+
             );
 
         }
@@ -464,9 +468,9 @@ ${result.totalKeys}
 
     async function sendAdRequired(chatId) {
 
-    return bot.sendMessage(
+        return bot.sendMessage(
 
-        chatId,
+            chatId,
 
 `<b>🔐 ACCESO POR ANUNCIOS</b>
 
@@ -488,24 +492,213 @@ Al completar los 5 anuncios podrás generar tu Key.
 
 ━━━━━━━━━━━━━━━━━━`,
 
-        {
-            parse_mode: "HTML",
+            {
 
-            reply_markup: {
+                parse_mode: "HTML",
 
-                inline_keyboard: [
+                reply_markup: {
 
-                    [
-                        {
-                            text: "🎬 VER 5 ANUNCIOS",
+                    inline_keyboard: [
 
-                            web_app: {
-                                url: WEBAPP_URL
+                        [
+                            {
+                                text:
+                                    "🎬 VER 5 ANUNCIOS",
+
+                                web_app: {
+                                    url: WEBAPP_URL
+                                }
                             }
-                        }
+                        ]
+
                     ]
 
-                ]
+                }
+
+            }
+
+        );
+
+    }
+
+
+    // =========================================================
+    // /START
+    // =========================================================
+
+    bot.onText(
+
+        /^\/start(?:@\w+)?(?:\s+(.+))?$/i,
+
+        async (msg, match) => {
+
+            const chatId =
+                String(msg.chat.id);
+
+            const startParam =
+                match && match[1]
+                    ? match[1].trim()
+                    : "";
+
+
+            // Solo procesar:
+            // /start adscompleted
+
+            if (
+                startParam !==
+                "adscompleted"
+            ) {
+
+                return;
+
+            }
+
+
+            try {
+
+                // =============================================
+                // VERIFICAR USUARIO
+                // =============================================
+
+                const userRef =
+                    db.ref(`users/${chatId}`);
+
+                const snap =
+                    await userRef.get();
+
+
+                if (!snap.exists()) {
+
+                    return bot.sendMessage(
+
+                        chatId,
+
+                        "❌ Usuario no registrado."
+
+                    );
+
+                }
+
+
+                // =============================================
+                // DESBLOQUEAR
+                // =============================================
+
+                await userRef.update({
+
+                    adsCompleted:
+                        REQUIRED_ADS,
+
+                    adsKeyUnlocked:
+                        true,
+
+                    adsCompletedAt:
+                        Date.now()
+
+                });
+
+
+                // =============================================
+                // HISTORIAL
+                // =============================================
+
+                await db
+                    .ref(`history/${chatId}`)
+                    .push({
+
+                        type:
+                            "ADS_COMPLETADOS",
+
+                        ads:
+                            REQUIRED_ADS,
+
+                        time:
+                            Date.now()
+
+                    });
+
+
+                // =============================================
+                // CONFIRMACIÓN
+                // =============================================
+
+                await bot.sendMessage(
+
+                    chatId,
+
+`<b>🎉 ¡ACCESO DESBLOQUEADO!</b>
+
+━━━━━━━━━━━━━━━━━━
+
+✅ Anuncios completados:
+
+<b>5 / 5</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🎁 <b>Recompensa</b>
+
+Tu acceso gratuito ha sido desbloqueado.
+
+Ahora puedes generar tu Key.
+
+━━━━━━━━━━━━━━━━━━
+
+🔑 Pulsa el botón:
+
+<b>GENERAR KEY</b>`,
+
+                    {
+
+                        parse_mode:
+                            "HTML",
+
+                        reply_markup: {
+
+                            inline_keyboard: [
+
+                                [
+                                    {
+                                        text:
+                                            "🔑 GENERAR KEY",
+
+                                        callback_data:
+                                            "menu_key"
+                                    }
+                                ],
+
+                                [
+                                    {
+                                        text:
+                                            "🏠 Inicio",
+
+                                        callback_data:
+                                            "menu_home"
+                                    }
+                                ]
+
+                            ]
+
+                        }
+
+                    }
+
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "ADS START ERROR:",
+                    error
+                );
+
+                await bot.sendMessage(
+
+                    chatId,
+
+                    "❌ Ocurrió un error al desbloquear el acceso."
+
+                );
 
             }
 
@@ -513,15 +706,15 @@ Al completar los 5 anuncios podrás generar tu Key.
 
     );
 
-}
-
 
     // =========================================================
     // /KEY
     // =========================================================
 
     bot.onText(
+
         /^\/key(?:@\w+)?$/i,
+
         async (msg) => {
 
             const chatId =
@@ -530,6 +723,7 @@ Al completar los 5 anuncios podrás generar tu Key.
             await showKey(chatId);
 
         }
+
     );
 
 
@@ -538,14 +732,18 @@ Al completar los 5 anuncios podrás generar tu Key.
     // =========================================================
 
     bot.on(
+
         "callback_query",
+
         async (query) => {
 
             if (
                 query.data !==
                 "menu_key"
             ) {
+
                 return;
+
             }
 
 
@@ -642,6 +840,10 @@ Pulsa:
 
                 }
 
+
+                // =============================================
+                // ERROR
+                // =============================================
 
                 if (!result.ok) {
 
@@ -776,6 +978,7 @@ ${result.totalKeys}
             }
 
         }
+
     );
 
 
@@ -784,11 +987,15 @@ ${result.totalKeys}
     // =========================================================
 
     bot.on(
+
         "message",
+
         async (msg) => {
 
             if (!msg.web_app_data) {
+
                 return;
+
             }
 
 
@@ -804,11 +1011,17 @@ ${result.totalKeys}
                     );
 
 
+                // =============================================
+                // VERIFICAR ACCIÓN
+                // =============================================
+
                 if (
                     data.action !==
                     "ads_completed"
                 ) {
+
                     return;
+
                 }
 
 
@@ -822,8 +1035,11 @@ ${result.totalKeys}
                 ) {
 
                     return bot.sendMessage(
+
                         chatId,
+
                         "❌ No se completaron los 5 anuncios."
+
                     );
 
                 }
@@ -887,11 +1103,17 @@ ${result.totalKeys}
 
 ━━━━━━━━━━━━━━━━━━
 
-🔑 Ya puedes generar tu Key gratuita.
+🎁 <b>Recompensa</b>
 
-Pulsa el botón:
+Tu acceso gratuito ha sido desbloqueado.
 
-<b>🔑 GENERAR KEY</b>`,
+Ahora puedes generar tu Key.
+
+━━━━━━━━━━━━━━━━━━
+
+🔑 Pulsa el botón:
+
+<b>GENERAR KEY</b>`,
 
                     {
 
@@ -909,6 +1131,16 @@ Pulsa el botón:
 
                                         callback_data:
                                             "menu_key"
+                                    }
+                                ],
+
+                                [
+                                    {
+                                        text:
+                                            "🏠 Inicio",
+
+                                        callback_data:
+                                            "menu_home"
                                     }
                                 ]
 
@@ -930,6 +1162,7 @@ Pulsa el botón:
             }
 
         }
+
     );
 
 
@@ -938,7 +1171,9 @@ Pulsa el botón:
     // =========================================================
 
     bot.on(
+
         "callback_query",
+
         async (query) => {
 
             if (
@@ -947,7 +1182,9 @@ Pulsa el botón:
                     "key_revoke_"
                 )
             ) {
+
                 return;
+
             }
 
 
@@ -988,11 +1225,13 @@ Pulsa el botón:
                         query.id,
 
                         {
+
                             text:
                                 "❌ La key ya fue eliminada.",
 
                             show_alert:
                                 true
+
                         }
 
                     );
@@ -1003,6 +1242,10 @@ Pulsa el botón:
                 const data =
                     snap.val();
 
+
+                // =============================================
+                // VERIFICAR PROPIETARIO
+                // =============================================
 
                 if (
                     data.owner !==
@@ -1126,6 +1369,7 @@ Pulsa el botón:
             }
 
         }
+
     );
 
 }
