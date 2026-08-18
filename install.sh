@@ -1009,4 +1009,24 @@ exit
 
 *)
 
-echo -
+echo -e "${RED}Opción inválida${NC}"
+
+sleep 2
+
+;;
+
+esac
+
+pause
+
+menu
+
+}
+
+# ==========================================
+# INICIAR
+# ==========================================
+
+check_root
+
+menu
