@@ -1,63 +1,112 @@
-import sys
-import json
-from pathlib import Path
+import os
+import tempfile
+
+from telegram import Update
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    ContextTypes,
+    filters,
+)
 
 from ehi_decryptor import run
 
 
-def main():
-    if len(sys.argv) != 2:
-        print(
-            json.dumps({
-                "ok": False,
-                "error": "Uso: python bot.py archivo.ehi"
-            }, ensure_ascii=False)
-        )
-        sys.exit(1)
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-    file_path = Path(sys.argv[1])
 
-    if not file_path.exists():
-        print(
-            json.dumps({
-                "ok": False,
-                "error": "El archivo no existe."
-            }, ensure_ascii=False)
-        )
-        sys.exit(1)
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🤖 EHI Decryptor Bot\n\n"
+        "Envíame un archivo .ehi y lo procesaré."
+    )
 
-    if file_path.suffix.lower() != ".ehi":
-        print(
-            json.dumps({
-                "ok": False,
-                "error": "Solo se aceptan archivos .ehi"
-            }, ensure_ascii=False)
+
+async def recibir_ehi(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    document = update.message.document
+
+    if not document:
+        return
+
+    filename = document.file_name or ""
+
+    if not filename.lower().endswith(".ehi"):
+        await update.message.reply_text(
+            "❌ Solo acepto archivos .ehi"
         )
-        sys.exit(1)
+        return
+
+    await update.message.reply_text(
+        "⏳ Procesando tu archivo..."
+    )
+
+    temp_path = None
 
     try:
-        file_bytes = file_path.read_bytes()
+        telegram_file = await document.get_file()
+
+        with tempfile.NamedTemporaryFile(
+            suffix=".ehi",
+            delete=False
+        ) as temp:
+            temp_path = temp.name
+
+        await telegram_file.download_to_drive(temp_path)
+
+        with open(temp_path, "rb") as f:
+            file_bytes = f.read()
 
         result = run(file_bytes)
 
         if not result:
-            result = "No se obtuvo ningún resultado."
+            result = "❌ No se obtuvo ningún resultado."
 
-        print(
-            json.dumps({
-                "ok": True,
-                "result": result
-            }, ensure_ascii=False)
+        if len(result) > 4000:
+            result = result[:4000] + (
+                "\n\n⚠️ Resultado recortado por Telegram."
+            )
+
+        await update.message.reply_text(
+            "✅ Procesamiento terminado\n\n"
+            + result
         )
 
-    except Exception as exc:
-        print(
-            json.dumps({
-                "ok": False,
-                "error": f"{type(exc).__name__}: {exc}"
-            }, ensure_ascii=False)
+    except Exception as e:
+        await update.message.reply_text(
+            f"❌ Error procesando el archivo:\n{e}"
         )
-        sys.exit(1)
+
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+def main():
+    if not BOT_TOKEN:
+        raise RuntimeError(
+            "Falta la variable de entorno BOT_TOKEN"
+        )
+
+    app = Application.builder().token(BOT_TOKEN).build()
+
+    app.add_handler(
+        CommandHandler("start", start)
+    )
+
+    app.add_handler(
+        MessageHandler(
+            filters.Document.ALL,
+            recibir_ehi
+        )
+    )
+
+    print("🤖 Bot iniciado...", flush=True)
+
+    app.run_polling()
 
 
 if __name__ == "__main__":
