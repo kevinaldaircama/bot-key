@@ -1,28 +1,31 @@
 import TelegramBot from "node-telegram-bot-api";
 import config from "./config.js";
 
-// Panel principal
 import registerStart, { registerMenuCallbacks } from "./handlers/start.js";
 import registerHome from "./handlers/home.js";
 
-// Solicitudes
 import registerRequest from "./handlers/request.js";
 import registerCallback from "./handlers/callback.js";
 import registerApprove from "./handlers/approve.js";
-import deleteExpiredKeys from "./handlers/deleteExpiredKeys.js";
-// Panel
+
 import registerReseller from "./handlers/reseller.js";
 import registerKey from "./handlers/key.js";
 import registerHistory from "./handlers/history.js";
 import registerUsage from "./handlers/usage.js";
 import registerStatistics from "./handlers/statistics.js";
 import registerPlans from "./handlers/plans.js";
-import startExpireTask from "./tasks/expireUsers.js";
+
 import registerDomainA from "./handlers/domainA.js";
 import registerDomainNS from "./handlers/domainNS.js";
 import registerDomains from "./handlers/domains.js";
 import registerSettings from "./handlers/settings.js";
 import registerActivations from "./handlers/watchActivations.js";
+
+import registerSniff from "./handlers/sniff.js";
+
+import startExpireTask from "./tasks/expireUsers.js";
+import deleteExpiredKeys from "./handlers/deleteExpiredKeys.js";
+
 const bot = new TelegramBot(config.BOT_TOKEN, {
     polling: true
 });
@@ -36,7 +39,7 @@ console.log("🤖 Bot iniciado correctamente");
 console.log("========================================");
 
 // ==========================
-// INICIAR MÓDULOS
+// MÓDULOS
 // ==========================
 
 registerStart(bot);
@@ -54,38 +57,34 @@ registerSettings(bot);
 registerUsage(bot);
 registerStatistics(bot);
 registerPlans(bot);
-startExpireTask(bot);
+
 registerDomainA(bot, config);
 registerDomainNS(bot, config);
 registerDomains(bot, config);
-registerActivations(bot);
-deleteExpiredKeys();
 
+registerActivations(bot);
+
+registerSniff(bot);
+
+startExpireTask(bot);
+deleteExpiredKeys();
 
 // ==========================
 // ERRORES
 // ==========================
 
 bot.on("polling_error", (err) => {
-
     console.log("Polling Error:", err.message);
-
 });
 
 bot.on("webhook_error", (err) => {
-
     console.log("Webhook Error:", err.message);
-
 });
 
 process.on("uncaughtException", (err) => {
-
     console.log("Uncaught Exception:", err);
-
 });
 
 process.on("unhandledRejection", (err) => {
-
     console.log("Unhandled Rejection:", err);
-
 });
