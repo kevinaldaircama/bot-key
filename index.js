@@ -21,7 +21,7 @@ import registerDomains from "./handlers/domains.js";
 import registerSettings from "./handlers/settings.js";
 import registerActivations from "./handlers/watchActivations.js";
 
-import registerSniff from "./sniff/bot.py";
+import registerSniff from "./handlers/sniff.js";
 
 import startExpireTask from "./tasks/expireUsers.js";
 import deleteExpiredKeys from "./handlers/deleteExpiredKeys.js";
