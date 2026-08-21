@@ -56,7 +56,7 @@ registerSettings(bot);
 registerUsage(bot);
 registerStatistics(bot);
 registerPlans(bot);
-
+registerFreeKey(bot);
 registerDomainA(bot, config);
 registerDomainNS(bot, config);
 registerDomains(bot, config);
