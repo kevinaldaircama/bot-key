@@ -1,7 +1,7 @@
 import db from "../firebase.js";
 import { randomUUID } from "crypto";
 
-export default function registerKey(bot) {
+export default function registerFreeKey(bot) {
 
     // =========================================================
     // CONFIGURACIÓN
@@ -10,9 +10,6 @@ export default function registerKey(bot) {
     const WEBAPP_URL =
         "https://kevinaldaircama.github.io/bot-key/";
 
-    const BOT_USERNAME =
-        "multiscriptkeygen_bot";
-
     const REQUIRED_ADS = 5;
 
     const KEY_LIFETIME =
@@ -20,7 +17,7 @@ export default function registerKey(bot) {
 
 
     // =========================================================
-    // GENERAR KEY
+    // GENERAR KEY FREE
     // =========================================================
 
     async function generateKey(chatId) {
@@ -60,12 +57,6 @@ export default function registerKey(bot) {
         // =====================================================
 
         if (!isOwner && !isAdmin) {
-
-            /*
-             * Los usuarios normales solamente pueden
-             * generar una Key después de completar
-             * los 5 anuncios.
-             */
 
             if (user.adsKeyUnlocked !== true) {
 
@@ -125,6 +116,8 @@ export default function registerKey(bot) {
 
                 username,
 
+                type: "free",
+
                 used: false,
 
                 created,
@@ -140,7 +133,7 @@ export default function registerKey(bot) {
 
         // =====================================================
         // CONSUMIR ACCESO DE ANUNCIOS
-        // =====================================================
+        // =========================================================
 
         if (!isOwner && !isAdmin) {
 
@@ -159,13 +152,13 @@ export default function registerKey(bot) {
 
         // =====================================================
         // HISTORIAL
-        // =====================================================
+        // =========================================================
 
         await db
             .ref(`history/${chatId}`)
             .push({
 
-                type: "KEY_GENERADA",
+                type: "KEY_GENERADA_FREE",
 
                 value: key,
 
@@ -176,7 +169,7 @@ export default function registerKey(bot) {
 
         // =====================================================
         // CONTAR KEYS ACTIVAS
-        // =====================================================
+        // =========================================================
 
         const keysSnapshot =
             await db.ref("keys").get();
@@ -209,7 +202,7 @@ export default function registerKey(bot) {
 
         // =====================================================
         // ROL MOSTRADO
-        // =====================================================
+        // =========================================================
 
         const roleName =
             isOwner
@@ -258,9 +251,13 @@ Para generar una Key gratuita debes completar:
 
 ━━━━━━━━━━━━━━━━━━
 
-🎁 <b>Recompensa</b>
+🎁 <b>RECOMPENSA</b>
 
-Después de completar los 5 anuncios podrás generar <b>1 Key</b>.
+Después de completar los 5 anuncios podrás generar <b>1 Key</b> usando:
+
+<code>/key</code>
+
+━━━━━━━━━━━━━━━━━━
 
 🔄 Para generar otra Key tendrás que completar nuevamente los 5 anuncios.
 
@@ -341,7 +338,9 @@ Después de completar los 5 anuncios podrás generar <b>1 Key</b>.
                     result.message,
 
                     {
+
                         parse_mode: "HTML"
+
                     }
 
                 );
@@ -357,7 +356,7 @@ Después de completar los 5 anuncios podrás generar <b>1 Key</b>.
 
                 chatId,
 
-`<b>🔑 KEY GENERADA CORRECTAMENTE</b>
+`<b>🔑 KEY FREE GENERADA</b>
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -417,20 +416,6 @@ ${result.totalKeys}
 
                                 }
 
-                            ],
-
-                            [
-
-                                {
-
-                                    text:
-                                        "🔄 Crear otra Key",
-
-                                    callback_data:
-                                        "menu_key"
-
-                                }
-
                             ]
 
                         ]
@@ -444,7 +429,7 @@ ${result.totalKeys}
         } catch (error) {
 
             console.error(
-                "ERROR GENERANDO KEY:",
+                "ERROR GENERANDO KEY FREE:",
                 error
             );
 
@@ -463,6 +448,7 @@ ${result.totalKeys}
 
     // =========================================================
     // /KEY
+    // ÚNICA FORMA DE GENERAR LA KEY FREE
     // =========================================================
 
     bot.onText(
@@ -482,195 +468,8 @@ ${result.totalKeys}
 
 
     // =========================================================
-    // BOTÓN GENERAR KEY
-    // =========================================================
-
-    bot.on(
-
-        "callback_query",
-
-        async (query) => {
-
-            if (
-                query.data !==
-                "menu_key"
-            ) {
-
-                return;
-
-            }
-
-
-            const chatId =
-                String(
-                    query.message.chat.id
-                );
-
-
-            try {
-
-                await bot.answerCallbackQuery(
-                    query.id
-                );
-
-
-                const result =
-                    await generateKey(
-                        chatId
-                    );
-
-
-                // =============================================
-                // NECESITA ANUNCIOS
-                // =============================================
-
-                if (result.noAccess) {
-
-                    return sendAdRequired(
-                        chatId
-                    );
-
-                }
-
-
-                // =============================================
-                // ERROR
-                // =============================================
-
-                if (!result.ok) {
-
-                    return bot.answerCallbackQuery(
-
-                        query.id,
-
-                        {
-
-                            text:
-                                result.message,
-
-                            show_alert:
-                                true
-
-                        }
-
-                    );
-
-                }
-
-
-                // =============================================
-                // MOSTRAR KEY
-                // =============================================
-
-                await bot.editMessageText(
-
-`<b>🔑 KEY GENERADA CORRECTAMENTE</b>
-
-━━━━━━━━━━━━━━━━━━
-
-${result.roleName}
-
-👤 <b>Usuario</b>
-
-${result.username}
-
-━━━━━━━━━━━━━━━━━━
-
-🔑 <b>Key</b>
-
-<code>${result.key}</code>
-
-━━━━━━━━━━━━━━━━━━
-
-⏳ <b>Expira</b>
-
-🗑️ Eliminación automática después de 2 horas o al primer uso.
-
-━━━━━━━━━━━━━━━━━━
-
-📊 <b>Total de Keys activas</b>
-
-${result.totalKeys}
-
-━━━━━━━━━━━━━━━━━━
-
-💻 <b>Instalador Multi Script</b>
-
-<code>export INSTALL_KEY="${result.key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>
-
-━━━━━━━━━━━━━━━━━━
-
-⚡ <b>Instalador @sshprivanoxbot</b>
-
-<code>export INSTALL_KEY="${result.key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/privanox-code/main/install_go.sh)</code>`,
-
-                    {
-
-                        chat_id:
-                            chatId,
-
-                        message_id:
-                            query.message.message_id,
-
-                        parse_mode:
-                            "HTML",
-
-                        reply_markup: {
-
-                            inline_keyboard: [
-
-                                [
-
-                                    {
-
-                                        text:
-                                            "🗑 Revocar Key",
-
-                                        callback_data:
-                                            `key_revoke_${result.key}`
-
-                                    }
-
-                                ],
-
-                                [
-
-                                    {
-
-                                        text:
-                                            "🔄 Crear otra Key",
-
-                                        callback_data:
-                                            "menu_key"
-
-                                    }
-
-                                ]
-
-                            ]
-
-                        }
-
-                    }
-
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "MENU KEY ERROR:",
-                    error
-                );
-
-            }
-
-        }
-
-    );
-
-
-    // =========================================================
     // /START ADSCOMPLETED
+    // DESBLOQUEAR UNA KEY
     // =========================================================
 
     bot.onText(
@@ -688,8 +487,6 @@ ${result.totalKeys}
                     ? match[1].trim()
                     : "";
 
-
-            // Solo procesamos nuestro parámetro
 
             if (
                 startParam !==
@@ -806,36 +603,22 @@ ${result.totalKeys}
 
 ━━━━━━━━━━━━━━━━━━
 
-🔑 Has desbloqueado <b>1 Key</b>.
+🔑 Has desbloqueado <b>1 Key FREE</b>.
 
-⚠️ Después de generar esta Key, tendrás que volver a completar 5 anuncios para generar otra.`,
+━━━━━━━━━━━━━━━━━━
+
+Ahora puedes generar tu Key escribiendo:
+
+<code>/key</code>
+
+━━━━━━━━━━━━━━━━━━
+
+⚠️ Después de generar esta Key tendrás que volver a completar los 5 anuncios para generar otra.`,
 
                     {
 
                         parse_mode:
-                            "HTML",
-
-                        reply_markup: {
-
-                            inline_keyboard: [
-
-                                [
-
-                                    {
-
-                                        text:
-                                            "🔑 GENERAR KEY",
-
-                                        callback_data:
-                                            "menu_key"
-
-                                    }
-
-                                ]
-
-                            ]
-
-                        }
+                            "HTML"
 
                     }
 
@@ -865,6 +648,8 @@ ${result.totalKeys}
 
     // =========================================================
     // REVOCAR KEY
+    // Se mantiene únicamente para revocar la Key mostrada.
+    // No genera Keys.
     // =========================================================
 
     bot.on(
@@ -964,16 +749,8 @@ ${result.totalKeys}
                 }
 
 
-                // =============================================
-                // ELIMINAR
-                // =============================================
-
                 await ref.remove();
 
-
-                // =============================================
-                // HISTORIAL
-                // =============================================
 
                 await db
                     .ref(
@@ -992,10 +769,6 @@ ${result.totalKeys}
 
                     });
 
-
-                // =============================================
-                // CONFIRMACIÓN
-                // =============================================
 
                 await bot.editMessageText(
 
@@ -1018,29 +791,7 @@ ${result.totalKeys}
                             query.message.message_id,
 
                         parse_mode:
-                            "HTML",
-
-                        reply_markup: {
-
-                            inline_keyboard: [
-
-                                [
-
-                                    {
-
-                                        text:
-                                            "🔄 Crear otra Key",
-
-                                        callback_data:
-                                            "menu_key"
-
-                                    }
-
-                                ]
-
-                            ]
-
-                        }
+                            "HTML"
 
                     }
 
