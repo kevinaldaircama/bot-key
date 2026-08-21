@@ -8,12 +8,57 @@ export default function registerFreeKey(bot) {
     // =========================================================
 
     const WEBAPP_URL =
-        "https://kevinaldaircama.github.io/bot-key/";
+        "https://kevinaldaircama.github.io/bot-key";
 
+    // Cantidad de anuncios necesarios
     const REQUIRED_ADS = 5;
 
+    // Duración de la Key
+    // 2 horas
     const KEY_LIFETIME =
         2 * 60 * 60 * 1000;
+
+    // Límite FREE
+    // 1 Key cada 24 horas
+    const FREE_KEY_COOLDOWN =
+        24 * 60 * 60 * 1000;
+
+
+    // =========================================================
+    // CALCULAR TIEMPO RESTANTE
+    // =========================================================
+
+    function getRemainingTime(targetTime) {
+
+        const remaining =
+            Math.max(
+                0,
+                targetTime - Date.now()
+            );
+
+
+        const hours =
+            Math.floor(
+                remaining /
+                (60 * 60 * 1000)
+            );
+
+
+        const minutes =
+            Math.floor(
+                (remaining %
+                    (60 * 60 * 1000)) /
+                (60 * 1000)
+            );
+
+
+        return {
+            remaining,
+            hours,
+            minutes
+        };
+
+    }
 
 
     // =========================================================
@@ -23,46 +68,130 @@ export default function registerFreeKey(bot) {
     async function generateKey(chatId) {
 
         const userRef =
-            db.ref(`users/${chatId}`);
+            db.ref(
+                `users/${chatId}`
+            );
+
 
         const snap =
             await userRef.get();
+
 
         if (!snap.exists()) {
 
             return {
                 ok: false,
-                message: "❌ Usuario no registrado."
+                message:
+                    "❌ Usuario no registrado."
             };
 
         }
+
 
         const user =
             snap.val();
 
 
         // =====================================================
-        // ROL
+        // ROLES
         // =====================================================
 
         const isOwner =
             user.role === "owner";
 
+
         const isAdmin =
             user.role === "admin";
 
 
+        const isStaff =
+            isOwner ||
+            isAdmin;
+
+
         // =====================================================
-        // USUARIO NORMAL
+        // CONTROL 24 HORAS
         // =====================================================
 
-        if (!isOwner && !isAdmin) {
+        if (!isStaff) {
 
-            if (user.adsKeyUnlocked !== true) {
+            const freeKeyAt =
+                Number(
+                    user.freeKeyAt || 0
+                );
+
+
+            if (freeKeyAt > 0) {
+
+                const nextFreeKeyAt =
+                    freeKeyAt +
+                    FREE_KEY_COOLDOWN;
+
+
+                if (
+                    Date.now() <
+                    nextFreeKeyAt
+                ) {
+
+                    const time =
+                        getRemainingTime(
+                            nextFreeKeyAt
+                        );
+
+
+                    return {
+
+                        ok: false,
+
+                        cooldown: true,
+
+                        message:
+
+`<b>⏳ KEY FREE EN COOLDOWN</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🔐 Ya generaste tu Key FREE de hoy.
+
+📌 <b>Límite:</b>
+
+1 Key FREE cada 24 horas
+
+━━━━━━━━━━━━━━━━━━
+
+⏱️ <b>Tiempo restante:</b>
+
+<b>${time.hours}h ${time.minutes}min</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🔄 Cuando termine el tiempo podrás volver a completar los 5 anuncios.`
+
+                    };
+
+                }
+
+            }
+
+        }
+
+
+        // =====================================================
+        // VERIFICAR ACCESO POR ANUNCIOS
+        // =====================================================
+
+        if (!isStaff) {
+
+            if (
+                user.adsKeyUnlocked !== true
+            ) {
 
                 return {
+
                     ok: false,
+
                     noAccess: true
+
                 };
 
             }
@@ -87,7 +216,8 @@ export default function registerFreeKey(bot) {
 
 
         const deleteAt =
-            created + KEY_LIFETIME;
+            created +
+            KEY_LIFETIME;
 
 
         // =====================================================
@@ -112,38 +242,51 @@ export default function registerFreeKey(bot) {
 
                 key,
 
-                owner: chatId,
+                owner:
+                    chatId,
 
                 username,
 
-                type: "free",
+                type:
+                    "free",
 
-                used: false,
+                used:
+                    false,
 
                 created,
 
                 deleteAt,
 
-                usedBy: "",
+                usedBy:
+                    "",
 
-                usedAt: ""
+                usedAt:
+                    ""
 
             });
 
 
         // =====================================================
         // CONSUMIR ACCESO DE ANUNCIOS
-        // =========================================================
+        // Y ACTIVAR COOLDOWN DE 24 HORAS
+        // =====================================================
 
-        if (!isOwner && !isAdmin) {
+        if (!isStaff) {
 
             await userRef.update({
 
-                adsKeyUnlocked: false,
+                adsKeyUnlocked:
+                    false,
 
-                adsCompleted: 0,
+                adsCompleted:
+                    0,
 
-                adsCompletedAt: null
+                adsCompletedAt:
+                    null,
+
+                // Momento exacto de generación
+                freeKeyAt:
+                    created
 
             });
 
@@ -152,69 +295,93 @@ export default function registerFreeKey(bot) {
 
         // =====================================================
         // HISTORIAL
-        // =========================================================
+        // =====================================================
 
         await db
-            .ref(`history/${chatId}`)
+            .ref(
+                `history/${chatId}`
+            )
             .push({
 
-                type: "KEY_GENERADA_FREE",
+                type:
+                    "KEY_GENERADA_FREE",
 
-                value: key,
+                value:
+                    key,
 
-                time: created
+                time:
+                    created
 
             });
 
 
         // =====================================================
         // CONTAR KEYS ACTIVAS
-        // =========================================================
+        // =====================================================
 
         const keysSnapshot =
             await db.ref("keys").get();
 
 
-        let totalKeys = 0;
+        let totalKeys =
+            0;
 
 
-        if (keysSnapshot.exists()) {
+        if (
+            keysSnapshot.exists()
+        ) {
 
-            keysSnapshot.forEach(item => {
+            keysSnapshot.forEach(
+                item => {
 
-                const data =
-                    item.val();
+                    const data =
+                        item.val();
 
-                if (
-                    data.owner === chatId &&
-                    data.deleteAt > Date.now() &&
-                    data.used !== true
-                ) {
 
-                    totalKeys++;
+                    if (
+
+                        data.owner ===
+                            chatId &&
+
+                        Number(
+                            data.deleteAt || 0
+                        ) >
+                            Date.now() &&
+
+                        data.used !== true
+
+                    ) {
+
+                        totalKeys++;
+
+                    }
 
                 }
-
-            });
+            );
 
         }
 
 
         // =====================================================
         // ROL MOSTRADO
-        // =========================================================
+        // =====================================================
 
         const roleName =
             isOwner
                 ? "👑 Dueño"
                 : isAdmin
                     ? "🛡️ Admin"
-                    : "🎁 Acceso por anuncios";
+                    : "🎁 Key FREE";
 
+
+        // =====================================================
+        // RESULTADO
+        // =====================================================
 
         return {
 
-            ok: true,
+            ok:
+                true,
 
             key,
 
@@ -232,20 +399,22 @@ export default function registerFreeKey(bot) {
 
 
     // =========================================================
-    // MOSTRAR WEBAPP
+    // MOSTRAR WEBAPP DE ANUNCIOS
     // =========================================================
 
-    async function sendAdRequired(chatId) {
+    async function sendAdRequired(
+        chatId
+    ) {
 
         return bot.sendMessage(
 
             chatId,
 
-`<b>🔐 ACCESO POR ANUNCIOS</b>
+`<b>🔐 KEY FREE</b>
 
 ━━━━━━━━━━━━━━━━━━
 
-Para generar una Key gratuita debes completar:
+Para obtener tu Key FREE debes completar:
 
 🎬 <b>5 anuncios</b>
 
@@ -253,19 +422,24 @@ Para generar una Key gratuita debes completar:
 
 🎁 <b>RECOMPENSA</b>
 
-Después de completar los 5 anuncios podrás generar <b>1 Key</b> usando:
+Después de completar los 5 anuncios podrás generar:
 
-<code>/key</code>
+🔑 <b>1 Key FREE</b>
 
 ━━━━━━━━━━━━━━━━━━
 
-🔄 Para generar otra Key tendrás que completar nuevamente los 5 anuncios.
+📌 <b>Límite:</b>
 
-━━━━━━━━━━━━━━━━━━`,
+1 Key FREE cada <b>24 horas</b>.
+
+━━━━━━━━━━━━━━━━━━
+
+⚠️ Después de generar tu Key tendrás que esperar 24 horas antes de poder obtener otra.`,
 
             {
 
-                parse_mode: "HTML",
+                parse_mode:
+                    "HTML",
 
                 reply_markup: {
 
@@ -304,19 +478,25 @@ Después de completar los 5 anuncios podrás generar <b>1 Key</b> usando:
     // MOSTRAR KEY
     // =========================================================
 
-    async function showKey(chatId) {
+    async function showKey(
+        chatId
+    ) {
 
         try {
 
             const result =
-                await generateKey(chatId);
+                await generateKey(
+                    chatId
+                );
 
 
             // =================================================
             // NECESITA ANUNCIOS
             // =================================================
 
-            if (result.noAccess) {
+            if (
+                result.noAccess
+            ) {
 
                 return sendAdRequired(
                     chatId
@@ -326,10 +506,12 @@ Después de completar los 5 anuncios podrás generar <b>1 Key</b> usando:
 
 
             // =================================================
-            // ERROR
+            // COOLDOWN 24 HORAS
             // =================================================
 
-            if (!result.ok) {
+            if (
+                result.cooldown
+            ) {
 
                 return bot.sendMessage(
 
@@ -339,7 +521,34 @@ Después de completar los 5 anuncios podrás generar <b>1 Key</b> usando:
 
                     {
 
-                        parse_mode: "HTML"
+                        parse_mode:
+                            "HTML"
+
+                    }
+
+                );
+
+            }
+
+
+            // =================================================
+            // ERROR
+            // =================================================
+
+            if (
+                !result.ok
+            ) {
+
+                return bot.sendMessage(
+
+                    chatId,
+
+                    result.message,
+
+                    {
+
+                        parse_mode:
+                            "HTML"
 
                     }
 
@@ -386,6 +595,12 @@ ${result.totalKeys}
 
 ━━━━━━━━━━━━━━━━━━
 
+⏱️ <b>Próxima Key FREE</b>
+
+Disponible después de <b>24 horas</b>.
+
+━━━━━━━━━━━━━━━━━━
+
 💻 <b>Instalador Multi Script</b>
 
 <code>export INSTALL_KEY="${result.key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>
@@ -398,7 +613,8 @@ ${result.totalKeys}
 
                 {
 
-                    parse_mode: "HTML",
+                    parse_mode:
+                        "HTML",
 
                     reply_markup: {
 
@@ -433,6 +649,7 @@ ${result.totalKeys}
                 error
             );
 
+
             return bot.sendMessage(
 
                 chatId,
@@ -447,20 +664,25 @@ ${result.totalKeys}
 
 
     // =========================================================
-    // /KEY
-    // ÚNICA FORMA DE GENERAR LA KEY FREE
+    // /KEYFREE
+    // ÚNICA FORMA DE GENERAR KEY FREE
     // =========================================================
 
     bot.onText(
 
-        /^\/key(?:@\w+)?$/i,
+        /^\/keyfree(?:@\w+)?$/i,
 
-        async (msg) => {
+        async msg => {
 
             const chatId =
-                String(msg.chat.id);
+                String(
+                    msg.chat.id
+                );
 
-            await showKey(chatId);
+
+            await showKey(
+                chatId
+            );
 
         }
 
@@ -469,24 +691,32 @@ ${result.totalKeys}
 
     // =========================================================
     // /START ADSCOMPLETED
-    // DESBLOQUEAR UNA KEY
     // =========================================================
 
     bot.onText(
 
         /^\/start(?:@\w+)?(?:\s+(.+))?$/i,
 
-        async (msg, match) => {
+        async (
+            msg,
+            match
+        ) => {
 
             const chatId =
-                String(msg.chat.id);
+                String(
+                    msg.chat.id
+                );
 
 
             const startParam =
-                match && match[1]
+                match &&
+                match[1]
                     ? match[1].trim()
                     : "";
 
+
+            // Solo procesamos:
+            // /start adscompleted
 
             if (
                 startParam !==
@@ -510,7 +740,9 @@ ${result.totalKeys}
                     await userRef.get();
 
 
-                if (!snap.exists()) {
+                if (
+                    !snap.exists()
+                ) {
 
                     return bot.sendMessage(
 
@@ -527,13 +759,18 @@ ${result.totalKeys}
                     snap.val();
 
 
-                // =============================================
+                // =================================================
                 // OWNER / ADMIN
-                // =============================================
+                // =================================================
 
                 if (
-                    user.role === "owner" ||
-                    user.role === "admin"
+
+                    user.role ===
+                        "owner" ||
+
+                    user.role ===
+                        "admin"
+
                 ) {
 
                     return bot.sendMessage(
@@ -547,9 +784,124 @@ ${result.totalKeys}
                 }
 
 
-                // =============================================
+                // =================================================
+                // VERIFICAR COOLDOWN 24 HORAS
+                // =================================================
+
+                const freeKeyAt =
+                    Number(
+                        user.freeKeyAt || 0
+                    );
+
+
+                if (
+                    freeKeyAt > 0
+                ) {
+
+                    const nextFreeKeyAt =
+                        freeKeyAt +
+                        FREE_KEY_COOLDOWN;
+
+
+                    if (
+                        Date.now() <
+                        nextFreeKeyAt
+                    ) {
+
+                        const time =
+                            getRemainingTime(
+                                nextFreeKeyAt
+                            );
+
+
+                        return bot.sendMessage(
+
+                            chatId,
+
+`<b>⏳ KEY FREE EN COOLDOWN</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🔐 Ya utilizaste tu Key FREE de hoy.
+
+📌 <b>Límite:</b>
+
+1 Key FREE cada 24 horas.
+
+━━━━━━━━━━━━━━━━━━
+
+⏱️ <b>Tiempo restante:</b>
+
+<b>${time.hours}h ${time.minutes}min</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🚫 No puedes desbloquear otra Key todavía.
+
+━━━━━━━━━━━━━━━━━━
+
+🔄 Cuando termine el tiempo podrás volver a completar los 5 anuncios.`,
+
+                            {
+
+                                parse_mode:
+                                    "HTML"
+
+                            }
+
+                        );
+
+                    }
+
+                }
+
+
+                // =================================================
+                // EVITAR DOBLE DESBLOQUEO
+                // =================================================
+
+                if (
+                    user.adsKeyUnlocked ===
+                    true
+                ) {
+
+                    return bot.sendMessage(
+
+                        chatId,
+
+`<b>⚠️ YA TIENES UNA KEY DESBLOQUEADA</b>
+
+━━━━━━━━━━━━━━━━━━
+
+Ya completaste los anuncios.
+
+🔑 Usa:
+
+<code>/keyfree</code>
+
+━━━━━━━━━━━━━━━━━━
+
+No necesitas volver a ver los anuncios.`,
+
+                        {
+
+                            parse_mode:
+                                "HTML"
+
+                        }
+
+                    );
+
+                }
+
+
+                // =================================================
                 // DESBLOQUEAR UNA KEY
-                // =============================================
+                // =================================================
+
+                const completedAt =
+                    Date.now();
+
 
                 await userRef.update({
 
@@ -560,17 +912,19 @@ ${result.totalKeys}
                         true,
 
                     adsCompletedAt:
-                        Date.now()
+                        completedAt
 
                 });
 
 
-                // =============================================
+                // =================================================
                 // HISTORIAL
-                // =============================================
+                // =================================================
 
                 await db
-                    .ref(`history/${chatId}`)
+                    .ref(
+                        `history/${chatId}`
+                    )
                     .push({
 
                         type:
@@ -580,14 +934,14 @@ ${result.totalKeys}
                             REQUIRED_ADS,
 
                         time:
-                            Date.now()
+                            completedAt
 
                     });
 
 
-                // =============================================
+                // =================================================
                 // CONFIRMACIÓN
-                // =============================================
+                // =================================================
 
                 await bot.sendMessage(
 
@@ -603,17 +957,21 @@ ${result.totalKeys}
 
 ━━━━━━━━━━━━━━━━━━
 
-🔑 Has desbloqueado <b>1 Key FREE</b>.
+🔑 Has desbloqueado:
+
+<b>1 KEY FREE</b>
 
 ━━━━━━━━━━━━━━━━━━
 
 Ahora puedes generar tu Key escribiendo:
 
-<code>/key</code>
+<code>/keyfree</code>
 
 ━━━━━━━━━━━━━━━━━━
 
-⚠️ Después de generar esta Key tendrás que volver a completar los 5 anuncios para generar otra.`,
+⚠️ Recuerda:
+
+Solo puedes generar <b>1 Key FREE cada 24 horas</b>.`,
 
                     {
 
@@ -630,6 +988,7 @@ Ahora puedes generar tu Key escribiendo:
                     "ADS START ERROR:",
                     error
                 );
+
 
                 await bot.sendMessage(
 
@@ -648,15 +1007,13 @@ Ahora puedes generar tu Key escribiendo:
 
     // =========================================================
     // REVOCAR KEY
-    // Se mantiene únicamente para revocar la Key mostrada.
-    // No genera Keys.
     // =========================================================
 
     bot.on(
 
         "callback_query",
 
-        async (query) => {
+        async query => {
 
             if (
                 !query.data ||
@@ -700,7 +1057,9 @@ Ahora puedes generar tu Key escribiendo:
                     await ref.get();
 
 
-                if (!snap.exists()) {
+                if (
+                    !snap.exists()
+                ) {
 
                     return bot.answerCallbackQuery(
 
@@ -724,6 +1083,10 @@ Ahora puedes generar tu Key escribiendo:
                 const data =
                     snap.val();
 
+
+                // =================================================
+                // VERIFICAR PROPIETARIO
+                // =================================================
 
                 if (
                     data.owner !==
@@ -749,8 +1112,16 @@ Ahora puedes generar tu Key escribiendo:
                 }
 
 
+                // =================================================
+                // ELIMINAR KEY
+                // =================================================
+
                 await ref.remove();
 
+
+                // =================================================
+                // HISTORIAL
+                // =================================================
 
                 await db
                     .ref(
@@ -770,6 +1141,10 @@ Ahora puedes generar tu Key escribiendo:
                     });
 
 
+                // =================================================
+                // CONFIRMACIÓN
+                // =================================================
+
                 await bot.editMessageText(
 
 `<b>🗑 KEY REVOCADA</b>
@@ -780,7 +1155,9 @@ Ahora puedes generar tu Key escribiendo:
 
 ━━━━━━━━━━━━━━━━━━
 
-✅ La Key fue eliminada correctamente.`,
+✅ La Key fue eliminada correctamente.
+
+⏳ El límite de 24 horas sigue activo.`,
 
                     {
 
