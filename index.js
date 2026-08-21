@@ -10,7 +10,7 @@ import registerApprove from "./handlers/approve.js";
 
 import registerReseller from "./handlers/reseller.js";
 import registerKey from "./handlers/key.js";
-import registerKey from "./handlers/key free.js";
+import registerFreeKey from "./handlers/key free.js";
 import registerHistory from "./handlers/history.js";
 import registerUsage from "./handlers/usage.js";
 import registerStatistics from "./handlers/statistics.js";
@@ -50,7 +50,7 @@ registerCallback(bot);
 registerApprove(bot);
 
 registerReseller(bot);
-registerKey(bot);
+registerKey(bot); 
 registerHistory(bot);
 registerSettings(bot);
 registerUsage(bot);
