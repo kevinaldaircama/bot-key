@@ -1,4 +1,4 @@
-import db from "../firebase.js";
+import db from "../db.js";
 import { randomUUID } from "crypto";
 
 export default function registerFreeKey(bot) {

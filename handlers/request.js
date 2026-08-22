@@ -1,4 +1,4 @@
-import db from "../firebase.js";
+import db from "../db.js";
 import config from "../config.js";
 
 export default function registerRequest(bot) {

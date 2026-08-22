@@ -1,4 +1,4 @@
-import db from "../firebase.js";
+import db from "../db.js";
 
 function formatDate(ts) {
   const d = new Date(ts);

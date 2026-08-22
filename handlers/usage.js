@@ -1,4 +1,4 @@
-import db from "../firebase.js";
+import db from "../db.js";
 
 export default function registerUsage(bot) {
   bot.on("callback_query", async (query) => {

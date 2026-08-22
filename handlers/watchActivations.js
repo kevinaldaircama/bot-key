@@ -1,4 +1,4 @@
-import db from "../firebase.js";  
+import db from "../db.js";  
   
 export default function registerActivations(bot) {  
     console.log("🕒 Sistema de notificaciones iniciado.");  
