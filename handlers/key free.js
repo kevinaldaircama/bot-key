@@ -8,17 +8,74 @@ export default function registerFreeKey(bot) {
     // =========================================================
 
     const WEBAPP_URL =
-        "https://kevinaldaircama.github.io/bot-key/";
+        "https://kevinaldaircama.github.io/bot-key";
 
+    // Cantidad de anuncios necesarios
     const REQUIRED_ADS = 5;
 
-    // Duración de la Key: 2 horas
+    // Duración de la Key
+    // 2 horas
     const KEY_LIFETIME =
         2 * 60 * 60 * 1000;
 
-    // Límite FREE: 1 Key cada 24 horas
+    // Límite FREE
+    // 1 Key cada 24 horas
     const FREE_KEY_COOLDOWN =
         24 * 60 * 60 * 1000;
+
+
+    // =========================================================
+    // CALCULAR TIEMPO RESTANTE
+    // =========================================================
+
+    function getRemainingTime(targetTime) {
+
+        const remaining =
+            Math.max(
+                0,
+                targetTime - Date.now()
+            );
+
+
+        const hours =
+            Math.floor(
+                remaining /
+                (60 * 60 * 1000)
+            );
+
+
+        const minutes =
+            Math.floor(
+                (remaining %
+                    (60 * 60 * 1000)) /
+                (60 * 1000)
+            );
+
+
+        return {
+            remaining,
+            hours,
+            minutes
+        };
+
+    }
+
+
+    // =========================================================
+    // OBTENER NOMBRE / USUARIO DE TELEGRAM
+    // =========================================================
+
+    function getTelegramName(user, chatId) {
+
+        return (
+            user.username ||
+            user.telegramUsername ||
+            user.firstName ||
+            user.name ||
+            `user_${chatId}`
+        );
+
+    }
 
 
     // =========================================================
@@ -28,7 +85,10 @@ export default function registerFreeKey(bot) {
     async function generateKey(chatId) {
 
         const userRef =
-            db.ref(`users/${chatId}`);
+            db.ref(
+                `users/${chatId}`
+            );
+
 
         const snap =
             await userRef.get();
@@ -38,7 +98,8 @@ export default function registerFreeKey(bot) {
 
             return {
                 ok: false,
-                message: "❌ Usuario no registrado."
+                message:
+                    "❌ Usuario no registrado."
             };
 
         }
@@ -49,93 +110,118 @@ export default function registerFreeKey(bot) {
 
 
         // =====================================================
-        // ROL
+        // ROLES
         // =====================================================
 
         const isOwner =
             user.role === "owner";
 
+
         const isAdmin =
             user.role === "admin";
 
 
-        // =====================================================
-        // OWNER / ADMIN
-        // Sin límite FREE
-        // =====================================================
-
-        // Los administradores pueden generar
-        // sin completar anuncios y sin cooldown.
+        const isStaff =
+            isOwner ||
+            isAdmin;
 
 
         // =====================================================
-        // USUARIO NORMAL
+        // NOMBRE / USUARIO DE TELEGRAM
         // =====================================================
 
-        if (!isOwner && !isAdmin) {
+        /*
+         * Para Key FREE el reseller NO sale de:
+         *
+         * user.reseller
+         *
+         * Sale directamente del usuario/nombre
+         * de Telegram.
+         */
+
+        const reseller =
+            getTelegramName(
+                user,
+                chatId
+            );
 
 
-            // =================================================
-            // COMPROBAR LÍMITE DE 24 HORAS
-            // =================================================
-
-            const lastFreeKeyAt =
-                Number(user.lastFreeKeyAt || 0);
-
-            const now =
-                Date.now();
+        const username =
+            reseller;
 
 
-            if (
-                lastFreeKeyAt > 0 &&
-                now - lastFreeKeyAt < FREE_KEY_COOLDOWN
-            ) {
+        // =====================================================
+        // CONTROL 24 HORAS
+        // =====================================================
 
-                const remaining =
-                    FREE_KEY_COOLDOWN -
-                    (now - lastFreeKeyAt);
+        if (!isStaff) {
 
-
-                const hours =
-                    Math.floor(
-                        remaining /
-                        (60 * 60 * 1000)
-                    );
+            const freeKeyAt =
+                Number(
+                    user.freeKeyAt || 0
+                );
 
 
-                const minutes =
-                    Math.floor(
-                        (
-                            remaining %
-                            (60 * 60 * 1000)
-                        ) /
-                        (60 * 1000)
-                    );
+            if (freeKeyAt > 0) {
+
+                const nextFreeKeyAt =
+                    freeKeyAt +
+                    FREE_KEY_COOLDOWN;
 
 
-                return {
+                if (
+                    Date.now() <
+                    nextFreeKeyAt
+                ) {
 
-                    ok: false,
+                    const time =
+                        getRemainingTime(
+                            nextFreeKeyAt
+                        );
 
-                    cooldown: true,
 
-                    message:
-                        `⏳ <b>LÍMITE DE KEY FREE</b>\n\n` +
-                        `━━━━━━━━━━━━━━━━━━\n\n` +
-                        `❌ Ya generaste tu Key FREE durante las últimas 24 horas.\n\n` +
-                        `⏰ Podrás generar otra Key en aproximadamente:\n\n` +
-                        `<b>${hours}h ${minutes}min</b>\n\n` +
-                        `━━━━━━━━━━━━━━━━━━\n\n` +
-                        `🎁 Límite: <b>1 Key FREE cada 24 horas</b>`
+                    return {
 
-                };
+                        ok: false,
+
+                        cooldown: true,
+
+                        message:
+
+`<b>⏳ KEY FREE EN COOLDOWN</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🔐 Ya generaste tu Key FREE de hoy.
+
+📌 <b>Límite:</b>
+
+1 Key FREE cada 24 horas.
+
+━━━━━━━━━━━━━━━━━━
+
+⏱️ <b>Tiempo restante:</b>
+
+<b>${time.hours}h ${time.minutes}min</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🔄 Cuando termine el tiempo podrás volver a completar los 5 anuncios.`
+
+                    };
+
+                }
 
             }
 
+        }
 
-            // =================================================
-            // COMPROBAR ANUNCIOS
-            // =================================================
+
+        // =====================================================
+        // VERIFICAR ACCESO POR ANUNCIOS
+        // =====================================================
+
+        if (!isStaff) {
 
             if (
                 user.adsKeyUnlocked !== true
@@ -176,30 +262,6 @@ export default function registerFreeKey(bot) {
 
 
         // =====================================================
-        // NOMBRE DE USUARIO
-        // =====================================================
-
-        const username =
-            user.username ||
-            user.telegramUsername ||
-            user.firstName ||
-            user.name ||
-            `user_${chatId}`;
-
-
-        // =====================================================
-        // RESELLER
-        // =====================================================
-
-        const reseller =
-            user.reseller &&
-            typeof user.reseller === "string" &&
-            user.reseller.trim() !== ""
-                ? user.reseller.trim()
-                : "Desconocido";
-
-
-        // =====================================================
         // GUARDAR KEY
         // =====================================================
 
@@ -212,11 +274,19 @@ export default function registerFreeKey(bot) {
                 owner:
                     chatId,
 
-                username,
+                /*
+                 * Usuario de Telegram
+                 */
+                username:
+                    username,
 
-                // IMPORTANTE:
-                // Igual que la Key de pago
-                reseller,
+                /*
+                 * Reseller de la Key FREE
+                 *
+                 * Usuario/nombre de Telegram
+                 */
+                reseller:
+                    reseller,
 
                 type:
                     "free",
@@ -238,14 +308,14 @@ export default function registerFreeKey(bot) {
 
 
         // =====================================================
-        // ACTUALIZAR USUARIO
+        // CONSUMIR ACCESO DE ANUNCIOS
+        // Y ACTIVAR COOLDOWN
         // =====================================================
 
-        if (!isOwner && !isAdmin) {
+        if (!isStaff) {
 
             await userRef.update({
 
-                // Consumir acceso de anuncios
                 adsKeyUnlocked:
                     false,
 
@@ -255,8 +325,11 @@ export default function registerFreeKey(bot) {
                 adsCompletedAt:
                     null,
 
-                // Registrar última Key FREE
-                lastFreeKeyAt:
+                /*
+                 * Momento exacto en que
+                 * generó la Key.
+                 */
+                freeKeyAt:
                     created
 
             });
@@ -269,7 +342,9 @@ export default function registerFreeKey(bot) {
         // =====================================================
 
         await db
-            .ref(`history/${chatId}`)
+            .ref(
+                `history/${chatId}`
+            )
             .push({
 
                 type:
@@ -278,7 +353,8 @@ export default function registerFreeKey(bot) {
                 value:
                     key,
 
-                reseller,
+                reseller:
+                    reseller,
 
                 time:
                     created
@@ -312,10 +388,12 @@ export default function registerFreeKey(bot) {
                     if (
 
                         data.owner ===
-                        chatId &&
+                            chatId &&
 
-                        data.deleteAt >
-                        Date.now() &&
+                        Number(
+                            data.deleteAt || 0
+                        ) >
+                            Date.now() &&
 
                         data.used !== true
 
@@ -370,16 +448,18 @@ export default function registerFreeKey(bot) {
 
 
     // =========================================================
-    // MOSTRAR WEBAPP
+    // MOSTRAR WEBAPP DE ANUNCIOS
     // =========================================================
 
-    async function sendAdRequired(chatId) {
+    async function sendAdRequired(
+        chatId
+    ) {
 
         return bot.sendMessage(
 
             chatId,
 
-`<b>🔐 ACCESO POR ANUNCIOS</b>
+`<b>🔐 KEY FREE</b>
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -397,19 +477,13 @@ Después de completar los 5 anuncios podrás generar:
 
 ━━━━━━━━━━━━━━━━━━
 
-⏰ <b>LÍMITE</b>
+📌 <b>Límite:</b>
 
-Solo puedes obtener:
-
-<b>1 Key FREE cada 24 horas.</b>
+1 Key FREE cada <b>24 horas</b>.
 
 ━━━━━━━━━━━━━━━━━━
 
-Después de completar los anuncios utiliza:
-
-<code>/key</code>
-
-━━━━━━━━━━━━━━━━━━`,
+⚠️ Después de generar tu Key tendrás que esperar 24 horas antes de obtener otra.`,
 
             {
 
@@ -453,7 +527,9 @@ Después de completar los anuncios utiliza:
     // MOSTRAR KEY
     // =========================================================
 
-    async function showKey(chatId) {
+    async function showKey(
+        chatId
+    ) {
 
         try {
 
@@ -464,7 +540,22 @@ Después de completar los anuncios utiliza:
 
 
             // =================================================
-            // COOLDOWN 24 HORAS
+            // NECESITA ANUNCIOS
+            // =================================================
+
+            if (
+                result.noAccess
+            ) {
+
+                return sendAdRequired(
+                    chatId
+                );
+
+            }
+
+
+            // =================================================
+            // COOLDOWN
             // =================================================
 
             if (
@@ -484,21 +575,6 @@ Después de completar los anuncios utiliza:
 
                     }
 
-                );
-
-            }
-
-
-            // =================================================
-            // NECESITA ANUNCIOS
-            // =================================================
-
-            if (
-                result.noAccess
-            ) {
-
-                return sendAdRequired(
-                    chatId
                 );
 
             }
@@ -544,13 +620,7 @@ Después de completar los anuncios utiliza:
 
 ${result.roleName}
 
-👤 <b>Usuario</b>
-
-${result.username}
-
-━━━━━━━━━━━━━━━━━━
-
-👥 <b>Reseller</b>
+👤 <b>Reseller</b>
 
 ${result.reseller}
 
@@ -574,9 +644,9 @@ ${result.totalKeys}
 
 ━━━━━━━━━━━━━━━━━━
 
-⏰ <b>Próxima Key FREE</b>
+⏱️ <b>Próxima Key FREE</b>
 
-Disponible después de 24 horas.
+Disponible después de <b>24 horas</b>.
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -643,14 +713,14 @@ Disponible después de 24 horas.
 
 
     // =========================================================
-    // /KEY
+    // /KEYFREE
     // =========================================================
 
     bot.onText(
 
-        /^\/key(?:@\w+)?$/i,
+        /^\/keyfree(?:@\w+)?$/i,
 
-        async (msg) => {
+        async msg => {
 
             const chatId =
                 String(
@@ -675,7 +745,10 @@ Disponible después de 24 horas.
 
         /^\/start(?:@\w+)?(?:\s+(.+))?$/i,
 
-        async (msg, match) => {
+        async (
+            msg,
+            match
+        ) => {
 
             const chatId =
                 String(
@@ -684,7 +757,8 @@ Disponible después de 24 horas.
 
 
             const startParam =
-                match && match[1]
+                match &&
+                match[1]
                     ? match[1].trim()
                     : "";
 
@@ -730,9 +804,9 @@ Disponible después de 24 horas.
                     snap.val();
 
 
-                // =============================================
+                // =================================================
                 // OWNER / ADMIN
-                // =============================================
+                // =================================================
 
                 if (
 
@@ -755,86 +829,104 @@ Disponible después de 24 horas.
                 }
 
 
-                // =============================================
-                // COMPROBAR COOLDOWN
-                // =============================================
+                // =================================================
+                // VERIFICAR COOLDOWN
+                // =================================================
 
-                const lastFreeKeyAt =
+                const freeKeyAt =
                     Number(
-                        user.lastFreeKeyAt ||
-                        0
+                        user.freeKeyAt || 0
                     );
 
 
-                const now =
-                    Date.now();
-
-
                 if (
-
-                    lastFreeKeyAt > 0 &&
-
-                    now -
-                    lastFreeKeyAt <
-                    FREE_KEY_COOLDOWN
-
+                    freeKeyAt > 0
                 ) {
 
-                    const remaining =
-                        FREE_KEY_COOLDOWN -
-                        (
-                            now -
-                            lastFreeKeyAt
+                    const nextFreeKeyAt =
+                        freeKeyAt +
+                        FREE_KEY_COOLDOWN;
+
+
+                    if (
+                        Date.now() <
+                        nextFreeKeyAt
+                    ) {
+
+                        const time =
+                            getRemainingTime(
+                                nextFreeKeyAt
+                            );
+
+
+                        return bot.sendMessage(
+
+                            chatId,
+
+`<b>⏳ KEY FREE EN COOLDOWN</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🔐 Ya utilizaste tu Key FREE de hoy.
+
+📌 <b>Límite:</b>
+
+1 Key FREE cada 24 horas.
+
+━━━━━━━━━━━━━━━━━━
+
+⏱️ <b>Tiempo restante:</b>
+
+<b>${time.hours}h ${time.minutes}min</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🚫 No puedes desbloquear otra Key todavía.
+
+━━━━━━━━━━━━━━━━━━
+
+🔄 Cuando termine el tiempo podrás volver a completar los 5 anuncios.`,
+
+                            {
+
+                                parse_mode:
+                                    "HTML"
+
+                            }
+
                         );
 
+                    }
 
-                    const hours =
-                        Math.floor(
-                            remaining /
-                            (
-                                60 *
-                                60 *
-                                1000
-                            )
-                        );
+                }
 
 
-                    const minutes =
-                        Math.floor(
-                            (
-                                remaining %
-                                (
-                                    60 *
-                                    60 *
-                                    1000
-                                )
-                            ) /
-                            (
-                                60 *
-                                1000
-                            )
-                        );
+                // =================================================
+                // EVITAR DOBLE DESBLOQUEO
+                // =================================================
 
+                if (
+                    user.adsKeyUnlocked ===
+                    true
+                ) {
 
                     return bot.sendMessage(
 
                         chatId,
 
-`⏳ <b>KEY FREE NO DISPONIBLE</b>
+`<b>⚠️ YA TIENES UNA KEY DESBLOQUEADA</b>
 
 ━━━━━━━━━━━━━━━━━━
 
-❌ Ya obtuviste una Key FREE durante las últimas 24 horas.
+Ya completaste los anuncios.
 
-⏰ Podrás obtener otra en:
+🔑 Usa:
 
-<b>${hours}h ${minutes}min</b>
+<code>/keyfree</code>
 
 ━━━━━━━━━━━━━━━━━━
 
-🎁 Límite:
-
-<b>1 Key FREE cada 24 horas</b>`,
+No necesitas volver a ver los anuncios.`,
 
                         {
 
@@ -848,9 +940,13 @@ Disponible después de 24 horas.
                 }
 
 
-                // =============================================
-                // DESBLOQUEAR UNA KEY
-                // =============================================
+                // =================================================
+                // DESBLOQUEAR KEY
+                // =================================================
+
+                const completedAt =
+                    Date.now();
+
 
                 await userRef.update({
 
@@ -861,14 +957,14 @@ Disponible después de 24 horas.
                         true,
 
                     adsCompletedAt:
-                        now
+                        completedAt
 
                 });
 
 
-                // =============================================
+                // =================================================
                 // HISTORIAL
-                // =============================================
+                // =================================================
 
                 await db
                     .ref(
@@ -883,14 +979,14 @@ Disponible después de 24 horas.
                             REQUIRED_ADS,
 
                         time:
-                            now
+                            completedAt
 
                     });
 
 
-                // =============================================
+                // =================================================
                 // CONFIRMACIÓN
-                // =============================================
+                // =================================================
 
                 await bot.sendMessage(
 
@@ -908,23 +1004,19 @@ Disponible después de 24 horas.
 
 🔑 Has desbloqueado:
 
-<b>1 Key FREE</b>
+<b>1 KEY FREE</b>
 
 ━━━━━━━━━━━━━━━━━━
 
 Ahora puedes generar tu Key escribiendo:
 
-<code>/key</code>
+<code>/keyfree</code>
 
 ━━━━━━━━━━━━━━━━━━
 
-⏰ Recuerda:
+⚠️ Recuerda:
 
-<b>1 Key FREE cada 24 horas.</b>
-
-━━━━━━━━━━━━━━━━━━
-
-⚠️ Después de generar esta Key no podrás generar otra hasta que pasen 24 horas.`,
+Solo puedes generar <b>1 Key FREE cada 24 horas</b>.`,
 
                     {
 
@@ -966,16 +1058,13 @@ Ahora puedes generar tu Key escribiendo:
 
         "callback_query",
 
-        async (query) => {
+        async query => {
 
             if (
-
                 !query.data ||
-
                 !query.data.startsWith(
                     "key_revoke_"
                 )
-
             ) {
 
                 return;
@@ -1040,6 +1129,10 @@ Ahora puedes generar tu Key escribiendo:
                     snap.val();
 
 
+                // =================================================
+                // VERIFICAR PROPIETARIO
+                // =================================================
+
                 if (
                     data.owner !==
                     chatId
@@ -1064,16 +1157,16 @@ Ahora puedes generar tu Key escribiendo:
                 }
 
 
-                // =============================================
+                // =================================================
                 // ELIMINAR KEY
-                // =============================================
+                // =================================================
 
                 await ref.remove();
 
 
-                // =============================================
+                // =================================================
                 // HISTORIAL
-                // =============================================
+                // =================================================
 
                 await db
                     .ref(
@@ -1093,9 +1186,9 @@ Ahora puedes generar tu Key escribiendo:
                     });
 
 
-                // =============================================
+                // =================================================
                 // CONFIRMACIÓN
-                // =============================================
+                // =================================================
 
                 await bot.editMessageText(
 
@@ -1109,7 +1202,7 @@ Ahora puedes generar tu Key escribiendo:
 
 ✅ La Key fue eliminada correctamente.
 
-⏰ Tu límite de Key FREE sigue activo.`,
+⏳ El límite de 24 horas sigue activo.`,
 
                     {
 
