@@ -1,3 +1,7 @@
 node_modules
 .env
 firebase-admin.json
+/data/
+*.db
+*.db-wal
+*.db-shm

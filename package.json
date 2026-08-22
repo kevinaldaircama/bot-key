@@ -12,9 +12,10 @@
   "dependencies": {
     "axios": "^1.11.0",
     "dotenv": "^16.4.7",
-    "firebase-admin": "^13.0.2",
     "node-telegram-bot-api": "^0.66.0",
     "uuid": "^11.0.3",
-    "ssh2": "^1.15.0"
+    "ssh2": "^1.15.0",
+    "better-sqlite3": "^12.4.1",
+    "express": "^5.1.0"
   }
 }
