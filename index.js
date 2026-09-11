@@ -15,6 +15,7 @@ import registerReseller from "./handlers/reseller.js";
 import registerKey from "./handlers/key.js";
 import registerFreeKey from "./handlers/key free.js";
 import registerHistory from "./handlers/history.js";
+import registerAudit from "./handlers/audit.js";
 import registerUsage from "./handlers/usage.js";
 import registerStatistics from "./handlers/statistics.js";
 import registerPlans from "./handlers/plans.js";
@@ -44,6 +45,8 @@ console.log("========================================");
 // MÓDULOS
 // ==========================
 
+// Registrar primero la auditoría para capturar acciones de Owner/Admin.
+registerAudit(bot, config);
 registerStart(bot);
 registerMenuCallbacks(bot);
 registerHome(bot);

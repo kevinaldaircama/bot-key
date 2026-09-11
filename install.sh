@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================
-#       KEVINTECH MULTI SCRIPT VPN BOT INSTALLER v5.2
+#       KEVINTECH MULTI SCRIPT VPN BOT INSTALLER v5.1
 # ============================================================
 # SQLite • Multi Owner • Licencias • Cloudflare • PM2
 # SIN FIREBASE
@@ -14,6 +14,9 @@ set -o pipefail
 # ============================================================
 
 BOT_NAME="Multi Script VPN Bot"
+
+# Repositorio oficial del proyecto (no se solicita al usuario)
+DEFAULT_REPO="https://github.com/kevinaldaircama/bot-key.git"
 
 INSTALL_DIR="/opt/multi-script-bot"
 CONFIG_DIR="/etc/kevintech/multiscript"
@@ -31,6 +34,11 @@ INSTALL_LOG="$LOG_DIR/installer.log"
 
 PM2_NAME="multiscriptbot"
 NODE_VERSION="22"
+
+# Dominio público de la License API. Solo se solicita en una instalación nueva.
+API_DOMAIN_FILE="$CONFIG_DIR/api-domain"
+NGINX_SITE="/etc/nginx/sites-available/kevintech-license-api"
+NGINX_LINK="/etc/nginx/sites-enabled/kevintech-license-api"
 
 LOG_DAYS="${LOG_DAYS:-7}"
 BACKUP_COUNT="${BACKUP_COUNT:-30}"
@@ -113,7 +121,7 @@ banner() {
     echo "╔══════════════════════════════════════════════════════════════╗"
     echo "║                                                              ║"
     echo "║                 KEVINTECH MULTI SCRIPT BOT                  ║"
-    echo "║                         INSTALLER v5.2                       ║"
+    echo "║                         INSTALLER v5.1                       ║"
     echo "║                                                              ║"
     echo "║       SQLITE • MULTI OWNER • LICENSE • CLOUDFLARE • PM2     ║"
     echo "║                                                              ║"
@@ -273,11 +281,11 @@ install_packages() {
         sqlite3 \
         openssl \
         ca-certificates \
-        gnupg \
-        build-essential \
         nginx \
         certbot \
         python3-certbot-nginx \
+        gnupg \
+        build-essential \
         >/dev/null 2>&1 ||
         die "Error instalando dependencias."
 
@@ -353,10 +361,21 @@ read_secret() {
     local prompt="$1"
     local value=""
 
-    read -r -s -p "$prompt: " value
-    echo
+    # Leer directamente del terminal. No usar command substitution para
+    # evitar que algunos terminales/SSH pierdan el valor pegado.
+    if [[ -t 0 ]]; then
+        read -r -s -p "$prompt: " value </dev/tty
+        printf '\n' >/dev/tty
+    else
+        read -r -s -p "$prompt: " value
+        printf '\n'
+    fi
 
-    printf '%s' "$value"
+    # Quitar espacios accidentales al principio/final del valor pegado.
+    value="${value#${value%%[![:space:]]*}}"
+    value="${value%${value##*[![:space:]]}}"
+
+    REPLY_SECRET="$value"
 }
 
 # ============================================================
@@ -1036,24 +1055,209 @@ owners_menu() {
 # CREAR ENV
 # ============================================================
 
+
+# ============================================================
+# DOMINIO DE LICENSE API
+# ============================================================
+
+normalize_domain() {
+    local domain="$1"
+    domain="$(printf '%s' "$domain" | tr -d '[:space:]')"
+    domain="${domain#http://}"
+    domain="${domain#https://}"
+    domain="${domain%%/*}"
+    domain="${domain%.}"
+
+    printf '%s' "$domain"
+}
+
+validate_domain() {
+    local domain="$1"
+
+    [[ -n "$domain" ]] ||
+        return 1
+
+    [[ "$domain" != *".."* ]] ||
+        return 1
+
+    [[ "$domain" =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$ ]] ||
+        return 1
+
+    return 0
+}
+
+get_existing_api_domain() {
+    local domain=""
+
+    if [[ -f "$API_DOMAIN_FILE" ]]; then
+        domain="$(head -n1 "$API_DOMAIN_FILE" 2>/dev/null | tr -d '[:space:]')"
+    fi
+
+    if [[ -z "$domain" && -f "$ENV_FILE" ]]; then
+        domain="$(
+            grep '^LICENSE_API_URL=' "$ENV_FILE" |
+            head -n1 |
+            cut -d= -f2- |
+            sed -E 's#^https?://##; s#/.*$##'
+        )"
+    fi
+
+    domain="$(normalize_domain "$domain")"
+
+    if validate_domain "$domain"; then
+        printf '%s' "$domain"
+    fi
+}
+
+ask_api_domain() {
+    local domain=""
+
+    while true; do
+        read -r -p "🌐 Dominio público para License API (ej. api.midominio.com): " domain
+        domain="$(normalize_domain "$domain")"
+
+        if validate_domain "$domain"; then
+            printf '%s\n' "$domain" > "$API_DOMAIN_FILE"
+            chmod 600 "$API_DOMAIN_FILE"
+            API_DOMAIN="$domain"
+            success "Dominio de License API: $API_DOMAIN"
+            return 0
+        fi
+
+        error "Dominio inválido. Ejemplo: api.midominio.com"
+    done
+}
+
+ensure_api_domain() {
+    local existing=""
+
+    existing="$(get_existing_api_domain || true)"
+
+    if [[ -n "$existing" ]]; then
+        API_DOMAIN="$existing"
+        printf '%s\n' "$API_DOMAIN" > "$API_DOMAIN_FILE"
+        chmod 600 "$API_DOMAIN_FILE"
+        success "Dominio de License API conservado: $API_DOMAIN"
+        return 0
+    fi
+
+    if [[ "$SILENT" == "1" ]]; then
+        API_DOMAIN="$(normalize_domain "${API_DOMAIN:-${LICENSE_API_DOMAIN:-}}")"
+        validate_domain "$API_DOMAIN" ||
+            die "Modo silencioso: falta LICENSE_API_DOMAIN/API_DOMAIN válido."
+        printf '%s\n' "$API_DOMAIN" > "$API_DOMAIN_FILE"
+        chmod 600 "$API_DOMAIN_FILE"
+        return 0
+    fi
+
+    ask_api_domain
+}
+
+configure_license_api_nginx() {
+    [[ -n "${API_DOMAIN:-}" ]] ||
+        die "No se configuró el dominio de License API."
+
+    command -v nginx >/dev/null 2>&1 ||
+        die "Nginx no está instalado."
+
+    mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
+
+    cat > "$NGINX_SITE" <<EOF
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name $API_DOMAIN;
+
+    location / {
+        proxy_pass http://127.0.0.1:8787;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+
+        proxy_read_timeout 60s;
+        proxy_connect_timeout 10s;
+    }
+}
+EOF
+
+    ln -sfn "$NGINX_SITE" "$NGINX_LINK"
+
+    # Evitar conflictos con el sitio por defecto.
+    rm -f /etc/nginx/sites-enabled/default
+
+    nginx -t >/dev/null 2>&1 ||
+        die "La configuración de Nginx para License API es inválida."
+
+    systemctl enable nginx >/dev/null 2>&1 || true
+    systemctl restart nginx ||
+        die "No se pudo iniciar/reiniciar Nginx."
+
+    success "Nginx configurado para: http://$API_DOMAIN"
+}
+
+try_enable_api_https() {
+    # HTTPS se intenta automáticamente. Si DNS/Cloudflare todavía no apunta
+    # al VPS, no se rompe la instalación: la API queda disponible por HTTP.
+    command -v certbot >/dev/null 2>&1 || return 0
+
+    if certbot --nginx \
+        --non-interactive \
+        --agree-tos \
+        --register-unsafely-without-email \
+        --redirect \
+        -d "$API_DOMAIN" >/dev/null 2>&1; then
+
+        LICENSE_API_SCHEME="https"
+        success "HTTPS habilitado para License API: https://$API_DOMAIN"
+    else
+        LICENSE_API_SCHEME="http"
+        warning "No se pudo emitir SSL automáticamente. License API queda en http://$API_DOMAIN."
+        warning "La instalación continúa sin detenerse."
+    fi
+}
+
+configure_api() {
+    ensure_api_domain
+    configure_license_api_nginx
+
+    LICENSE_API_SCHEME="http"
+    try_enable_api_https
+
+    # Guardar la URL final usada por el instalador y futuras actualizaciones.
+    LICENSE_API_URL="${LICENSE_API_SCHEME}://${API_DOMAIN}"
+
+    printf '%s\n' "$API_DOMAIN" > "$API_DOMAIN_FILE"
+    chmod 600 "$API_DOMAIN_FILE"
+}
+
+
+persist_license_api_url() {
+    [[ -n "${LICENSE_API_URL:-}" ]] || return 0
+    [[ -f "$ENV_FILE" ]] || return 0
+
+    if grep -q '^LICENSE_API_URL=' "$ENV_FILE"; then
+        sed -i "s|^LICENSE_API_URL=.*|LICENSE_API_URL=$LICENSE_API_URL|" "$ENV_FILE"
+    else
+        printf '\nLICENSE_API_URL=%s\n' "$LICENSE_API_URL" >> "$ENV_FILE"
+    fi
+
+    chmod 600 "$ENV_FILE"
+    success "LICENSE_API_URL configurada: $LICENSE_API_URL"
+}
+
 create_env() {
 
     local bot_token="$1"
     local owner_id="$2"
     local cloudflare_token="$3"
     local cloudflare_zone="$4"
-    local domain="$5"
+    local license_api_url="${5:-${LICENSE_API_URL:-http://${API_DOMAIN:-localhost}}}"
 
     local license_api_key=""
-    local api_domain=""
-    local license_api_url=""
-
-    domain="${domain#http://}"
-    domain="${domain#https://}"
-    domain="${domain%%/*}"
-    domain="${domain%.}"
-    api_domain="api.${domain}"
-    license_api_url="https://${api_domain}"
 
     # ========================================================
     # CONSERVAR CLAVE EXISTENTE
@@ -1086,13 +1290,10 @@ BOT_TOKEN=$bot_token
 OWNER_ID=$owner_id
 
 # License API
-LICENSE_API_URL=$license_api_url
+LICENSE_API_KEY=$license_api_key
 LICENSE_API_HOST=127.0.0.1
 LICENSE_API_PORT=8787
-LICENSE_API_KEY=$license_api_key
-
-# Dominio
-DOMAIN=$domain
+LICENSE_API_URL=$license_api_url
 
 # Cloudflare
 CLOUDFLARE_TOKEN=$cloudflare_token
@@ -1110,7 +1311,37 @@ EOF
 
     chmod 600 "$ENV_FILE"
 
-    success "Archivo .env configurado."
+    # Verificación crítica: evitar iniciar el bot con credenciales ausentes.
+    grep -q '^BOT_TOKEN=' "$ENV_FILE" || die "BOT_TOKEN no quedó guardado en .env."
+    grep -q '^CLOUDFLARE_TOKEN=' "$ENV_FILE" || die "CLOUDFLARE_TOKEN no quedó guardado en .env."
+    grep -q '^CLOUDFLARE_ZONE_ID=' "$ENV_FILE" || die "CLOUDFLARE_ZONE_ID no quedó guardado en .env."
+
+    success "Archivo .env configurado correctamente."
+
+    # Mostrar únicamente una comprobación segura; nunca imprimir secretos.
+    local token_len=${#bot_token}
+    local cf_len=${#cloudflare_token}
+    if (( token_len > 8 )); then
+        success "BOT_TOKEN guardado en .env (${bot_token:0:4}••••${bot_token: -4}, ${token_len} caracteres)."
+    else
+        warning "BOT_TOKEN quedó vacío o es demasiado corto en .env."
+    fi
+
+    if (( cf_len > 0 )); then
+        success "CLOUDFLARE_TOKEN guardado en .env (${cf_len} caracteres)."
+    else
+        info "CLOUDFLARE_TOKEN: omitido (ENTER)."
+    fi
+
+    if [[ -n "$cloudflare_zone" ]]; then
+        success "CLOUDFLARE_ZONE_ID guardado en .env."
+    else
+        info "CLOUDFLARE_ZONE_ID: omitido (ENTER)."
+    fi
+
+    # Validar Telegram DESPUÉS de guardar .env para que el instalador nunca
+    # pierda el token introducido si Telegram está temporalmente inaccesible.
+    validate_bot_token "$bot_token"
 }
 
 # ============================================================
@@ -1202,6 +1433,34 @@ ensure_main_owner() {
 }
 
 # ============================================================
+# VALIDAR CREDENCIALES
+# ============================================================
+
+validate_bot_token() {
+    local token="$1"
+
+    [[ -n "$token" ]] || die "Token del Bot vacío."
+    require_command curl
+
+    info "Validando Token de Telegram..."
+
+    local response=""
+    response="$(curl -fsS --max-time 15 "https://api.telegram.org/bot${token}/getMe" 2>/dev/null || true)"
+
+    if [[ "$response" != *'"ok":true'* ]]; then
+        die "El Token del Bot no es válido. No se iniciará PM2."
+    fi
+
+    success "Token de Telegram válido."
+}
+
+validate_cloudflare_pair() {
+    # Cloudflare es opcional. Si el usuario lo deja vacío, se guarda vacío.
+    # No se consulta Cloudflare durante la instalación.
+    return 0
+}
+
+# ============================================================
 # CONFIGURAR PROYECTO
 # ============================================================
 
@@ -1209,24 +1468,21 @@ configure_project() {
 
     section "⚙️ CONFIGURACIÓN DEL PROYECTO"
 
-    local repo=""
+    local repo="$DEFAULT_REPO"
     local bot_token=""
     local owner_id=""
     local cloudflare_token=""
     local cloudflare_zone=""
-    local domain=""
+    local api_domain=""
 
     if [[ "$SILENT" == "1" ]]; then
 
-        repo="${REPO:-}"
+        repo="${REPO:-$DEFAULT_REPO}"
         bot_token="${BOT_TOKEN:-}"
         owner_id="${OWNER_ID:-}"
         cloudflare_token="${CLOUDFLARE_TOKEN:-}"
         cloudflare_zone="${CLOUDFLARE_ZONE_ID:-}"
-        domain="${DOMAIN:-}"
-
-        [[ -n "$repo" ]] ||
-            die "Modo silencioso: falta REPO."
+        api_domain="${LICENSE_API_DOMAIN:-${API_DOMAIN:-}}"
 
         [[ -n "$bot_token" ]] ||
             die "Modo silencioso: falta BOT_TOKEN."
@@ -1234,19 +1490,10 @@ configure_project() {
         [[ -n "$owner_id" ]] ||
             die "Modo silencioso: falta OWNER_ID."
 
-        [[ -n "$domain" ]] ||
-            die "Modo silencioso: falta DOMAIN."
-
     else
 
-        read -r -p "URL GitHub: " repo
-
-        [[ -n "$repo" ]] ||
-            die "Repositorio vacío."
-
-        bot_token="$(
-            read_secret "Token del Bot"
-        )"
+        read_secret "Token del Bot"
+        bot_token="$REPLY_SECRET"
 
         [[ -n "$bot_token" ]] ||
             die "Token vacío."
@@ -1259,30 +1506,31 @@ configure_project() {
             die "OWNER_ID inválido."
 
         echo
-        read -r -p "Dominio principal (ejemplo: socialstreaming.xyz): " domain
+        ask_api_domain
+        api_domain="$API_DOMAIN"
 
-        domain="${domain#http://}"
-        domain="${domain#https://}"
-        domain="${domain%%/*}"
-        domain="${domain%.}"
-
-        [[ "$domain" =~ ^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$ ]] ||
-            die "Dominio inválido."
-
-        echo -e "${GREEN}✓ Dominio:${RESET} $domain"
-        echo -e "${CYAN}✓ License API:${RESET} https://api.$domain"
         echo
         echo -e "${YELLOW}Cloudflare es opcional.${RESET}"
         echo
 
-        cloudflare_token="$(
-            read_secret "Cloudflare API Token (ENTER para omitir)"
-        )"
+        read_secret "Cloudflare API Token (ENTER para omitir)"
+        cloudflare_token="$REPLY_SECRET"
 
         read -r -p \
             "Cloudflare Zone ID (ENTER para omitir): " \
             cloudflare_zone
 
+    fi
+
+    # Validar antes de continuar, pero conservar siempre los valores
+    # proporcionados en .env incluso si una validación externa falla.
+    validate_cloudflare_pair
+
+    if [[ -n "$api_domain" ]]; then
+        API_DOMAIN="$(normalize_domain "$api_domain")"
+        validate_domain "$API_DOMAIN" || die "LICENSE_API_DOMAIN inválido."
+    else
+        ensure_api_domain
     fi
 
     backup_config
@@ -1338,7 +1586,7 @@ configure_project() {
             "$owner_id" \
             "$cloudflare_token" \
             "$cloudflare_zone" \
-            "$domain"
+            "$LICENSE_API_URL"
 
         sed -i \
             "s|^LICENSE_API_KEY=.*|LICENSE_API_KEY=$previous_license|" \
@@ -1351,7 +1599,7 @@ configure_project() {
             "$owner_id" \
             "$cloudflare_token" \
             "$cloudflare_zone" \
-            "$domain"
+            "$LICENSE_API_URL"
 
     fi
 
@@ -1361,93 +1609,16 @@ configure_project() {
 
     restore_latest_sqlite
 
+    # Instalar dependencias sin arrancar todavía el bot.
     install_project
-    configure_public_api
-}
 
-# ============================================================
-# CONFIGURAR LICENSE API PÚBLICA
-# ============================================================
+    # Publicar y comprobar la License API antes de arrancar Telegram.
+    configure_api
+    persist_license_api_url
 
-configure_public_api() {
-
-    [[ -f "$ENV_FILE" ]] || return 0
-
-    local domain=""
-    local api_domain=""
-
-    domain="$(
-        grep '^DOMAIN=' "$ENV_FILE" |
-        head -n1 |
-        cut -d= -f2-
-    )"
-
-    [[ -n "$domain" ]] || {
-        warning "DOMAIN no está configurado; se omitió nginx."
-        return 0
-    }
-
-    api_domain="api.$domain"
-
-    mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
-
-    cat > "/etc/nginx/sites-available/license-api" <<EOF
-server {
-    listen 80;
-    listen [::]:80;
-
-    server_name $api_domain;
-
-    location / {
-        proxy_pass http://127.0.0.1:8787;
-        proxy_http_version 1.1;
-
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-
-        proxy_read_timeout 60s;
-        proxy_connect_timeout 10s;
-    }
-}
-EOF
-
-    ln -sfn         "/etc/nginx/sites-available/license-api"         "/etc/nginx/sites-enabled/license-api"
-
-    rm -f /etc/nginx/sites-enabled/default
-
-    nginx -t >/dev/null 2>&1 ||
-        die "La configuración de nginx es inválida."
-
-    systemctl enable nginx >/dev/null 2>&1 || true
-    systemctl restart nginx >/dev/null 2>&1 ||
-        die "No se pudo iniciar nginx."
-
-    success "Nginx configurado para $api_domain"
-
-    # Intentar HTTPS automáticamente si el DNS ya apunta al VPS.
-    if command -v certbot >/dev/null 2>&1; then
-        local email_domain="admin@$domain"
-
-        info "Intentando habilitar HTTPS para $api_domain..."
-
-        if certbot --nginx             -d "$api_domain"             --non-interactive             --agree-tos             --register-unsafely-without-email             --redirect             >/tmp/kevintech-certbot.log 2>&1; then
-
-            sed -i                 "s|^LICENSE_API_URL=.*|LICENSE_API_URL=https://$api_domain|"                 "$ENV_FILE"
-
-            success "HTTPS habilitado: https://$api_domain"
-
-        else
-
-            warning "No se pudo emitir el certificado todavía."
-            warning "Asegúrate de que $api_domain apunte a este VPS y ejecuta certbot nuevamente."
-            warning "La API local seguirá funcionando en 127.0.0.1:8787."
-
-        fi
-
-        rm -f /tmp/kevintech-certbot.log
-    fi
+    # El .env definitivo ya contiene BOT_TOKEN y Cloudflare.
+    start_bot
+    restart_bot
 }
 
 # ============================================================
@@ -1523,7 +1694,8 @@ install_project() {
 
     success "Dependencias instaladas."
 
-    start_bot
+    # El bot se inicia al final de la instalación, después de validar .env
+    # y dejar lista la License API.
 }
 
 # ============================================================
@@ -1731,10 +1903,21 @@ update_bot() {
     create_owners_file
 
     # ========================================================
+    # LICENSE API / NGINX
+    # ========================================================
+
+    ensure_api_domain
+
+    # ========================================================
     # DEPENDENCIAS
     # ========================================================
 
     install_project
+
+    # La API ya está levantada; aplicar/reparar el proxy público.
+    configure_api
+    persist_license_api_url
+    restart_bot
 
     success "Actualización completada."
 }
@@ -1916,9 +2099,8 @@ change_token() {
 
     local new_token=""
 
-    new_token="$(
-        read_secret "Nuevo Token"
-    )"
+    read_secret "Nuevo Token"
+    new_token="$REPLY_SECRET"
 
     [[ -n "$new_token" ]] ||
         die "Token vacío."
@@ -2001,6 +2183,10 @@ change_cloudflare() {
     local new_token=""
     local new_zone=""
 
+    # ========================================================
+    # LEER CONFIGURACIÓN ACTUAL
+    # ========================================================
+
     current_token="$(
         grep '^CLOUDFLARE_TOKEN=' "$ENV_FILE" |
         head -n1 |
@@ -2032,58 +2218,100 @@ change_cloudflare() {
     echo -e "${YELLOW}Deja ENTER para conservar el valor actual.${RESET}"
     echo
 
-    new_token="$(
-        read_secret "Nuevo Cloudflare API Token (ENTER = conservar)"
-    )"
+    # ========================================================
+    # NUEVO TOKEN
+    # ========================================================
 
-    [[ -n "$new_token" ]] || new_token="$current_token"
-
-    read -r -p         "Nuevo Zone ID (ENTER = conservar): "         new_zone
-
-    [[ -n "$new_zone" ]] || new_zone="$current_zone"
+    read_secret "Nuevo Cloudflare API Token (ENTER = conservar)"
+    new_token="$REPLY_SECRET"
 
     if [[ -z "$new_token" ]]; then
-        error "Cloudflare API Token vacío."
-        return 1
+        new_token="$current_token"
+        info "Se conservará el Cloudflare API Token actual."
     fi
+
+    # ========================================================
+    # NUEVO ZONE ID
+    # ========================================================
+
+    read -r -p \
+        "Nuevo Zone ID (ENTER = conservar): " \
+        new_zone
 
     if [[ -z "$new_zone" ]]; then
-        error "Cloudflare Zone ID vacío."
-        return 1
+        new_zone="$current_zone"
+        info "Se conservará el Zone ID actual."
     fi
 
-    # IMPORTANTE:
-    # No se consulta ni valida Cloudflare aquí.
-    # Solo se guardan los nuevos valores y se reinicia el bot.
+    # ========================================================
+    # CAMBIO DIRECTO
+    # ========================================================
+    # No se consulta Cloudflare ni se valida el token aquí.
+    # El usuario pidió que esta opción solo cambie la configuración.
+
+    # ========================================================
+    # BACKUP ANTES DE MODIFICAR
+    # ========================================================
+
     backup_config
 
+    # ========================================================
+    # ACTUALIZAR TOKEN
+    # ========================================================
+
     if grep -q '^CLOUDFLARE_TOKEN=' "$ENV_FILE"; then
-        sed -i             "s|^CLOUDFLARE_TOKEN=.*|CLOUDFLARE_TOKEN=$new_token|"             "$ENV_FILE"
+
+        sed -i \
+            "s|^CLOUDFLARE_TOKEN=.*|CLOUDFLARE_TOKEN=$new_token|" \
+            "$ENV_FILE"
+
     else
-        printf '\nCLOUDFLARE_TOKEN=%s\n' "$new_token" >> "$ENV_FILE"
+
+        printf '\nCLOUDFLARE_TOKEN=%s\n' \
+            "$new_token" >> "$ENV_FILE"
+
     fi
 
+    # ========================================================
+    # ACTUALIZAR ZONE ID
+    # ========================================================
+
     if grep -q '^CLOUDFLARE_ZONE_ID=' "$ENV_FILE"; then
-        sed -i             "s|^CLOUDFLARE_ZONE_ID=.*|CLOUDFLARE_ZONE_ID=$new_zone|"             "$ENV_FILE"
+
+        sed -i \
+            "s|^CLOUDFLARE_ZONE_ID=.*|CLOUDFLARE_ZONE_ID=$new_zone|" \
+            "$ENV_FILE"
+
     else
-        printf 'CLOUDFLARE_ZONE_ID=%s\n' "$new_zone" >> "$ENV_FILE"
+
+        printf 'CLOUDFLARE_ZONE_ID=%s\n' \
+            "$new_zone" >> "$ENV_FILE"
+
     fi
 
     chmod 600 "$ENV_FILE"
 
+    # ========================================================
+    # REINICIAR BOT
+    # ========================================================
+
     echo
-    info "Aplicando configuración Cloudflare..."
+    info "Aplicando nueva configuración..."
 
     if ! restart_bot; then
+
         error "No se pudo reiniciar el bot."
+
         return 1
     fi
 
     echo
     success "Cloudflare actualizado correctamente."
-    echo -e "${GREEN}✓ Token cambiado${RESET}"
-    echo -e "${GREEN}✓ Zone ID cambiado${RESET}"
-    echo -e "${CYAN}✓ No se realizó ninguna consulta de validación a Cloudflare.${RESET}"
+    success "El nuevo token y Zone ID quedaron guardados sin validación externa."
+
+    echo
+    echo -e "${CYAN}Zone ID:${RESET} $new_zone"
+    echo -e "${GREEN}Estado:${RESET} GUARDADO ✓"
 }
 
 # ============================================================
@@ -2180,7 +2408,6 @@ silent_install() {
     if [[ -d "$INSTALL_DIR/.git" ]]; then
 
         update_bot
-        configure_public_api
 
     else
 
@@ -2211,7 +2438,6 @@ install_or_update() {
     if [[ -d "$INSTALL_DIR/.git" ]]; then
 
         update_bot
-        configure_public_api
 
     else
 

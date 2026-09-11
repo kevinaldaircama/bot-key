@@ -299,7 +299,7 @@ bot.on("message", async (msg) => {
         },      
         body: JSON.stringify({      
           type: "A",      
-          name: `${nuevo}.${config.DOMAIN}`,      
+          name: `${nuevo}.kevintechtutorials.site`,      
           content: item.ip,      
           ttl: 1,      
           proxied: false      
@@ -310,11 +310,11 @@ bot.on("message", async (msg) => {
       await db.ref(`domains/${chatId}/${nuevo}`).set({      
         ...item,      
         name: nuevo,      
-        domain: `${nuevo}.${config.DOMAIN}`      
+        domain: `${nuevo}.kevintechtutorials.site`      
       });      
       
       delete usersState[chatId];      
-      return bot.sendMessage(chatId, `✅ Nombre actualizado a ${nuevo}.${config.DOMAIN}`);      
+      return bot.sendMessage(chatId, `✅ Nombre actualizado a ${nuevo}.kevintechtutorials.site`);      
     } catch (err) {      
       console.log(err);      
       delete usersState[chatId];      
@@ -563,11 +563,11 @@ bot.on("message", async (msg) => {
       await db.ref(`domains/${chatId}/ns/${nuevo}`).set({
         ...item,
         name: nuevo,
-        domain: `${nuevo}.${config.DOMAIN}`
+        domain: `${nuevo}.kevintechtutorials.site`
       });
 
       delete usersState[chatId];
-      return bot.sendMessage(chatId, `✅ Nombre NS actualizado a ${nuevo}.${config.DOMAIN}`);
+      return bot.sendMessage(chatId, `✅ Nombre NS actualizado a ${nuevo}.kevintechtutorials.site`);
     } catch (err) {
       console.log(err);
       delete usersState[chatId];
@@ -591,15 +591,15 @@ bot.on("message", async (msg) => {
         body: JSON.stringify({
           type: "NS",
           name: item.name,
-          content: `${nuevoTarget}.${config.DOMAIN}`,
+          content: `${nuevoTarget}.kevintechtutorials.site`,
           ttl: 1
         })
       });
 
-      await ref.child("target").set(`${nuevoTarget}.${config.DOMAIN}`);
+      await ref.child("target").set(`${nuevoTarget}.kevintechtutorials.site`);
 
       delete usersState[chatId];
-      return bot.sendMessage(chatId, `✅ Destino NS actualizado a ${nuevoTarget}.${config.DOMAIN}`);
+      return bot.sendMessage(chatId, `✅ Destino NS actualizado a ${nuevoTarget}.kevintechtutorials.site`);
     } catch (err) {
       console.log(err);
       delete usersState[chatId];

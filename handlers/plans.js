@@ -1,85 +1,78 @@
 import axios from "axios";
 
+const PLANS = [
+  { label: "7 Días", days: 7, admin: 2.50, owner: 8 },
+  { label: "30 Días", days: 30, admin: 5, owner: 10 },
+  { label: "60 Días", days: 60, admin: 10, owner: 15 },
+  { label: "90 Días", days: 90, admin: 25, owner: 20 },
+  { label: "365 Días (1 Año)", days: 365, admin: 35, owner: 40 },
+  { label: "♾️ Acceso Ilimitado", days: 0, admin: 150, owner: 200 },
+];
+
+function money(value) {
+  return Number(value).toFixed(2);
+}
+
 export default function registerPlans(bot) {
+  bot.onText(/\/planes(?:@\w+)?/, async (msg) => {
+    const chatId = msg.chat.id;
 
-    bot.onText(/\/planes/, async (msg) => {
+    try {
+      const { data } = await axios.get(
+        "https://open.er-api.com/v6/latest/USD",
+        { timeout: 7000 }
+      );
 
-        const chatId = msg.chat.id;
+      const tc = Number(data?.rates?.PEN);
+      if (!Number.isFinite(tc) || tc <= 0) throw new Error("Tipo de cambio inválido");
 
-        try {
+      const lines = PLANS.map((plan) => {
+        const adminPen = money(plan.admin * tc);
+        const ownerPen = money(plan.owner * tc);
 
-            // Obtener el tipo de cambio USD -> PEN
-            const { data } = await axios.get("https://open.er-api.com/v6/latest/USD");
+        return [
+          `📅 <b>${plan.label}</b>`,
+          `🛡️ Admin: <b>$${money(plan.admin)}</b> | 🇵🇪 <b>S/ ${adminPen}</b>`,
+          `👑 Dueño: <b>$${money(plan.owner)}</b> | 🇵🇪 <b>S/ ${ownerPen}</b>`,
+        ].join("\n");
+      }).join("\n\n");
 
-            const tc = data.rates.PEN;
-
-            const s5   = (5 * tc).toFixed(2);
-            const s10  = (10 * tc).toFixed(2);
-            const s18  = (18 * tc).toFixed(2);
-            const s20  = (20 * tc).toFixed(2);
-            const s30  = (30 * tc).toFixed(2);
-            const s100 = (100 * tc).toFixed(2);
-
-            await bot.sendMessage(
-                chatId,
+      await bot.sendMessage(
+        chatId,
 `🚀 <b>MULTI SCRIPT VPN PREMIUM</b>
 
 ━━━━━━━━━━━━━━━━━━
 
-💎 <b>PRECIOS PARA ADMIN</b>
+💎 <b>PLANES ADMIN / DUEÑO</b>
 
-📅 <b>7 Días</b>
-💵 USD $5 | 🇵🇪 S/ ${s5}
-
-📅 <b>30 Días</b>
-💵 USD $10 | 🇵🇪 S/ ${s10}
-
-📅 <b>60 Días</b>
-💵 USD $18 | 🇵🇪 S/ ${s18}
-
-📅 <b>90 Días</b>
-💵 USD $20 | 🇵🇪 S/ ${s20}
-
-📅 <b>365 Días (1 Año)</b>
-💵 USD $30 | 🇵🇪 S/ ${s30}
-
-♾️ <b>Acceso Ilimitado</b>
-💵 USD $100 | 🇵🇪 S/ ${s100}
+${lines}
 
 ━━━━━━━━━━━━━━━━━━
 
-💱 <b>Tipo de cambio:</b> 1 USD = S/ ${tc.toFixed(2)}
+💱 <b>Tipo de cambio actual:</b>
+1 USD = S/ ${money(tc)}
+
+🇵🇪 Los precios en soles se recalculan automáticamente según el tipo de cambio actual.
 
 ━━━━━━━━━━━━━━━━━━
 
-📩 ¿Deseas comprar un acceso Admin?`,
-                {
-                    parse_mode: "HTML",
-                    reply_markup: {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: "💳 Comprar Acceso",
-                                    url: "https://t.me/senseicamachito"
-                                }
-                            ],
-                            [
-                                {
-                                    text: "📩 Unirme al grupo",
-                                    url: "https://t.me/multiscriptofi"
-                                }
-                            ]
-                        ]
-                    }
-                }
-            );
-
-        } catch (err) {
-
-            bot.sendMessage(chatId, "❌ No se pudo obtener el tipo de cambio.");
-
+📩 ¿Deseas comprar un acceso?`,
+        {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "💳 Comprar Acceso", url: "https://t.me/senseicamachito" }],
+              [{ text: "📩 Unirme al grupo", url: "https://t.me/multiscriptofi" }],
+            ],
+          },
         }
-
-    });
-
+      );
+    } catch (err) {
+      console.error("❌ Error tipo de cambio:", err.message);
+      await bot.sendMessage(
+        chatId,
+        "❌ No se pudo obtener el tipo de cambio actual. Intenta nuevamente en unos segundos."
+      );
+    }
+  });
 }

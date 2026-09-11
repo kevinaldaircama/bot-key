@@ -1,5 +1,6 @@
 import db from "../db.js";
 
+const DOMAIN = "kevintechtutorials.site";
 const API = "https://api.cloudflare.com/client/v4";
 
 const usersState = {};
@@ -9,8 +10,6 @@ const usersState = {};
 // ==============================
 
 export default function registerDomainA(bot, config) {
-
-const DOMAIN = config.DOMAIN;
 
 bot.on("callback_query", async (query) => {
 

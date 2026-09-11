@@ -1,75 +1,50 @@
-# KevinTech Bot — SQLite + License API + systemd
+# KevinTech Multi Script Bot
 
-## VPS del BOT
+## Instalación automática
 
-La base SQLite está en:
+Ejecuta `install.sh` como root.
 
-`/opt/kevintech-bot/data/bot.db`
+En una instalación nueva, el instalador solicita:
+- URL del repositorio GitHub
+- Token del bot de Telegram
+- ID del Owner principal
+- Dominio público de License API
+- Token y Zone ID de Cloudflare (opcionales)
 
-La API escucha solo localmente:
+Después realiza automáticamente la instalación de dependencias, Node.js, PM2, Nginx, Certbot, SQLite, el proyecto, la License API y el proxy del dominio.
 
-`127.0.0.1:8787`
+La URL queda guardada en `.env` como `LICENSE_API_URL` y el dominio en `/etc/kevintech/multiscript/api-domain`.
 
-El servicio systemd arranca bot y API juntos.
+Si se puede emitir el certificado, configura HTTPS automáticamente. Si el dominio todavía no apunta al VPS, la instalación no se detiene y deja la API disponible por HTTP para no romper el servicio.
 
-### Configurar
+## Actualizaciones
 
-```bash
-cd /opt/kevintech-bot
-cp .env.example .env
-nano .env
-```
+Si el bot ya está instalado, `install.sh` conserva el dominio de la License API y la configuración existente. No vuelve a pedir el dominio salvo que no exista una configuración previa.
 
-Genera la clave:
+La base SQLite y `.env` se respaldan antes de actualizar.
 
-```bash
-openssl rand -hex 32
-```
+## Cloudflare
 
-Colócala en:
+La opción de configuración de Cloudflare ahora solo guarda el nuevo Token/Zone ID y reinicia el bot. No hace una consulta de validación a Cloudflare, tal como requiere el flujo del instalador.
 
-```env
-LICENSE_API_KEY=...
-```
+## License API
 
-La misma clave será usada por tu `install.sh`.
+La API escucha únicamente en `127.0.0.1:8787`. Nginx publica el dominio configurado y reenvía las peticiones a la API.
 
-### Instalar systemd
+Endpoints principales:
+- `/health`
+- `/api/keys/:key`
+- `/api/activations`
+- `/api/public/validate`
+- `/api/public/activate`
+- `/api/status`
 
-```bash
-./setup-systemd.sh
-```
+## Historial
 
-### Comprobar
+El historial del bot combina:
+- `history/<chatId>` para dominios
+- `keyHistory` para Key Free
 
-```bash
-systemctl status kevintech-bot
-journalctl -u kevintech-bot -f
-```
+Muestra los últimos 15 eventos y acepta registros antiguos que usen `createdAt` en lugar de `time`.
 
-## API pública
-
-No expongas directamente el puerto 8787.
-
-Usa Nginx/Caddy/Cloudflare Tunnel u otro proxy HTTPS:
-
-`https://licencias.tudominio.com`
-
--> `http://127.0.0.1:8787`
-
-## VPS cliente
-
-Tu `install.sh` consulta:
-
-`GET /api/keys/:key`
-
-y registra:
-
-`POST /api/activations`
-
-La Key queda marcada como usada y permanece en SQLite para historial.
-
-## Importante
-
-Esta migración no borra Firebase ni importa automáticamente los datos existentes.
-Si quieres conservar las Keys/usuarios actuales de Firebase, primero hay que hacer una migración Firebase -> SQLite.
+No es necesario editar `history.js` manualmente.

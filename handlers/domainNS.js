@@ -1,12 +1,11 @@
 import db from "../db.js";  
   
+const DOMAIN = "kevintechtutorials.site";  
 const API = "https://api.cloudflare.com/client/v4";  
   
 const usersState = {};  
   
-export default function registerDomainNS(bot, config) {
-
-const DOMAIN = config.DOMAIN;
+export default function registerDomainNS(bot, config) {  
   
 bot.on("callback_query", async (query) => {  
   
@@ -138,11 +137,11 @@ Ejemplos:
   
 Se creará:  
   
-<code>${ns}.${DOMAIN}</code>  
+<code>${ns}.socialstreaming.xyz</code>  
   
 Apuntando hacia:  
   
-<code>panel.${DOMAIN}</code>`,  
+<code>panel.socialstreaming.xyz</code>`,  
 {  
 parse_mode:"HTML"  
 });  
@@ -173,9 +172,9 @@ await bot.sendMessage(chatId,
   
 `⏳ Creando registro...  
   
-🧩 ${state.ns}.${DOMAIN}  
+🧩 ${state.ns}.socialstreaming.xyz  
   
-➡️ ${state.target}.${DOMAIN}`);  
+➡️ ${state.target}.socialstreaming.xyz`);  
 // ==============================  
 // CREAR REGISTRO NS  
 // ==============================  
