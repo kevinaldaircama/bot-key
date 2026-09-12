@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import db from "../db.js";
 
 // ============================================================
 // CONFIGURACIÓN
@@ -7,8 +8,8 @@ import crypto from "crypto";
 const WEBAPP_URL = "https://kevinaldaircama.github.io/bot-key";
 
 const REQUIRED_ADS = 5;
-const KEY_LIFETIME = 2 * 60 * 60 * 1000; // 2 horas
-const FREE_KEY_COOLDOWN = 24 * 60 * 60 * 1000; // 24 horas
+const KEY_LIFETIME = 2 * 60 * 60 * 1000;
+const FREE_KEY_COOLDOWN = 24 * 60 * 60 * 1000;
 
 const INSTALL_URL =
   "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh";
@@ -32,7 +33,8 @@ function escapeHtml(text = "") {
 function getRemainingTime(timestamp) {
   if (!timestamp) return 0;
 
-  const remaining = Number(timestamp) + FREE_KEY_COOLDOWN - Date.now();
+  const remaining =
+    Number(timestamp) + FREE_KEY_COOLDOWN - Date.now();
 
   return remaining > 0 ? remaining : 0;
 }
@@ -48,9 +50,23 @@ function formatRemainingTime(ms) {
 
   const parts = [];
 
-  if (days > 0) parts.push(`${days} día${days !== 1 ? "s" : ""}`);
-  if (hours > 0) parts.push(`${hours} hora${hours !== 1 ? "s" : ""}`);
-  if (minutes > 0) parts.push(`${minutes} minuto${minutes !== 1 ? "s" : ""}`);
+  if (days > 0) {
+    parts.push(
+      `${days} día${days !== 1 ? "s" : ""}`
+    );
+  }
+
+  if (hours > 0) {
+    parts.push(
+      `${hours} hora${hours !== 1 ? "s" : ""}`
+    );
+  }
+
+  if (minutes > 0) {
+    parts.push(
+      `${minutes} minuto${minutes !== 1 ? "s" : ""}`
+    );
+  }
 
   return parts.join(" ");
 }
@@ -87,25 +103,36 @@ async function getTelegramName(bot, chatId) {
 }
 
 // ============================================================
-// FIREBASE HELPERS
+// DATABASE
 // ============================================================
 
-async function getUser(db, chatId) {
+async function getUser(chatId) {
   try {
-    const snapshot = await db.ref(`users/${chatId}`).once("value");
+    const snapshot =
+      await db.ref(`users/${chatId}`).get();
+
     return snapshot.val() || {};
-  } catch {
+  } catch (error) {
+    console.error(
+      "[KEYFREE] Error obteniendo usuario:",
+      error
+    );
+
     return {};
   }
 }
 
-async function saveUser(db, chatId, data) {
-  await db.ref(`users/${chatId}`).update(data);
+async function saveUser(chatId, data) {
+  await db
+    .ref(`users/${chatId}`)
+    .update(data);
 }
 
-async function getUserKeys(db, chatId) {
+async function getUserKeys(chatId) {
   try {
-    const snapshot = await db.ref("keys").once("value");
+    const snapshot =
+      await db.ref("keys").get();
+
     const data = snapshot.val() || {};
 
     return Object.entries(data)
@@ -119,7 +146,12 @@ async function getUserKeys(db, chatId) {
           item.type === "free"
         );
       });
-  } catch {
+  } catch (error) {
+    console.error(
+      "[KEYFREE] Error obteniendo keys:",
+      error
+    );
+
     return [];
   }
 }
@@ -128,8 +160,8 @@ async function getUserKeys(db, chatId) {
 // GENERAR KEY
 // ============================================================
 
-async function generateKey(db, bot, chatId) {
-  const user = await getUser(db, chatId);
+async function generateKey(bot, chatId) {
+  const user = await getUser(chatId);
 
   const isOwner =
     user.role === "owner" ||
@@ -141,14 +173,16 @@ async function generateKey(db, bot, chatId) {
     user.isAdmin === true ||
     user.admin === true;
 
-  const isStaff = isOwner || isAdmin;
+  const isStaff =
+    isOwner || isAdmin;
 
-  // ----------------------------------------------------------
-  // CONTROL DE COOLDOWN
-  // ----------------------------------------------------------
+  // ==========================================================
+  // COOLDOWN
+  // ==========================================================
 
   if (!isStaff) {
-    const remaining = getRemainingTime(user.freeKeyAt);
+    const remaining =
+      getRemainingTime(user.freeKeyAt);
 
     if (remaining > 0) {
       return {
@@ -158,9 +192,9 @@ async function generateKey(db, bot, chatId) {
       };
     }
 
-    // --------------------------------------------------------
-    // CONTROL DE ANUNCIOS
-    // --------------------------------------------------------
+    // ========================================================
+    // ANUNCIOS
+    // ========================================================
 
     if (!user.adsKeyUnlocked) {
       return {
@@ -170,15 +204,20 @@ async function generateKey(db, bot, chatId) {
     }
   }
 
-  // ----------------------------------------------------------
-  // GENERAR KEY
-  // ----------------------------------------------------------
+  // ==========================================================
+  // CREAR KEY
+  // ==========================================================
 
-  const key = generateRandomKey();
-  const telegramName = await getTelegramName(bot, chatId);
+  const key =
+    generateRandomKey();
+
+  const telegramName =
+    await getTelegramName(bot, chatId);
 
   const now = Date.now();
-  const expiresAt = now + KEY_LIFETIME;
+
+  const expiresAt =
+    now + KEY_LIFETIME;
 
   const keyData = {
     key,
@@ -190,25 +229,27 @@ async function generateKey(db, bot, chatId) {
     active: true,
   };
 
-  await db.ref(`keys/${key}`).set(keyData);
+  await db
+    .ref(`keys/${key}`)
+    .set(keyData);
 
-  // ----------------------------------------------------------
-  // CONSUMIR ACCESO DE ANUNCIOS
-  // ----------------------------------------------------------
+  // ==========================================================
+  // CONSUMIR DESBLOQUEO
+  // ==========================================================
 
   if (!isStaff) {
-    await saveUser(db, chatId, {
+    await saveUser(chatId, {
       adsKeyUnlocked: false,
       freeKeyAt: now,
     });
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // HISTORIAL
-  // ----------------------------------------------------------
+  // ==========================================================
 
   try {
-    await db.ref("keyHistory").push({
+    await db.ref("keyHistory").push().set({
       key,
       type: "free",
       chatId: String(chatId),
@@ -217,30 +258,40 @@ async function generateKey(db, bot, chatId) {
       createdAt: now,
       expiresAt,
     });
-  } catch {
-    // El historial no debe impedir la creación de la key
+  } catch (error) {
+    console.error(
+      "[KEYFREE] Error historial:",
+      error
+    );
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // CONTADOR
-  // ----------------------------------------------------------
+  // ==========================================================
 
   let activeCount = 0;
 
   try {
-    const snapshot = await db.ref("keys").once("value");
-    const keys = snapshot.val() || {};
+    const snapshot =
+      await db.ref("keys").get();
 
-    activeCount = Object.values(keys).filter((item) => {
-      return (
-        item &&
-        item.active === true &&
-        item.type === "free" &&
-        Number(item.expiresAt || 0) > now
-      );
-    }).length;
-  } catch {
-    activeCount = 0;
+    const keys =
+      snapshot.val() || {};
+
+    activeCount =
+      Object.values(keys).filter((item) => {
+        return (
+          item &&
+          item.active === true &&
+          item.type === "free" &&
+          Number(item.expiresAt || 0) > now
+        );
+      }).length;
+  } catch (error) {
+    console.error(
+      "[KEYFREE] Error contador:",
+      error
+    );
   }
 
   return {
@@ -253,7 +304,7 @@ async function generateKey(db, bot, chatId) {
 }
 
 // ============================================================
-// MENÚ KEYFREE
+// MENÚ
 // ============================================================
 
 function keyFreeMenu() {
@@ -309,7 +360,7 @@ function keyFreeMessage() {
 }
 
 // ============================================================
-// MOSTRAR ANUNCIOS
+// ANUNCIOS
 // ============================================================
 
 async function sendAdRequired(bot, chatId) {
@@ -343,27 +394,31 @@ async function sendAdRequired(bot, chatId) {
 }
 
 // ============================================================
-// CREAR KEY SEGÚN MODO
+// CREAR KEY
 // ============================================================
 
 async function createKeyForMode({
   bot,
-  db,
   chatId,
   mode,
 }) {
-  const result = await generateKey(db, bot, chatId);
+  const result =
+    await generateKey(bot, chatId);
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // COOLDOWN
-  // ----------------------------------------------------------
+  // ==========================================================
 
-  if (!result.success && result.reason === "cooldown") {
+  if (
+    !result.success &&
+    result.reason === "cooldown"
+  ) {
     await bot.sendMessage(
       chatId,
       "⏳ <b>KEY FREE NO DISPONIBLE</b>\n\n" +
         "Ya utilizaste tu key gratuita.\n\n" +
-        `🕐 Podrás solicitar otra en:\n<b>${formatRemainingTime(
+        "🕐 Podrás solicitar otra en:\n" +
+        `<b>${formatRemainingTime(
           result.remaining
         )}</b>`,
       {
@@ -374,12 +429,19 @@ async function createKeyForMode({
     return;
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // ANUNCIOS
-  // ----------------------------------------------------------
+  // ==========================================================
 
-  if (!result.success && result.reason === "ads") {
-    await sendAdRequired(bot, chatId);
+  if (
+    !result.success &&
+    result.reason === "ads"
+  ) {
+    await sendAdRequired(
+      bot,
+      chatId
+    );
+
     return;
   }
 
@@ -388,26 +450,28 @@ async function createKeyForMode({
       chatId,
       "❌ No fue posible generar la key."
     );
+
     return;
   }
 
-  const safeKey = escapeHtml(result.key);
+  const safeKey =
+    escapeHtml(result.key);
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // AUTO
-  // ----------------------------------------------------------
+  // ==========================================================
 
   if (mode === "auto") {
     const command =
       `export INSTALL_KEY="${safeKey}"; ` +
-      `bash &lt;(curl -fsSL ${INSTALL_URL})`;
+      `bash <(curl -fsSL ${INSTALL_URL})`;
 
     await bot.sendMessage(
       chatId,
       "🤖 <b>INSTALACIÓN AUTOMÁTICA</b>\n\n" +
         "Tu key fue generada correctamente.\n\n" +
         "📋 <b>Comando:</b>\n\n" +
-        `<code>${command}</code>\n\n` +
+        `<code>${escapeHtml(command)}</code>\n\n` +
         "📌 Copia y pega el comando completo en tu VPS.\n\n" +
         "⏳ <b>Duración:</b> 2 horas",
       {
@@ -417,7 +481,8 @@ async function createKeyForMode({
             [
               {
                 text: "🔄 Generar otra",
-                callback_data: "free_key_auto",
+                callback_data:
+                  "free_key_auto",
               },
             ],
           ],
@@ -428,13 +493,13 @@ async function createKeyForMode({
     return;
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // NORMAL
-  // ----------------------------------------------------------
+  // ==========================================================
 
   if (mode === "normal") {
     const command =
-      `bash &lt;(curl -fsSL ${INSTALL_URL})`;
+      `bash <(curl -fsSL ${INSTALL_URL})`;
 
     await bot.sendMessage(
       chatId,
@@ -442,7 +507,7 @@ async function createKeyForMode({
         "🔑 <b>Tu Key:</b>\n" +
         `<code>${safeKey}</code>\n\n` +
         "📋 <b>Comando de instalación:</b>\n\n" +
-        `<code>${command}</code>\n\n` +
+        `<code>${escapeHtml(command)}</code>\n\n` +
         "📌 Ejecuta el comando y cuando el instalador solicite la key, introduce la mostrada arriba.\n\n" +
         "⏳ <b>Duración:</b> 2 horas",
       {
@@ -452,7 +517,8 @@ async function createKeyForMode({
             [
               {
                 text: "🔄 Generar otra",
-                callback_data: "free_key_normal",
+                callback_data:
+                  "free_key_normal",
               },
             ],
           ],
@@ -463,13 +529,13 @@ async function createKeyForMode({
     return;
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // ACTUALIZAR
-  // ----------------------------------------------------------
+  // ==========================================================
 
   if (mode === "update") {
     const command =
-      `bash &lt;(curl -fsSL ${UPDATE_URL})`;
+      `bash <(curl -fsSL ${UPDATE_URL})`;
 
     await bot.sendMessage(
       chatId,
@@ -477,7 +543,7 @@ async function createKeyForMode({
         "🔑 <b>Tu Key:</b>\n" +
         `<code>${safeKey}</code>\n\n` +
         "📋 <b>Comando de actualización:</b>\n\n" +
-        `<code>${command}</code>\n\n` +
+        `<code>${escapeHtml(command)}</code>\n\n` +
         "📌 Cuando el actualizador solicite la key, introduce la mostrada arriba.\n\n" +
         "⏳ <b>Duración:</b> 2 horas",
       {
@@ -487,33 +553,38 @@ async function createKeyForMode({
             [
               {
                 text: "🔄 Generar otra",
-                callback_data: "free_key_update",
+                callback_data:
+                  "free_key_update",
               },
             ],
           ],
         },
       }
     );
-
-    return;
   }
 }
 
 // ============================================================
-// MENÚ REVOCAR
+// REVOCAR
 // ============================================================
 
-async function showRevokeMenu(bot, db, chatId) {
-  const keys = await getUserKeys(db, chatId);
+async function showRevokeMenu(
+  bot,
+  chatId
+) {
+  const keys =
+    await getUserKeys(chatId);
 
-  const now = Date.now();
+  const now =
+    Date.now();
 
-  const activeKeys = keys.filter((item) => {
-    return (
-      item.active === true &&
-      Number(item.expiresAt || 0) > now
-    );
-  });
+  const activeKeys =
+    keys.filter((item) => {
+      return (
+        item.active === true &&
+        Number(item.expiresAt || 0) > now
+      );
+    });
 
   if (activeKeys.length === 0) {
     await bot.sendMessage(
@@ -528,21 +599,20 @@ async function showRevokeMenu(bot, db, chatId) {
     return;
   }
 
-  const buttons = activeKeys.map((item) => {
-    const safeKey = escapeHtml(item.key);
-
-    return [
+  const buttons =
+    activeKeys.map((item) => [
       {
         text: `🚫 ${item.key}`,
-        callback_data: `free_revoke_${item.key}`,
+        callback_data:
+          `free_revoke_${item.key}`,
       },
-    ];
-  });
+    ]);
 
   buttons.push([
     {
       text: "❌ Cancelar",
-      callback_data: "free_key_cancel",
+      callback_data:
+        "free_key_cancel",
     },
   ]);
 
@@ -560,37 +630,86 @@ async function showRevokeMenu(bot, db, chatId) {
 }
 
 // ============================================================
-// REGISTRO DEL MÓDULO
+// REGISTRO
 // ============================================================
 
-export default function registerFreeKey(bot, db) {
-  // ----------------------------------------------------------
+export default function registerFreeKey(bot) {
+
+  // ==========================================================
   // /keyfree
-  // ----------------------------------------------------------
+  // ==========================================================
 
-  bot.onText(/^\/keyfree(?:@\w+)?$/i, async (msg) => {
-    const chatId = msg.chat.id;
+  bot.onText(
+    /^\/keyfree(?:@\w+)?$/i,
+    async (msg) => {
 
-    try {
-      const user = await getUser(db, chatId);
+      const chatId =
+        msg.chat.id;
 
-      const isOwner =
-        user.role === "owner" ||
-        user.isOwner === true ||
-        user.owner === true;
+      try {
+        const user =
+          await getUser(chatId);
 
-      const isAdmin =
-        user.role === "admin" ||
-        user.isAdmin === true ||
-        user.admin === true;
+        const isOwner =
+          user.role === "owner" ||
+          user.isOwner === true ||
+          user.owner === true;
 
-      const isStaff = isOwner || isAdmin;
+        const isAdmin =
+          user.role === "admin" ||
+          user.isAdmin === true ||
+          user.admin === true;
 
-      // ------------------------------------------------------
-      // STAFF
-      // ------------------------------------------------------
+        const isStaff =
+          isOwner || isAdmin;
 
-      if (isStaff) {
+        // STAFF
+        if (isStaff) {
+          await bot.sendMessage(
+            chatId,
+            keyFreeMessage(),
+            {
+              parse_mode: "HTML",
+              ...keyFreeMenu(),
+            }
+          );
+
+          return;
+        }
+
+        // COOLDOWN
+        const remaining =
+          getRemainingTime(
+            user.freeKeyAt
+          );
+
+        if (remaining > 0) {
+          await bot.sendMessage(
+            chatId,
+            "⏳ <b>KEY FREE EN COOLDOWN</b>\n\n" +
+              "Podrás solicitar otra key en:\n\n" +
+              `<b>${formatRemainingTime(
+                remaining
+              )}</b>`,
+            {
+              parse_mode: "HTML",
+            }
+          );
+
+          return;
+        }
+
+        // ANUNCIOS
+        if (!user.adsKeyUnlocked) {
+          await sendAdRequired(
+            bot,
+            chatId
+          );
+
+          return;
+        }
+
+        // MENÚ
         await bot.sendMessage(
           chatId,
           keyFreeMessage(),
@@ -600,283 +719,341 @@ export default function registerFreeKey(bot, db) {
           }
         );
 
+      } catch (error) {
+
+        console.error(
+          "[KEYFREE]",
+          error
+        );
+
+        await bot.sendMessage(
+          chatId,
+          "❌ Ocurrió un error al abrir el gestor de Key Free."
+        );
+      }
+    }
+  );
+
+  // ==========================================================
+  // CALLBACKS
+  // ==========================================================
+
+  bot.on(
+    "callback_query",
+    async (query) => {
+
+      if (!query.data) return;
+
+      const chatId =
+        query.message?.chat?.id;
+
+      if (!chatId) return;
+
+      // AUTO
+      if (
+        query.data ===
+        "free_key_auto"
+      ) {
+
+        await bot.answerCallbackQuery(
+          query.id
+        );
+
+        await createKeyForMode({
+          bot,
+          chatId,
+          mode: "auto",
+        });
+
         return;
       }
 
-      // ------------------------------------------------------
-      // COOLDOWN
-      // ------------------------------------------------------
+      // NORMAL
+      if (
+        query.data ===
+        "free_key_normal"
+      ) {
 
-      const remaining = getRemainingTime(user.freeKeyAt);
+        await bot.answerCallbackQuery(
+          query.id
+        );
 
-      if (remaining > 0) {
+        await createKeyForMode({
+          bot,
+          chatId,
+          mode: "normal",
+        });
+
+        return;
+      }
+
+      // UPDATE
+      if (
+        query.data ===
+        "free_key_update"
+      ) {
+
+        await bot.answerCallbackQuery(
+          query.id
+        );
+
+        await createKeyForMode({
+          bot,
+          chatId,
+          mode: "update",
+        });
+
+        return;
+      }
+
+      // REVOCAR MENÚ
+      if (
+        query.data ===
+        "free_key_revoke_menu"
+      ) {
+
+        await bot.answerCallbackQuery(
+          query.id
+        );
+
+        await showRevokeMenu(
+          bot,
+          chatId
+        );
+
+        return;
+      }
+
+      // CANCELAR
+      if (
+        query.data ===
+        "free_key_cancel"
+      ) {
+
+        await bot.answerCallbackQuery(
+          query.id
+        );
+
         await bot.sendMessage(
           chatId,
-          "⏳ <b>KEY FREE EN COOLDOWN</b>\n\n" +
-            `Podrás solicitar otra key en:\n\n` +
-            `<b>${formatRemainingTime(remaining)}</b>`,
+          "↩️ Operación cancelada."
+        );
+
+        return;
+      }
+
+      // ======================================================
+      // ANUNCIOS COMPLETADOS
+      // ======================================================
+
+      if (
+        query.data ===
+        "free_ads_completed"
+      ) {
+
+        await bot.answerCallbackQuery(
+          query.id
+        );
+
+        try {
+
+          await saveUser(
+            chatId,
+            {
+              adsKeyUnlocked: true,
+            }
+          );
+
+          await bot.sendMessage(
+            chatId,
+            "✅ <b>ANUNCIOS COMPLETADOS</b>\n\n" +
+              "Tu Key Free ha sido desbloqueada.\n\n" +
+              "Ahora puedes usar nuevamente:\n" +
+              "🤖 Auto\n" +
+              "📦 Normal\n" +
+              "🔄 Actualizar",
+            {
+              parse_mode: "HTML",
+              ...keyFreeMenu(),
+            }
+          );
+
+        } catch (error) {
+
+          console.error(
+            "[KEYFREE ADS CALLBACK]",
+            error
+          );
+
+          await bot.sendMessage(
+            chatId,
+            "❌ No se pudo activar la Key Free."
+          );
+        }
+
+        return;
+      }
+
+      // ======================================================
+      // REVOCAR KEY
+      // ======================================================
+
+      if (
+        query.data.startsWith(
+          "free_revoke_"
+        )
+      ) {
+
+        await bot.answerCallbackQuery(
+          query.id
+        );
+
+        const key =
+          query.data.substring(
+            "free_revoke_".length
+          );
+
+        if (!key) return;
+
+        try {
+
+          const keyRef =
+            db.ref(`keys/${key}`);
+
+          const snapshot =
+            await keyRef.get();
+
+          if (!snapshot.exists()) {
+
+            await bot.sendMessage(
+              chatId,
+              "❌ La key ya no existe."
+            );
+
+            return;
+          }
+
+          const keyData =
+            snapshot.val();
+
+          if (
+            String(keyData.chatId) !==
+              String(chatId) ||
+            keyData.type !== "free"
+          ) {
+
+            await bot.sendMessage(
+              chatId,
+              "❌ No puedes revocar esta key."
+            );
+
+            return;
+          }
+
+          await keyRef.update({
+            active: false,
+            revokedAt: Date.now(),
+          });
+
+          try {
+
+            await db
+              .ref("keyHistory")
+              .push()
+              .set({
+                key,
+                type: "free",
+                chatId:
+                  String(chatId),
+                action: "revoked",
+                revokedAt:
+                  Date.now(),
+              });
+
+          } catch (error) {
+
+            console.error(
+              "[KEYFREE] Error historial revocación:",
+              error
+            );
+          }
+
+          await bot.sendMessage(
+            chatId,
+            "✅ <b>KEY REVOCADA</b>\n\n" +
+              `🔑 Key:\n<code>${escapeHtml(
+                key
+              )}</code>\n\n` +
+              "La key ya no podrá utilizarse.",
+            {
+              parse_mode: "HTML",
+            }
+          );
+
+        } catch (error) {
+
+          console.error(
+            "[KEYFREE REVOKE]",
+            error
+          );
+
+          await bot.sendMessage(
+            chatId,
+            "❌ No se pudo revocar la key."
+          );
+        }
+
+        return;
+      }
+    }
+  );
+
+  // ==========================================================
+  // /start adscompleted
+  // ==========================================================
+
+  bot.onText(
+    /^\/start(?:@\w+)?\s+adscompleted$/i,
+    async (msg) => {
+
+      const chatId =
+        msg.chat.id;
+
+      try {
+
+        // IMPORTANTE:
+        // NO usamos {...user}.
+        // Solo actualizamos el campo necesario.
+
+        await saveUser(
+          chatId,
+          {
+            adsKeyUnlocked: true,
+          }
+        );
+
+        await bot.sendMessage(
+          chatId,
+          "✅ <b>ANUNCIOS COMPLETADOS</b>\n\n" +
+            "Tu Key Free está desbloqueada.\n\n" +
+            "Usa <code>/keyfree</code> para continuar.",
           {
             parse_mode: "HTML",
           }
         );
 
-        return;
-      }
+      } catch (error) {
 
-      // ------------------------------------------------------
-      // ANUNCIOS
-      // ------------------------------------------------------
-
-      if (!user.adsKeyUnlocked) {
-        await sendAdRequired(bot, chatId);
-        return;
-      }
-
-      // ------------------------------------------------------
-      // MENÚ
-      // ------------------------------------------------------
-
-      await bot.sendMessage(
-        chatId,
-        keyFreeMessage(),
-        {
-          parse_mode: "HTML",
-          ...keyFreeMenu(),
-        }
-      );
-    } catch (error) {
-      console.error("[KEYFREE]", error);
-
-      await bot.sendMessage(
-        chatId,
-        "❌ Ocurrió un error al abrir el gestor de Key Free."
-      );
-    }
-  });
-
-  // ----------------------------------------------------------
-  // AUTO
-  // ----------------------------------------------------------
-
-  bot.on("callback_query", async (query) => {
-    if (!query.data) return;
-
-    const chatId = query.message?.chat?.id;
-
-    if (!chatId) return;
-
-    if (query.data === "free_key_auto") {
-      await bot.answerCallbackQuery(query.id);
-
-      await createKeyForMode({
-        bot,
-        db,
-        chatId,
-        mode: "auto",
-      });
-
-      return;
-    }
-
-    // --------------------------------------------------------
-    // NORMAL
-    // --------------------------------------------------------
-
-    if (query.data === "free_key_normal") {
-      await bot.answerCallbackQuery(query.id);
-
-      await createKeyForMode({
-        bot,
-        db,
-        chatId,
-        mode: "normal",
-      });
-
-      return;
-    }
-
-    // --------------------------------------------------------
-    // UPDATE
-    // --------------------------------------------------------
-
-    if (query.data === "free_key_update") {
-      await bot.answerCallbackQuery(query.id);
-
-      await createKeyForMode({
-        bot,
-        db,
-        chatId,
-        mode: "update",
-      });
-
-      return;
-    }
-
-    // --------------------------------------------------------
-    // REVOCAR MENÚ
-    // --------------------------------------------------------
-
-    if (query.data === "free_key_revoke_menu") {
-      await bot.answerCallbackQuery(query.id);
-
-      await showRevokeMenu(bot, db, chatId);
-
-      return;
-    }
-
-    // --------------------------------------------------------
-    // CANCELAR
-    // --------------------------------------------------------
-
-    if (query.data === "free_key_cancel") {
-      await bot.answerCallbackQuery(query.id);
-
-      await bot.sendMessage(
-        chatId,
-        "↩️ Operación cancelada."
-      );
-
-      return;
-    }
-
-    // --------------------------------------------------------
-    // ANUNCIOS COMPLETADOS
-    // --------------------------------------------------------
-
-    if (query.data === "free_ads_completed") {
-      await bot.answerCallbackQuery(query.id);
-
-      const user = await getUser(db, chatId);
-
-      await saveUser(db, chatId, {
-        ...user,
-        adsKeyUnlocked: true,
-      });
-
-      await bot.sendMessage(
-        chatId,
-        "✅ <b>ANUNCIOS COMPLETADOS</b>\n\n" +
-          "Tu Key Free ha sido desbloqueada.\n\n" +
-          "Ahora puedes usar nuevamente:\n" +
-          "🤖 Auto\n" +
-          "📦 Normal\n" +
-          "🔄 Actualizar",
-        {
-          parse_mode: "HTML",
-          ...keyFreeMenu(),
-        }
-      );
-
-      return;
-    }
-
-    // --------------------------------------------------------
-    // REVOCAR KEY
-    // --------------------------------------------------------
-
-    if (query.data.startsWith("free_revoke_")) {
-      await bot.answerCallbackQuery(query.id);
-
-      const key = query.data.substring("free_revoke_".length);
-
-      if (!key) return;
-
-      const keyRef = db.ref(`keys/${key}`);
-      const snapshot = await keyRef.once("value");
-
-      if (!snapshot.exists()) {
-        await bot.sendMessage(
-          chatId,
-          "❌ La key ya no existe."
+        console.error(
+          "[KEYFREE ADS]",
+          error
         );
 
-        return;
-      }
-
-      const keyData = snapshot.val();
-
-      // ------------------------------------------------------
-      // SEGURIDAD
-      // ------------------------------------------------------
-
-      if (
-        String(keyData.chatId) !== String(chatId) ||
-        keyData.type !== "free"
-      ) {
         await bot.sendMessage(
           chatId,
-          "❌ No puedes revocar esta key."
+          "❌ No se pudo activar la Key Free."
         );
-
-        return;
       }
-
-      // ------------------------------------------------------
-      // REVOCAR
-      // ------------------------------------------------------
-
-      await keyRef.update({
-        active: false,
-        revokedAt: Date.now(),
-      });
-
-      try {
-        await db.ref("keyHistory").push({
-          key,
-          type: "free",
-          chatId: String(chatId),
-          action: "revoked",
-          revokedAt: Date.now(),
-        });
-      } catch {
-        // No detener la operación si falla el historial
-      }
-
-      await bot.sendMessage(
-        chatId,
-        "✅ <b>KEY REVOCADA</b>\n\n" +
-          `🔑 Key:\n<code>${escapeHtml(key)}</code>\n\n` +
-          "La key ya no podrá utilizarse.",
-        {
-          parse_mode: "HTML",
-        }
-      );
-
-      return;
     }
-  });
-
-  // ----------------------------------------------------------
-  // /start adscompleted
-  // ----------------------------------------------------------
-
-  bot.onText(/^\/start\s+adscompleted$/i, async (msg) => {
-    const chatId = msg.chat.id;
-
-    try {
-      const user = await getUser(db, chatId);
-
-      await saveUser(db, chatId, {
-        ...user,
-        adsKeyUnlocked: true,
-      });
-
-      await bot.sendMessage(
-        chatId,
-        "✅ <b>ANUNCIOS COMPLETADOS</b>\n\n" +
-          "Tu Key Free está desbloqueada.\n\n" +
-          "Usa <code>/keyfree</code> para continuar.",
-        {
-          parse_mode: "HTML",
-        }
-      );
-    } catch (error) {
-      console.error("[KEYFREE ADS]", error);
-
-      await bot.sendMessage(
-        chatId,
-        "❌ No se pudo activar la Key Free."
-      );
-    }
-  });
+  );
 }
