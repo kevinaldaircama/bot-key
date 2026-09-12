@@ -1,860 +1,1048 @@
-<!DOCTYPE html>
-<html lang="es">
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 
-<head>
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+>
 
-    <meta charset="UTF-8">
+<title>KevinTech • Key Free</title>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    <title>KevinTech Premium</title>
+<!-- Monetag -->
+<script
+    src="//libtl.com/sdk.js"
+    data-zone="11217882"
+    data-sdk="show_11217882">
+</script>
 
-    <!-- Telegram -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
 
-    <!-- Monetag -->
-    <script
-        src="//libtl.com/sdk.js"
-        data-zone="11217882"
-        data-sdk="show_11217882">
-    </script>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+    }
 
-    <style>
+    :root {
+        --cyan: #00e5ff;
+        --blue: #087cff;
+        --purple: #8b5cf6;
+        --green: #00f5a0;
+        --red: #ff4164;
+        --white: #ffffff;
+        --muted: rgba(255,255,255,.55);
+        --panel: rgba(9,14,25,.72);
+        --border: rgba(255,255,255,.10);
+        --bg: #02040a;
+    }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
+    html,
+    body {
+        width: 100%;
+        min-height: 100%;
+        background: var(--bg);
+    }
+
+    body {
+        min-height: 100dvh;
+        overflow-x: hidden;
+        color: var(--white);
+
+        font-family:
+            Inter,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            Roboto,
+            Arial,
+            sans-serif;
+    }
+
+    /* =====================================================
+       BACKGROUND
+    ===================================================== */
+
+    .background {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        pointer-events: none;
+
+        background:
+            radial-gradient(
+                circle at 50% -10%,
+                rgba(0,229,255,.16),
+                transparent 38%
+            ),
+            radial-gradient(
+                circle at 0% 100%,
+                rgba(139,92,246,.16),
+                transparent 35%
+            ),
+            radial-gradient(
+                circle at 100% 70%,
+                rgba(0,119,255,.10),
+                transparent 35%
+            ),
+            #02040a;
+    }
+
+    .orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(70px);
+        opacity: .22;
+    }
+
+    .orb.one {
+        width: 180px;
+        height: 180px;
+        background: var(--cyan);
+        top: -80px;
+        left: -70px;
+        animation: floatOne 8s ease-in-out infinite;
+    }
+
+    .orb.two {
+        width: 220px;
+        height: 220px;
+        background: var(--purple);
+        right: -100px;
+        bottom: -100px;
+        animation: floatTwo 10s ease-in-out infinite;
+    }
+
+    @keyframes floatOne {
+        50% {
+            transform: translate(40px, 40px);
+        }
+    }
+
+    @keyframes floatTwo {
+        50% {
+            transform: translate(-30px, -40px);
+        }
+    }
+
+    .grid {
+        position: absolute;
+        width: 160%;
+        height: 70%;
+        left: -30%;
+        bottom: -20%;
+
+        background-image:
+            linear-gradient(
+                rgba(0,229,255,.035) 1px,
+                transparent 1px
+            ),
+            linear-gradient(
+                90deg,
+                rgba(0,229,255,.035) 1px,
+                transparent 1px
+            );
+
+        background-size: 38px 38px;
+
+        transform:
+            perspective(500px)
+            rotateX(62deg);
+
+        mask-image:
+            linear-gradient(
+                to top,
+                black,
+                transparent
+            );
+
+        animation:
+            gridMove
+            14s
+            linear
+            infinite;
+    }
+
+    @keyframes gridMove {
+        from {
+            background-position: 0 0;
         }
 
-        :root {
-            --cyan: #00e5ff;
-            --blue: #0077ff;
-            --purple: #8b5cf6;
-            --green: #00ff9d;
-            --red: #ff3158;
-            --bg: #03050a;
+        to {
+            background-position: 0 80px;
+        }
+    }
+
+    /* =====================================================
+       PARTICLES
+    ===================================================== */
+
+    .particles span {
+        position: absolute;
+
+        width: 2px;
+        height: 2px;
+
+        border-radius: 50%;
+
+        background: var(--cyan);
+
+        box-shadow:
+            0 0 10px var(--cyan);
+
+        animation:
+            particle
+            5s
+            linear
+            infinite;
+    }
+
+    .particles span:nth-child(1) {
+        left: 12%;
+        top: 20%;
+    }
+
+    .particles span:nth-child(2) {
+        left: 25%;
+        top: 72%;
+        animation-delay: 1s;
+    }
+
+    .particles span:nth-child(3) {
+        left: 74%;
+        top: 18%;
+        animation-delay: 2s;
+    }
+
+    .particles span:nth-child(4) {
+        left: 88%;
+        top: 63%;
+        animation-delay: 3s;
+    }
+
+    .particles span:nth-child(5) {
+        left: 52%;
+        top: 86%;
+        animation-delay: 4s;
+    }
+
+    .particles span:nth-child(6) {
+        left: 93%;
+        top: 34%;
+        animation-delay: 1.5s;
+    }
+
+    @keyframes particle {
+
+        0% {
+            opacity: 0;
+            transform: translateY(40px);
         }
 
-        html,
-        body {
-            width: 100%;
-            height: 100%;
+        30% {
+            opacity: 1;
         }
 
-        body {
-            overflow: hidden;
-            background: var(--bg);
-            color: white;
+        100% {
+            opacity: 0;
+            transform: translateY(-100px);
+        }
+    }
 
-            font-family:
-                Inter,
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                sans-serif;
+    /* =====================================================
+       APP
+    ===================================================== */
+
+    .app {
+        position: relative;
+        z-index: 5;
+
+        width: 100%;
+        min-height: 100dvh;
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        padding: 22px 16px;
+    }
+
+    .panel {
+        width: 100%;
+        max-width: 410px;
+
+        padding: 24px 20px 20px;
+
+        border: 1px solid var(--border);
+
+        border-radius: 30px;
+
+        background:
+            linear-gradient(
+                145deg,
+                rgba(16,23,39,.82),
+                rgba(3,7,14,.78)
+            );
+
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+
+        box-shadow:
+            0 30px 80px rgba(0,0,0,.55),
+            inset 0 1px rgba(255,255,255,.05);
+    }
+
+    /* =====================================================
+       TOP BADGE
+    ===================================================== */
+
+    .top-badge {
+        width: fit-content;
+        margin: 0 auto 20px;
+
+        display: flex;
+        align-items: center;
+        gap: 7px;
+
+        padding: 7px 12px;
+
+        border-radius: 50px;
+
+        border: 1px solid
+            rgba(0,229,255,.18);
+
+        background:
+            rgba(0,229,255,.055);
+
+        color:
+            rgba(255,255,255,.65);
+
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+    }
+
+    .live-dot {
+        width: 6px;
+        height: 6px;
+
+        border-radius: 50%;
+
+        background: var(--green);
+
+        box-shadow:
+            0 0 10px var(--green);
+
+        animation:
+            blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+        50% {
+            opacity: .35;
+        }
+    }
+
+    /* =====================================================
+       LOGO
+    ===================================================== */
+
+    .logo-area {
+        position: relative;
+
+        width: 118px;
+        height: 118px;
+
+        margin:
+            0 auto 20px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ring {
+        position: absolute;
+
+        border-radius: 50%;
+
+        border: 1px solid
+            rgba(0,229,255,.35);
+
+        animation:
+            rotate
+            8s
+            linear
+            infinite;
+    }
+
+    .ring.one {
+        width: 118px;
+        height: 118px;
+    }
+
+    .ring.two {
+        width: 98px;
+        height: 98px;
+
+        border-color:
+            rgba(139,92,246,.42);
+
+        animation-direction: reverse;
+        animation-duration: 6s;
+    }
+
+    .ring.three {
+        width: 82px;
+        height: 82px;
+
+        border-color:
+            rgba(0,229,255,.18);
+
+        animation-duration: 4s;
+    }
+
+    @keyframes rotate {
+        from {
+            transform: rotate(0);
         }
 
-        /* ==============================
-           BACKGROUND
-        ============================== */
-
-        .background {
-            position: fixed;
-            inset: 0;
-            overflow: hidden;
-            pointer-events: none;
-
-            background:
-                radial-gradient(
-                    circle at 50% 20%,
-                    rgba(0,229,255,.12),
-                    transparent 30%
-                ),
-                radial-gradient(
-                    circle at 10% 90%,
-                    rgba(139,92,246,.13),
-                    transparent 30%
-                ),
-                #03050a;
+        to {
+            transform: rotate(360deg);
         }
+    }
 
-        .grid {
-            position: absolute;
-            inset: -50%;
+    .logo {
+        position: relative;
 
-            background-image:
-                linear-gradient(
-                    rgba(0,229,255,.035) 1px,
-                    transparent 1px
-                ),
-                linear-gradient(
-                    90deg,
-                    rgba(0,229,255,.035) 1px,
-                    transparent 1px
-                );
+        width: 68px;
+        height: 68px;
 
-            background-size: 45px 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
-            transform:
-                perspective(500px)
-                rotateX(60deg)
-                translateY(150px);
+        border-radius: 21px;
 
-            animation:
-                gridMove 12s linear infinite;
-        }
+        background:
+            linear-gradient(
+                135deg,
+                var(--cyan),
+                var(--blue) 52%,
+                var(--purple)
+            );
 
-        @keyframes gridMove {
+        box-shadow:
+            0 0 30px rgba(0,229,255,.42),
+            0 0 70px rgba(0,119,255,.16);
 
-            from {
-                transform:
-                    perspective(500px)
-                    rotateX(60deg)
-                    translateY(0);
-            }
+        font-size: 21px;
+        font-weight: 950;
+        letter-spacing: -1.5px;
 
-            to {
-                transform:
-                    perspective(500px)
-                    rotateX(60deg)
-                    translateY(90px);
-            }
+        animation:
+            logoPulse
+            3s
+            ease-in-out
+            infinite;
+    }
 
-        }
+    @keyframes logoPulse {
 
-        /* ==============================
-           PARTICULAS
-        ============================== */
-
-        .particles span {
-
-            position: absolute;
-
-            width: 3px;
-            height: 3px;
-
-            background: var(--cyan);
-
-            border-radius: 50%;
-
+        50% {
             box-shadow:
-                0 0 10px var(--cyan);
+                0 0 45px rgba(0,229,255,.65),
+                0 0 90px rgba(0,119,255,.25);
+        }
+    }
 
-            animation:
-                particle 5s linear infinite;
+    /* =====================================================
+       TITLES
+    ===================================================== */
+
+    .mini-title {
+        margin-bottom: 8px;
+
+        color: var(--cyan);
+
+        font-size: 9px;
+        font-weight: 900;
+
+        letter-spacing: 3px;
+
+        text-transform: uppercase;
+    }
+
+    h1 {
+        margin-bottom: 12px;
+
+        font-size: 29px;
+        line-height: 1.08;
+
+        font-weight: 950;
+
+        letter-spacing: -1px;
+    }
+
+    h1 span {
+        background:
+            linear-gradient(
+                90deg,
+                #fff,
+                var(--cyan),
+                #fff
+            );
+
+        background-size: 200%;
+
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+
+        animation:
+            shine
+            3s
+            linear
+            infinite;
+    }
+
+    @keyframes shine {
+        to {
+            background-position: 200%;
+        }
+    }
+
+    .description {
+        max-width: 320px;
+
+        margin: 0 auto;
+
+        color: var(--muted);
+
+        font-size: 12px;
+        line-height: 1.65;
+    }
+
+    .description b {
+        color: white;
+    }
+
+    /* =====================================================
+       PROGRESS
+    ===================================================== */
+
+    .progress-card {
+        margin-top: 22px;
+        padding: 15px;
+
+        border-radius: 18px;
+
+        border: 1px solid
+            rgba(255,255,255,.07);
+
+        background:
+            rgba(255,255,255,.035);
+    }
+
+    .progress-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        margin-bottom: 11px;
+    }
+
+    .progress-label {
+        color:
+            rgba(255,255,255,.55);
+
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .progress-count {
+        color: white;
+
+        font-size: 12px;
+        font-weight: 900;
+    }
+
+    .progress-track {
+        width: 100%;
+        height: 7px;
+
+        overflow: hidden;
+
+        border-radius: 50px;
+
+        background:
+            rgba(255,255,255,.07);
+    }
+
+    .progress-bar {
+        width: 0%;
+        height: 100%;
+
+        border-radius: inherit;
+
+        background:
+            linear-gradient(
+                90deg,
+                var(--cyan),
+                var(--blue),
+                var(--purple)
+            );
+
+        box-shadow:
+            0 0 14px
+            rgba(0,229,255,.5);
+
+        transition:
+            width .45s
+            cubic-bezier(.2,.8,.2,1);
+    }
+
+    .steps {
+        display: flex;
+        justify-content: space-between;
+
+        margin-top: 10px;
+    }
+
+    .step {
+        width: 7px;
+        height: 7px;
+
+        border-radius: 50%;
+
+        background:
+            rgba(255,255,255,.13);
+
+        transition:
+            .25s ease;
+    }
+
+    .step.active {
+        background: var(--cyan);
+
+        box-shadow:
+            0 0 9px var(--cyan);
+    }
+
+    .step.done {
+        background: var(--green);
+
+        box-shadow:
+            0 0 9px var(--green);
+    }
+
+    /* =====================================================
+       BUTTON
+    ===================================================== */
+
+    .button-wrap {
+        position: relative;
+
+        margin-top: 17px;
+    }
+
+    .glow {
+        position: absolute;
+        inset: -4px;
+
+        border-radius: 18px;
+
+        background:
+            linear-gradient(
+                90deg,
+                var(--cyan),
+                var(--blue),
+                var(--purple),
+                var(--cyan)
+            );
+
+        background-size: 300%;
+
+        filter: blur(13px);
+
+        opacity: .28;
+
+        animation:
+            buttonGlow
+            4s
+            linear
+            infinite;
+    }
+
+    @keyframes buttonGlow {
+        to {
+            background-position: 300%;
+        }
+    }
+
+    #playBtn {
+        position: relative;
+
+        width: 100%;
+
+        min-height: 56px;
+
+        padding: 16px 18px;
+
+        border:
+            1px solid
+            rgba(255,255,255,.15);
+
+        border-radius: 17px;
+
+        background:
+            linear-gradient(
+                135deg,
+                rgba(0,229,255,.18),
+                rgba(0,119,255,.18)
+            );
+
+        color: white;
+
+        font-size: 13px;
+        font-weight: 900;
+
+        cursor: pointer;
+
+        backdrop-filter: blur(12px);
+
+        transition:
+            transform .18s ease,
+            background .18s ease,
+            opacity .18s ease;
+    }
+
+    #playBtn:active {
+        transform: scale(.97);
+    }
+
+    #playBtn:disabled {
+        opacity: .65;
+        cursor: wait;
+    }
+
+    .loader {
+        display: none;
+
+        width: 17px;
+        height: 17px;
+
+        margin-right: 8px;
+
+        vertical-align: -3px;
+
+        border:
+            2px solid
+            rgba(255,255,255,.2);
+
+        border-top-color:
+            var(--cyan);
+
+        border-radius: 50%;
+
+        animation:
+            spin
+            .7s
+            linear
+            infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* =====================================================
+       INFO
+    ===================================================== */
+
+    .info {
+        display: flex;
+
+        align-items: center;
+        gap: 10px;
+
+        margin-top: 13px;
+
+        padding: 11px 12px;
+
+        border-radius: 14px;
+
+        background:
+            rgba(255,255,255,.025);
+
+        border:
+            1px solid
+            rgba(255,255,255,.06);
+
+        color:
+            rgba(255,255,255,.42);
+
+        font-size: 10px;
+
+        text-align: left;
+    }
+
+    .info-icon {
+        flex: 0 0 auto;
+
+        width: 27px;
+        height: 27px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 9px;
+
+        background:
+            rgba(0,229,255,.08);
+
+        color: var(--cyan);
+    }
+
+    /* =====================================================
+       ERROR
+    ===================================================== */
+
+    #error-msg {
+        display: none;
+    }
+
+    .state-icon {
+        width: 78px;
+        height: 78px;
+
+        margin:
+            0 auto 18px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 24px;
+
+        font-size: 31px;
+    }
+
+    .error-icon {
+        background:
+            rgba(255,65,100,.09);
+
+        border:
+            1px solid
+            rgba(255,65,100,.23);
+
+        box-shadow:
+            0 0 35px
+            rgba(255,65,100,.10);
+    }
+
+    .retry,
+    .continue {
+        width: 100%;
+
+        margin-top: 19px;
+
+        padding: 15px;
+
+        border: 0;
+
+        border-radius: 16px;
+
+        color: white;
+
+        font-size: 13px;
+        font-weight: 900;
+
+        cursor: pointer;
+    }
+
+    .retry {
+        background:
+            linear-gradient(
+                135deg,
+                #ff4164,
+                #c92d50
+            );
+    }
+
+    .continue {
+        background:
+            linear-gradient(
+                135deg,
+                #00d89a,
+                #00a875
+            );
+
+        box-shadow:
+            0 10px 30px
+            rgba(0,210,145,.15);
+    }
+
+    /* =====================================================
+       SUCCESS
+    ===================================================== */
+
+    #success-msg {
+        display: none;
+    }
+
+    .success-icon {
+        background:
+            rgba(0,245,160,.09);
+
+        border:
+            1px solid
+            rgba(0,245,160,.25);
+
+        box-shadow:
+            0 0 45px
+            rgba(0,245,160,.12);
+
+        animation:
+            successPop
+            .45s
+            ease-out;
+    }
+
+    @keyframes successPop {
+        0% {
+            transform: scale(.7);
+            opacity: 0;
         }
 
-        .particles span:nth-child(1) {
-            left: 10%;
-            top: 20%;
-            animation-delay: 0s;
+        100% {
+            transform: scale(1);
+            opacity: 1;
         }
+    }
 
-        .particles span:nth-child(2) {
-            left: 25%;
-            top: 70%;
-            animation-delay: 1s;
-        }
+    .success-note {
+        margin-top: 13px;
 
-        .particles span:nth-child(3) {
-            left: 70%;
-            top: 15%;
-            animation-delay: 2s;
-        }
+        color:
+            rgba(255,255,255,.42);
 
-        .particles span:nth-child(4) {
-            left: 85%;
-            top: 65%;
-            animation-delay: 3s;
-        }
+        font-size: 10px;
+        line-height: 1.6;
+    }
 
-        .particles span:nth-child(5) {
-            left: 50%;
-            top: 85%;
-            animation-delay: 4s;
-        }
+    /* =====================================================
+       FOOTER
+    ===================================================== */
 
-        .particles span:nth-child(6) {
-            left: 92%;
-            top: 35%;
-            animation-delay: 1.5s;
-        }
+    .footer {
+        margin-top: 18px;
 
-        @keyframes particle {
+        text-align: center;
 
-            0% {
-                opacity: 0;
-                transform:
-                    translateY(40px);
-            }
+        color:
+            rgba(255,255,255,.25);
 
-            30% {
-                opacity: 1;
-            }
+        font-size: 9px;
+    }
 
-            100% {
-                opacity: 0;
-                transform:
-                    translateY(-100px);
-            }
+    .footer p {
+        margin: 5px;
+    }
 
-        }
+    .footer a {
+        color:
+            rgba(0,229,255,.58);
 
-        /* ==============================
-           APP
-        ============================== */
+        text-decoration: none;
+
+        font-weight: 800;
+    }
+
+    /* =====================================================
+       MOBILE
+    ===================================================== */
+
+    @media (max-height: 700px) {
 
         .app {
-
-            position: relative;
-            z-index: 5;
-
-            width: 100%;
-            height: 100%;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            padding: 20px;
+            align-items: flex-start;
+            padding-top: 12px;
+            padding-bottom: 12px;
         }
 
         .panel {
-
-            width: 100%;
-            max-width: 390px;
-
-            text-align: center;
+            padding-top: 17px;
         }
-
-        /* ==============================
-           LOGO
-        ============================== */
 
         .logo-area {
-
-            position: relative;
-
-            width: 150px;
-            height: 150px;
-
-            margin:
-                0 auto 25px;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
+            transform: scale(.82);
+            margin-bottom: 7px;
         }
 
-        .ring {
-
-            position: absolute;
-
-            border:
-                1px solid
-                rgba(0,229,255,.45);
-
-            border-radius: 50%;
-
-            animation:
-                rotate 8s linear infinite;
-        }
-
-        .ring.one {
-
-            width: 150px;
-            height: 150px;
-        }
-
-        .ring.two {
-
-            width: 125px;
-            height: 125px;
-
-            border-color:
-                rgba(139,92,246,.5);
-
-            animation-direction:
-                reverse;
-
-            animation-duration:
-                6s;
-        }
-
-        .ring.three {
-
-            width: 105px;
-            height: 105px;
-
-            border-color:
-                rgba(0,229,255,.25);
-
-            animation-duration:
-                4s;
-        }
-
-        @keyframes rotate {
-
-            from {
-                transform:
-                    rotate(0deg);
-            }
-
-            to {
-                transform:
-                    rotate(360deg);
-            }
-
-        }
-
-        .logo {
-
-            position: relative;
-
-            width: 82px;
-            height: 82px;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            border-radius: 25px;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    #00e5ff,
-                    #0077ff 55%,
-                    #8b5cf6
-                );
-
-            box-shadow:
-                0 0 25px
-                rgba(0,229,255,.45),
-
-                0 0 70px
-                rgba(0,119,255,.2);
-
-            font-size: 25px;
-
-            font-weight: 950;
-
-            letter-spacing: -2px;
-
-            animation:
-                logoPulse
-                2.5s
-                ease-in-out
-                infinite;
-        }
-
-        @keyframes logoPulse {
-
-            0%,100% {
-
-                box-shadow:
-                    0 0 25px
-                    rgba(0,229,255,.45),
-
-                    0 0 70px
-                    rgba(0,119,255,.2);
-            }
-
-            50% {
-
-                box-shadow:
-                    0 0 45px
-                    rgba(0,229,255,.7),
-
-                    0 0 100px
-                    rgba(0,119,255,.35);
-            }
-
-        }
-
-        /* ==============================
-           TEXTOS
-        ============================== */
-
-        .mini-title {
-
-            font-size: 10px;
-
-            font-weight: 800;
-
-            letter-spacing: 4px;
-
-            color:
-                var(--cyan);
-
-            text-transform:
-                uppercase;
-
-            margin-bottom: 10px;
-        }
-
-        h1 {
-
-            font-size: 32px;
-
-            line-height: 1;
-
-            font-weight: 900;
-
-            letter-spacing: -1px;
-
-            margin-bottom: 13px;
-        }
-
-        h1 span {
-
-            background:
-                linear-gradient(
-                    90deg,
-                    #fff,
-                    var(--cyan),
-                    #fff
-                );
-
-            background-size:
-                200%;
-
-            -webkit-background-clip:
-                text;
-
-            -webkit-text-fill-color:
-                transparent;
-
-            animation:
-                shine
-                3s
-                linear
-                infinite;
-        }
-
-        @keyframes shine {
-
-            to {
-                background-position:
-                    200%;
-            }
-
-        }
-
-        .description {
-
-            max-width: 310px;
-
-            margin:
-                0 auto;
-
-            color:
-                rgba(255,255,255,.55);
-
-            font-size: 13px;
-
-            line-height: 1.6;
-        }
-
-        /* ==============================
-           STATUS
-        ============================== */
-
-        .status {
-
-            display: inline-flex;
-
-            align-items: center;
-
-            gap: 7px;
-
-            margin-top: 18px;
-            margin-bottom: 18px;
-
-            padding:
-                7px 12px;
-
-            border-radius:
-                50px;
-
-            background:
-                rgba(0,255,157,.06);
-
-            border:
-                1px solid
-                rgba(0,255,157,.15);
-
-            color:
-                rgba(255,255,255,.65);
-
-            font-size: 10px;
-        }
-
-        .status-dot {
-
-            width: 6px;
-            height: 6px;
-
-            border-radius: 50%;
-
-            background:
-                var(--green);
-
-            box-shadow:
-                0 0 10px
-                var(--green);
-
-            animation:
-                blink
-                1.5s
-                infinite;
-        }
-
-        @keyframes blink {
-
-            50% {
-                opacity: .3;
-            }
-
-        }
-
-        /* ==============================
-           BOTON
-        ============================== */
-
-        .button-wrap {
-
-            position: relative;
-
-            margin-top: 5px;
-        }
-
-        .glow {
-
-            position: absolute;
-
-            inset: -3px;
-
-            border-radius: 18px;
-
-            background:
-                linear-gradient(
-                    90deg,
-                    var(--cyan),
-                    var(--blue),
-                    var(--purple),
-                    var(--cyan)
-                );
-
-            background-size:
-                300%;
-
-            filter:
-                blur(12px);
-
-            opacity: .35;
-
-            animation:
-                buttonGlow
-                4s
-                linear
-                infinite;
-        }
-
-        @keyframes buttonGlow {
-
-            to {
-                background-position:
-                    300%;
-            }
-
-        }
-
-        #playBtn {
-
-            position: relative;
-
-            width: 100%;
-
-            padding:
-                17px 20px;
-
-            border:
-                1px solid
-                rgba(255,255,255,.18);
-
-            border-radius: 17px;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    rgba(0,229,255,.18),
-                    rgba(0,119,255,.18)
-                );
-
-            color: white;
-
-            font-size: 14px;
-
-            font-weight: 850;
-
-            cursor: pointer;
-
-            backdrop-filter:
-                blur(10px);
-
-            transition:
-                transform .2s,
-                background .2s;
-        }
-
-        #playBtn:active {
-
-            transform:
-                scale(.96);
-        }
-
-        #playBtn:hover {
-
-            background:
-                linear-gradient(
-                    135deg,
-                    rgba(0,229,255,.28),
-                    rgba(0,119,255,.28)
-                );
-        }
-
-        #playBtn:disabled {
-
-            opacity: .65;
-
-            cursor: wait;
-        }
-
-        /* ==============================
-           LOADER
-        ============================== */
-
-        .loader {
-
-            display: none;
-
-            width: 17px;
-            height: 17px;
-
-            margin-right: 8px;
-
-            vertical-align: middle;
-
-            border:
-                2px solid
-                rgba(255,255,255,.25);
-
-            border-top-color:
-                var(--cyan);
-
-            border-radius: 50%;
-
-            animation:
-                spin .7s linear infinite;
-        }
-
-        @keyframes spin {
-
-            to {
-                transform:
-                    rotate(360deg);
-            }
-
-        }
-
-        /* ==============================
-           ERROR
-        ============================== */
-
-        #error-msg {
-
-            display: none;
-        }
-
-        .error-icon {
-
-            width: 75px;
-            height: 75px;
-
-            margin:
-                0 auto 20px;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            border-radius: 24px;
-
-            background:
-                rgba(255,49,88,.1);
-
-            border:
-                1px solid
-                rgba(255,49,88,.25);
-
-            font-size: 30px;
-        }
-
-        .continue {
-
-            width: 100%;
-
-            margin-top: 22px;
-
-            padding: 15px;
-
-            border: 0;
-
-            border-radius: 16px;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    #00c987,
-                    #00a974
-                );
-
-            color: white;
-
-            font-size: 14px;
-
-            font-weight: 800;
-
-            cursor: pointer;
-        }
-
-        /* ==============================
-           SUCCESS
-        ============================== */
-
-        #success-msg {
-
-            display: none;
-        }
-
-        .success-icon {
-
-            width: 80px;
-            height: 80px;
-
-            margin:
-                0 auto 20px;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            border-radius: 25px;
-
-            background:
-                rgba(0,255,157,.1);
-
-            border:
-                1px solid
-                rgba(0,255,157,.3);
-
-            font-size: 34px;
-
-            box-shadow:
-                0 0 40px
-                rgba(0,255,157,.15);
-        }
-
-        .progress {
-
-            margin-top: 18px;
-
-            color:
-                rgba(255,255,255,.6);
-
-            font-size: 11px;
+        .progress-card {
+            margin-top: 14px;
         }
 
         .footer {
-
-            margin-top: 22px;
-
-            color:
-                rgba(255,255,255,.32);
-
-            font-size: 10px;
+            margin-top: 12px;
         }
+    }
 
-        .footer p {
-            margin: 6px;
-        }
+</style>
 
-        .footer a {
+</head><body><!-- =====================================================
+     BACKGROUND
+====================================================== -->
 
-            color:
-                rgba(0,229,255,.65);
+<div class="background">
 
-            text-decoration: none;
+    <div class="orb one"></div>
+    <div class="orb two"></div>
 
-            font-weight: 700;
-        }
+    <div class="grid"></div>
 
-    </style>
-
-</head>
-
-<body>
-
-    <!-- ==============================
-         BACKGROUND
-    ============================== -->
-
-    <div class="background">
-
-        <div class="grid"></div>
-
-        <div class="particles">
-
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-
-        </div>
-
+    <div class="particles">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
     </div>
 
-
-    <!-- ==============================
-         APP
-    ============================== -->
-
-    <main class="app">
-
-        <section class="panel">
+</div>
 
 
-            <!-- LOGO -->
+<!-- =====================================================
+     APP
+====================================================== -->
+
+<main class="app">
+
+    <section class="panel">
+
+        <div class="top-badge">
+            <span class="live-dot"></span>
+            KevinTech Online
+        </div>
+
+
+        <!-- =================================================
+             LOADING / MAIN
+        ================================================== -->
+
+        <div id="loading">
 
             <div class="logo-area">
 
                 <div class="ring one"></div>
-
                 <div class="ring two"></div>
-
                 <div class="ring three"></div>
 
                 <div class="logo">
@@ -864,201 +1052,239 @@
             </div>
 
 
-            <!-- ==========================
-                 PRINCIPAL
-            =========================== -->
+            <div class="mini-title">
+                KevinTech Premium
+            </div>
 
-            <div id="loading">
+            <h1>
+                <span>Key Free</span>
+            </h1>
 
-                <div class="mini-title">
-                    KevinTech System
-                </div>
+            <p class="description">
 
-                <h1>
-                    <span>Acceso Premium</span>
-                </h1>
+                Completa los
+                <b>5 anuncios</b>
+                para desbloquear tu Key gratuita.
 
-                <p class="description">
+                <br><br>
 
-                    Para obtener una Key gratuita
-                    debes completar
+                Cuando termines, podrás volver
+                al bot y activar tu acceso.
 
-                    <b>5 anuncios</b>.
-
-                    <br><br>
-
-                    Cada anuncio ayuda a mantener
-                    KevinTech disponible gratuitamente.
-
-                    <br><br>
-
-                    <small>
-                        ⏱️ Hay un intervalo de espera
-                        entre cada anuncio.
-                    </small>
-
-                </p>
+            </p>
 
 
-                <div class="status">
+            <!-- PROGRESO -->
 
-                    <span class="status-dot"></span>
+            <div class="progress-card">
 
-                    Sistema disponible
+                <div class="progress-top">
+
+                    <span class="progress-label">
+                        PROGRESO DE ACTIVACIÓN
+                    </span>
+
+                    <span
+                        id="progressCount"
+                        class="progress-count">
+                        0 / 5
+                    </span>
 
                 </div>
 
+                <div class="progress-track">
 
-                <div class="button-wrap">
+                    <div
+                        id="progressBar"
+                        class="progress-bar">
+                    </div>
 
-                    <div class="glow"></div>
+                </div>
 
-                    <button id="playBtn">
+                <div class="steps">
 
-                        <span
-                            id="loader"
-                            class="loader">
-                        </span>
-
-                        <span id="btnText">
-                            ▶ VER ANUNCIO 1/5
-                        </span>
-
-                    </button>
+                    <span class="step"></span>
+                    <span class="step"></span>
+                    <span class="step"></span>
+                    <span class="step"></span>
+                    <span class="step"></span>
 
                 </div>
 
             </div>
 
 
-            <!-- ==========================
-                 ERROR
-            =========================== -->
+            <!-- BOTÓN -->
 
-            <div id="error-msg">
+            <div class="button-wrap">
 
-                <div class="error-icon">
-                    ⚠️
-                </div>
+                <div class="glow"></div>
 
-                <div class="mini-title">
-                    KevinTech System
-                </div>
+                <button id="playBtn">
 
-                <h1>
-                    Anuncio no disponible
-                </h1>
+                    <span
+                        id="loader"
+                        class="loader">
+                    </span>
 
-                <p class="description">
-
-                    En este momento no hay
-                    publicidad disponible para
-                    tu región.
-
-                </p>
-
-                <button
-                    class="continue"
-                    onclick="reloadAds()">
-
-                    🔄 INTENTAR NUEVAMENTE
+                    <span id="btnText">
+                        ▶ VER ANUNCIO 1/5
+                    </span>
 
                 </button>
 
             </div>
 
 
-            <!-- ==========================
-                 SUCCESS
-            =========================== -->
+            <div class="info">
 
-            <div id="success-msg">
-
-                <div class="success-icon">
-                    ✓
+                <div class="info-icon">
+                    ⏱
                 </div>
 
-                <div class="mini-title">
-                    KevinTech System
-                </div>
-
-                <h1>
-                    <span>¡Completado!</span>
-                </h1>
-
-                <p class="description">
-
-                    Has completado los
-
-                    <b>5 anuncios</b>.
-
-                    <br><br>
-
-                    Tu acceso gratuito está
-                    listo.
-
-                    <br><br>
-
-                    Pulsa el botón para volver
-                    al bot y activar tu acceso.
-
-                </p>
-
-                <button
-                    class="continue"
-                    onclick="openBot()">
-
-                    🔑 CONTINUAR AL BOT
-
-                </button>
+                <span>
+                    Puede existir un pequeño intervalo
+                    entre cada anuncio debido a la
+                    disponibilidad de publicidad.
+                </span>
 
             </div>
 
+        </div>
 
-            <!-- FOOTER -->
 
-            <div class="footer">
+        <!-- =================================================
+             ERROR
+        ================================================== -->
 
-                <p>
-                    © KevinTech Multi Script
-                </p>
+        <div id="error-msg">
 
-                <p>
+            <div class="state-icon error-icon">
+                ⚠️
+            </div>
 
-                    <a
-                        href="https://youtube.com/@kevintechtutorials?si=a2gv6Oqhsne9Thgl"
-                        target="_blank">
+            <div class="mini-title">
+                Publicidad
+            </div>
 
-                        YouTube
+            <h1>
+                Anuncio no disponible
+            </h1>
 
-                    </a>
+            <p class="description">
 
-                    &nbsp;•&nbsp;
+                No hay publicidad disponible
+                en este momento para tu región.
 
-                    <a
-                        href="https://whatsapp.com/channel/0029VaGmNBB4Y9lvO2Ppem2l"
-                        target="_blank">
+                <br><br>
 
-                        WhatsApp
+                Intenta nuevamente.
 
-                    </a>
+            </p>
 
-                </p>
+            <button
+                class="retry"
+                onclick="reloadAds()">
+
+                🔄 INTENTAR NUEVAMENTE
+
+            </button>
+
+        </div>
+
+
+        <!-- =================================================
+             SUCCESS
+        ================================================== -->
+
+        <div id="success-msg">
+
+            <div class="state-icon success-icon">
+                ✓
+            </div>
+
+            <div class="mini-title">
+                Activación lista
+            </div>
+
+            <h1>
+                <span>¡5/5 Completados!</span>
+            </h1>
+
+            <p class="description">
+
+                Has completado correctamente
+                los <b>5 anuncios</b>.
+
+                <br><br>
+
+                Tu Key Free está lista para
+                ser activada desde el bot.
+
+            </p>
+
+            <button
+                class="continue"
+                onclick="openBot()">
+
+                🔑 VOLVER AL BOT
+
+            </button>
+
+            <div class="success-note">
+
+                Al volver al bot, pulsa
+                <b>/start adscompleted</b>
+                para continuar.
 
             </div>
 
-        </section>
-
-    </main>
+        </div>
 
 
-    <script>
+        <!-- =================================================
+             FOOTER
+        ================================================== -->
+
+        <div class="footer">
+
+            <p>
+                © KevinTech Multi Script
+            </p>
+
+            <p>
+
+                <a
+                    href="https://youtube.com/@kevintechtutorials?si=a2gv6Oqhsne9Thgl"
+                    target="_blank">
+                    YouTube
+                </a>
+
+                &nbsp;•&nbsp;
+
+                <a
+                    href="https://whatsapp.com/channel/0029VaGmNBB4Y9lvO2Ppem2l"
+                    target="_blank">
+                    WhatsApp
+                </a>
+
+            </p>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<script>
 
     /* =====================================================
        TELEGRAM
     ===================================================== */
 
-    const tg = window.Telegram.WebApp;
+    const tg =
+        window.Telegram.WebApp;
 
     tg.ready();
     tg.expand();
@@ -1070,17 +1296,11 @@
 
     const TOTAL_ADS = 5;
 
-    // 24 HORAS
-    const COOLDOWN = 24 * 60 * 60 * 1000;
-
     let adsCompleted = 0;
     let showingAd = false;
 
     const STORAGE_KEY =
         "kevintech_ads_completed";
-
-    const COOLDOWN_KEY =
-        "kevintech_ads_cooldown";
 
 
     /* =====================================================
@@ -1105,163 +1325,71 @@
     const successMsg =
         document.getElementById("success-msg");
 
+    const progressBar =
+        document.getElementById("progressBar");
 
-    /* =====================================================
-       TIEMPO RESTANTE
-    ===================================================== */
+    const progressCount =
+        document.getElementById("progressCount");
 
-    function getCooldownRemaining() {
-
-        const cooldown =
-            localStorage.getItem(
-                COOLDOWN_KEY
-            );
-
-        if (!cooldown) {
-            return 0;
-        }
-
-        const endTime =
-            Number(cooldown);
-
-        const remaining =
-            endTime - Date.now();
-
-        if (remaining <= 0) {
-
-            localStorage.removeItem(
-                COOLDOWN_KEY
-            );
-
-            localStorage.removeItem(
-                STORAGE_KEY
-            );
-
-            return 0;
-        }
-
-        return remaining;
-    }
+    const steps =
+        document.querySelectorAll(".step");
 
 
     /* =====================================================
-       FORMATO DEL TIEMPO
+       PROGRESO
     ===================================================== */
 
-    function formatTime(ms) {
+    function updateProgress() {
 
-        const totalSeconds =
-            Math.ceil(ms / 1000);
+        const percentage =
+            (adsCompleted / TOTAL_ADS) * 100;
 
-        const hours =
-            Math.floor(
-                totalSeconds / 3600
-            );
+        progressBar.style.width =
+            percentage + "%";
 
-        const minutes =
-            Math.floor(
-                (totalSeconds % 3600) / 60
-            );
+        progressCount.textContent =
+            `${adsCompleted} / ${TOTAL_ADS}`;
 
-        const seconds =
-            totalSeconds % 60;
 
-        return (
-            String(hours).padStart(2, "0") +
-            ":" +
-            String(minutes).padStart(2, "0") +
-            ":" +
-            String(seconds).padStart(2, "0")
+        steps.forEach(
+            (step, index) => {
+
+                step.classList.remove(
+                    "active",
+                    "done"
+                );
+
+                if (
+                    index <
+                    adsCompleted
+                ) {
+
+                    step.classList.add(
+                        "done"
+                    );
+
+                } else if (
+                    index ===
+                    adsCompleted
+                ) {
+
+                    step.classList.add(
+                        "active"
+                    );
+
+                }
+
+            }
         );
 
     }
 
 
     /* =====================================================
-       MOSTRAR BLOQUEO 24 HORAS
-    ===================================================== */
-
-    function showCooldown() {
-
-        const remaining =
-            getCooldownRemaining();
-
-        if (remaining <= 0) {
-            return false;
-        }
-
-        loading.style.display =
-            "block";
-
-        errorMsg.style.display =
-            "none";
-
-        successMsg.style.display =
-            "none";
-
-        playBtn.disabled =
-            true;
-
-        loader.style.display =
-            "none";
-
-        btnText.textContent =
-            "⏳ DISPONIBLE EN " +
-            formatTime(remaining);
-
-        return true;
-
-    }
-
-
-    /* =====================================================
-       ACTUALIZAR CUENTA REGRESIVA
-    ===================================================== */
-
-    function updateCooldown() {
-
-        const remaining =
-            getCooldownRemaining();
-
-        if (remaining <= 0) {
-
-            adsCompleted = 0;
-
-            playBtn.disabled =
-                false;
-
-            updateButton();
-
-            return;
-        }
-
-        playBtn.disabled =
-            true;
-
-        loader.style.display =
-            "none";
-
-        btnText.textContent =
-            "⏳ DISPONIBLE EN " +
-            formatTime(remaining);
-
-    }
-
-
-    /* =====================================================
-       ACTUALIZAR BOTÓN
+       BOTÓN
     ===================================================== */
 
     function updateButton() {
-
-        if (
-            getCooldownRemaining() > 0
-        ) {
-
-            updateCooldown();
-
-            return;
-        }
 
         if (
             adsCompleted >=
@@ -1279,6 +1407,9 @@
 
         btnText.textContent =
             `▶ VER ANUNCIO ${adsCompleted + 1}/5`;
+
+        playBtn.disabled =
+            false;
 
     }
 
@@ -1302,8 +1433,28 @@
 
 
     /* =====================================================
+       REINTENTAR
+    ===================================================== */
+
+    function reloadAds() {
+
+        errorMsg.style.display =
+            "none";
+
+        loading.style.display =
+            "block";
+
+        successMsg.style.display =
+            "none";
+
+        updateProgress();
+        updateButton();
+
+    }
+
+
+    /* =====================================================
        ABRIR BOT
-       /start adscompleted
     ===================================================== */
 
     function openBot() {
@@ -1316,9 +1467,7 @@
 
         try {
 
-            tg.openTelegramLink(
-                url
-            );
+            tg.openTelegramLink(url);
 
         } catch (error) {
 
@@ -1354,32 +1503,18 @@
 
     async function showAd() {
 
-        /* ---------------------------------------------
-           VERIFICAR LÍMITE DE 24 HORAS
-        --------------------------------------------- */
-
-        if (
-            getCooldownRemaining() > 0
-        ) {
-
-            updateCooldown();
-
-            return;
-        }
-
-
-        /* ---------------------------------------------
+        /* -----------------------------------------------
            EVITAR DOBLE CLIC
-        --------------------------------------------- */
+        ------------------------------------------------ */
 
         if (showingAd) {
             return;
         }
 
 
-        /* ---------------------------------------------
-           5/5
-        --------------------------------------------- */
+        /* -----------------------------------------------
+           5 / 5
+        ------------------------------------------------ */
 
         if (
             adsCompleted >=
@@ -1387,13 +1522,17 @@
         ) {
 
             return;
+
         }
 
 
+        /* -----------------------------------------------
+           ACTIVAR LOADER
+        ------------------------------------------------ */
+
         showingAd = true;
 
-        playBtn.disabled =
-            true;
+        playBtn.disabled = true;
 
         loader.style.display =
             "inline-block";
@@ -1402,9 +1541,9 @@
             `CARGANDO ANUNCIO ${adsCompleted + 1}/5...`;
 
 
-        /* ---------------------------------------------
-           VERIFICAR MONETAG
-        --------------------------------------------- */
+        /* -----------------------------------------------
+           COMPROBAR MONETAG
+        ------------------------------------------------ */
 
         if (
             typeof show_11217882 !==
@@ -1415,8 +1554,7 @@
                 "Monetag SDK no disponible"
             );
 
-            showingAd =
-                false;
+            showingAd = false;
 
             playBtn.disabled =
                 false;
@@ -1427,23 +1565,30 @@
             showError();
 
             return;
+
         }
 
 
         try {
 
-            /* -----------------------------------------
+            /* -------------------------------------------
                MOSTRAR ANUNCIO
-            ----------------------------------------- */
+            -------------------------------------------- */
 
             await show_11217882();
 
 
-            /* -----------------------------------------
+            /* -------------------------------------------
                ANUNCIO COMPLETADO
-            ----------------------------------------- */
+            -------------------------------------------- */
 
             adsCompleted++;
+
+            adsCompleted =
+                Math.min(
+                    adsCompleted,
+                    TOTAL_ADS
+                );
 
 
             localStorage.setItem(
@@ -1456,9 +1601,12 @@
                 "none";
 
 
-            /* -----------------------------------------
+            updateProgress();
+
+
+            /* -------------------------------------------
                5 / 5
-            ----------------------------------------- */
+            -------------------------------------------- */
 
             if (
                 adsCompleted >=
@@ -1468,79 +1616,35 @@
                 adsCompleted =
                     TOTAL_ADS;
 
-
-                /* -------------------------------------
-                   INICIAR 24 HORAS
-                ------------------------------------- */
-
-                const cooldownEnd =
-                    Date.now() +
-                    COOLDOWN;
-
-
-                localStorage.setItem(
-                    COOLDOWN_KEY,
-                    cooldownEnd
-                );
-
-
                 localStorage.setItem(
                     STORAGE_KEY,
                     TOTAL_ADS
                 );
 
+                updateProgress();
 
                 btnText.textContent =
                     "✓ 5/5 COMPLETADOS";
 
-
                 playBtn.disabled =
                     true;
 
-
-                showingAd =
-                    false;
-
-
-                /* -------------------------------------
-                   MOSTRAR ÉXITO
-                ------------------------------------- */
+                showingAd = false;
 
                 showSuccess();
-
-
-                /*
-                 * Abrir el bot después de
-                 * mostrar la pantalla de éxito.
-                 */
-
-                setTimeout(
-                    () => {
-
-                        openBot();
-
-                    },
-                    800
-                );
-
 
                 return;
 
             }
 
 
-            /* -----------------------------------------
+            /* -------------------------------------------
                SIGUIENTE ANUNCIO
-            ----------------------------------------- */
+            -------------------------------------------- */
+
+            showingAd = false;
 
             updateButton();
-
-            playBtn.disabled =
-                false;
-
-            showingAd =
-                false;
-
 
         } catch (error) {
 
@@ -1552,11 +1656,12 @@
             loader.style.display =
                 "none";
 
+            showingAd = false;
+
             playBtn.disabled =
                 false;
 
-            showingAd =
-                false;
+            updateButton();
 
             showError();
 
@@ -1577,20 +1682,52 @@
 
     /* =====================================================
        RECUPERAR PROGRESO
+       
+       IMPORTANTE:
+       Aquí NO existe ningún cooldown.
+       
+       El servidor/bot es quien controla
+       cuándo puede volver a solicitarse
+       una Key Free.
     ===================================================== */
 
-    const savedAds =
-        localStorage.getItem(
-            STORAGE_KEY
+    try {
+
+        const savedAds =
+            localStorage.getItem(
+                STORAGE_KEY
+            );
+
+        if (savedAds !== null) {
+
+            const parsed =
+                Number(savedAds);
+
+            if (
+                Number.isFinite(parsed)
+            ) {
+
+                adsCompleted =
+                    Math.min(
+                        Math.max(
+                            parsed,
+                            0
+                        ),
+                        TOTAL_ADS
+                    );
+
+            }
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Error leyendo progreso:",
+            error
         );
 
-    if (savedAds) {
-
-        adsCompleted =
-            Math.min(
-                Number(savedAds),
-                TOTAL_ADS
-            );
+        adsCompleted = 0;
 
     }
 
@@ -1599,41 +1736,23 @@
        INICIO
     ===================================================== */
 
-    if (
-        getCooldownRemaining() > 0
-    ) {
-
-        showCooldown();
-
-    } else {
-
-        updateButton();
-
-    }
+    updateProgress();
+    updateButton();
 
 
     /* =====================================================
-       ACTUALIZAR CADA SEGUNDO
+       SI YA ESTÁ 5/5
     ===================================================== */
 
-    setInterval(
-        () => {
+    if (
+        adsCompleted >=
+        TOTAL_ADS
+    ) {
 
-            if (
-                getCooldownRemaining() > 0
-            ) {
+        showSuccess();
 
-                updateCooldown();
-
-            }
-
-        },
-        1000
-    );
-
+    }
 
 </script>
 
-</body>
-
-</html>
+</body></html>
