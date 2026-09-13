@@ -15,33 +15,39 @@ const UPDATE_URL =
   "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/update.sh";
 
 /* =========================================================
-   KEY RANDOM
+   KEY
 ========================================================= */
 
 function generateRandomKey() {
-  const a = crypto.randomBytes(4).toString("hex").toUpperCase();
-  const b = crypto.randomBytes(4).toString("hex").toUpperCase();
+  const part1 = crypto.randomBytes(4).toString("hex").toUpperCase();
+  const part2 = crypto.randomBytes(4).toString("hex").toUpperCase();
 
-  return `KT-${a}-${b}`;
+  return `KT-${part1}-${part2}`;
 }
 
 /* =========================================================
    USUARIO
 ========================================================= */
 
-function getUser(chatId) {
-  return db.ref(`users/${chatId}`).get() || {};
+async function getUser(chatId) {
+  const snapshot = await db
+    .ref(`users/${chatId}`)
+    .get();
+
+  return snapshot.val() || {};
 }
 
-function setUser(chatId, data) {
-  return db.ref(`users/${chatId}`).set(data);
+async function setUser(chatId, data) {
+  await db
+    .ref(`users/${chatId}`)
+    .set(data);
 }
 
-function updateUser(chatId, data) {
-  const current = getUser(chatId);
+async function updateUser(chatId, data) {
+  const currentUser = await getUser(chatId);
 
-  return setUser(chatId, {
-    ...current,
+  await setUser(chatId, {
+    ...currentUser,
     ...data,
   });
 }
@@ -50,14 +56,16 @@ function updateUser(chatId, data) {
    STAFF
 ========================================================= */
 
-function isStaff(chatId) {
+async function isStaff(chatId) {
   const id = String(chatId);
 
-  if (String(config?.OWNER_ID || "") === id) {
+  if (
+    String(config?.OWNER_ID || "") === id
+  ) {
     return true;
   }
 
-  const user = getUser(chatId);
+  const user = await getUser(chatId);
 
   if (user?.isAdmin === true) {
     return true;
@@ -74,12 +82,16 @@ function isStaff(chatId) {
    KEYS
 ========================================================= */
 
-function getAllKeys() {
-  return db.ref("keys").get() || {};
+async function getAllKeys() {
+  const snapshot = await db
+    .ref("keys")
+    .get();
+
+  return snapshot.val() || {};
 }
 
-function getUserKeys(chatId) {
-  const keys = getAllKeys();
+async function getUserKeys(chatId) {
+  const keys = await getAllKeys();
 
   return Object.values(keys).filter(
     (key) =>
@@ -97,27 +109,31 @@ function formatRemaining(ms) {
     return "0m";
   }
 
-  const totalMinutes = Math.ceil(ms / 60000);
+  const totalMinutes =
+    Math.ceil(ms / 60000);
 
-  const days = Math.floor(totalMinutes / 1440);
+  const days =
+    Math.floor(totalMinutes / 1440);
 
-  const hours = Math.floor(
-    (totalMinutes % 1440) / 60
-  );
+  const hours =
+    Math.floor(
+      (totalMinutes % 1440) / 60
+    );
 
-  const minutes = totalMinutes % 60;
+  const minutes =
+    totalMinutes % 60;
 
   const parts = [];
 
-  if (days) {
+  if (days > 0) {
     parts.push(`${days}d`);
   }
 
-  if (hours) {
+  if (hours > 0) {
     parts.push(`${hours}h`);
   }
 
-  if (minutes) {
+  if (minutes > 0) {
     parts.push(`${minutes}m`);
   }
 
@@ -125,7 +141,7 @@ function formatRemaining(ms) {
 }
 
 /* =========================================================
-   MENÚ
+   MENÚ KEY FREE
 ========================================================= */
 
 function keyFreeMenu() {
@@ -200,19 +216,28 @@ async function generateKey(
   chatId,
   mode = "normal"
 ) {
-  const user = getUser(chatId);
-  const staff = isStaff(chatId);
-  const now = Date.now();
+  const user =
+    await getUser(chatId);
+
+  const staff =
+    await isStaff(chatId);
+
+  const now =
+    Date.now();
 
   /* -------------------------------------------------------
      USUARIO NORMAL
   ------------------------------------------------------- */
 
   if (!staff) {
+
     const freeKeyAt =
-      Number(user?.freeKeyAt || 0);
+      Number(
+        user?.freeKeyAt || 0
+      );
 
     if (freeKeyAt > now) {
+
       await bot.sendMessage(
         chatId,
 
@@ -230,10 +255,13 @@ async function generateKey(
     }
 
     /* -----------------------------------------------------
-       ANUNCIOS COMPLETADOS
+       COMPROBAR ANUNCIOS
     ----------------------------------------------------- */
 
-    if (user?.adsKeyUnlocked !== true) {
+    if (
+      user?.adsKeyUnlocked !== true
+    ) {
+
       await sendAdRequired(
         bot,
         chatId
@@ -274,6 +302,7 @@ async function generateKey(
   ------------------------------------------------------- */
 
   if (!staff) {
+
     await updateUser(
       chatId,
       {
@@ -288,30 +317,37 @@ async function generateKey(
      HISTORIAL
   ------------------------------------------------------- */
 
-  await db
-    .ref("keyHistory")
-    .push()
-    .set({
-      action: "created",
-      key,
-      chatId,
-      username:
-        user?.username || "",
-      type: "free",
-      mode,
-      createdAt: now,
-      expiresAt,
-    });
+  const historyRef =
+    db
+      .ref("keyHistory")
+      .push();
+
+  await historyRef.set({
+    action: "created",
+    key,
+    chatId,
+    username:
+      user?.username || "",
+    type: "free",
+    mode,
+    createdAt: now,
+    expiresAt,
+  });
 
   /* -------------------------------------------------------
      KEYS ACTIVAS
   ------------------------------------------------------- */
 
+  const userKeys =
+    await getUserKeys(chatId);
+
   const activeKeys =
-    getUserKeys(chatId).filter(
+    userKeys.filter(
       (item) =>
         item?.active === true &&
-        Number(item?.expiresAt || 0) > now
+        Number(
+          item?.expiresAt || 0
+        ) > now
     ).length;
 
   /* -------------------------------------------------------
@@ -351,7 +387,7 @@ async function generateKey(
 }
 
 /* =========================================================
-   REVOCAR
+   REVOCAR KEY
 ========================================================= */
 
 async function revokeKey(
@@ -359,10 +395,16 @@ async function revokeKey(
   chatId,
   key
 ) {
+  const snapshot =
+    await db
+      .ref(`keys/${key}`)
+      .get();
+
   const keyData =
-    db.ref(`keys/${key}`).get();
+    snapshot.val();
 
   if (!keyData) {
+
     await bot.sendMessage(
       chatId,
       "❌ <b>Key no encontrada.</b>",
@@ -378,6 +420,7 @@ async function revokeKey(
     String(keyData.chatId) !==
     String(chatId)
   ) {
+
     await bot.sendMessage(
       chatId,
       "❌ <b>Esta Key no pertenece a tu cuenta.</b>",
@@ -389,27 +432,30 @@ async function revokeKey(
     return;
   }
 
-  const now = Date.now();
+  const now =
+    Date.now();
 
-  await db
-    .ref("keyHistory")
-    .push()
-    .set({
-      action: "revoked",
-      key,
-      chatId,
-      username:
-        keyData.username || "",
-      type:
-        keyData.type || "free",
-      mode:
-        keyData.mode || "normal",
-      createdAt:
-        keyData.createdAt || now,
-      expiresAt:
-        keyData.expiresAt || null,
-      revokedAt: now,
-    });
+  const historyRef =
+    db
+      .ref("keyHistory")
+      .push();
+
+  await historyRef.set({
+    action: "revoked",
+    key,
+    chatId,
+    username:
+      keyData.username || "",
+    type:
+      keyData.type || "free",
+    mode:
+      keyData.mode || "normal",
+    createdAt:
+      keyData.createdAt || now,
+    expiresAt:
+      keyData.expiresAt || null,
+    revokedAt: now,
+  });
 
   await db
     .ref(`keys/${key}`)
@@ -429,7 +475,7 @@ async function revokeKey(
 }
 
 /* =========================================================
-   REGISTRAR
+   REGISTRO
 ========================================================= */
 
 export default function registerFreeKey(bot) {
@@ -449,10 +495,10 @@ export default function registerFreeKey(bot) {
       try {
 
         const user =
-          getUser(chatId);
+          await getUser(chatId);
 
         const staff =
-          isStaff(chatId);
+          await isStaff(chatId);
 
         /* -------------------------------------------------
            STAFF
@@ -543,7 +589,7 @@ export default function registerFreeKey(bot) {
       } catch (error) {
 
         console.error(
-          "Error /keyfree:",
+          "❌ Error /keyfree:",
           error
         );
 
@@ -573,11 +619,10 @@ export default function registerFreeKey(bot) {
          * LEER USUARIO ACTUAL
          */
         const currentUser =
-          getUser(chatId);
+          await getUser(chatId);
 
         /*
-         * GUARDAR DIRECTAMENTE
-         * EN SQLITE
+         * GUARDAR USUARIO COMPLETO
          */
         await setUser(
           chatId,
@@ -588,16 +633,19 @@ export default function registerFreeKey(bot) {
         );
 
         /*
-         * VERIFICAR QUE SE GUARDÓ
+         * VOLVER A LEER DESDE SQLITE
          */
         const savedUser =
-          getUser(chatId);
+          await getUser(chatId);
 
         console.log(
           `📺 Ads desbloqueados para ${chatId}:`,
           savedUser?.adsKeyUnlocked
         );
 
+        /*
+         * CONFIRMAR GUARDADO
+         */
         if (
           savedUser?.adsKeyUnlocked !== true
         ) {
@@ -622,7 +670,7 @@ export default function registerFreeKey(bot) {
       } catch (error) {
 
         console.error(
-          "Error /start adscompleted:",
+          "❌ Error /start adscompleted:",
           error
         );
 
@@ -741,17 +789,19 @@ export default function registerFreeKey(bot) {
             Date.now();
 
           const userKeys =
-            getUserKeys(chatId)
-              .filter(
-                (item) =>
-                  item?.active === true &&
-                  Number(
-                    item?.expiresAt || 0
-                  ) > now
-              );
+            await getUserKeys(chatId);
+
+          const activeKeys =
+            userKeys.filter(
+              (item) =>
+                item?.active === true &&
+                Number(
+                  item?.expiresAt || 0
+                ) > now
+            );
 
           if (
-            userKeys.length === 0
+            activeKeys.length === 0
           ) {
 
             await bot.sendMessage(
@@ -768,7 +818,7 @@ export default function registerFreeKey(bot) {
           }
 
           const buttons =
-            userKeys.map(
+            activeKeys.map(
               (item) => [
                 {
                   text:
@@ -831,7 +881,7 @@ export default function registerFreeKey(bot) {
         }
 
         /* ================================================
-           REVOCAR KEY
+           REVOCAR KEY ESPECÍFICA
         ================================================ */
 
         if (
@@ -862,7 +912,7 @@ export default function registerFreeKey(bot) {
       } catch (error) {
 
         console.error(
-          "Error callback Key Free:",
+          "❌ Error callback Key Free:",
           error
         );
 
