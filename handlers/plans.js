@@ -1,12 +1,12 @@
 import axios from "axios";
 
 const PLANS = [
-  { label: "7 Días", days: 7, admin: 2.50, owner: 8 },
-  { label: "30 Días", days: 30, admin: 5, owner: 10 },
-  { label: "60 Días", days: 60, admin: 10, owner: 15 },
-  { label: "90 Días", days: 90, admin: 25, owner: 20 },
-  { label: "365 Días (1 Año)", days: 365, admin: 35, owner: 40 },
-  { label: "♾️ Acceso Ilimitado", days: 0, admin: 150, owner: 200 },
+  { label: "7 Días", days: 7, admin: 5, owner: 10 },
+  { label: "30 Días", days: 30, admin: 10, owner: 15 },
+  { label: "60 Días", days: 60, admin: 15, owner: 20 },
+  { label: "90 Días", days: 90, admin: 20, owner: 25 },
+  { label: "365 Días (1 Año)", days: 365, admin: 30, owner: 25 },
+  { label: "♾️ Acceso Ilimitado", days: 0, admin: 35, owner: 30 },
 ];
 
 function money(value) {
