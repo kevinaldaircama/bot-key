@@ -76,7 +76,7 @@ async function getTelegramName(bot, chatId) {
 }
 
 // ======================================================
-// SQLITE / FIREBASE-COMPATIBLE DB
+// SQLITE
 // ======================================================
 
 async function getUser(chatId) {
@@ -210,8 +210,10 @@ async function showFreeKeyMenu(bot, chatId) {
   } else {
     keyboard.push([
       {
-        text: "📺 COMPLETAR ANUNCIOS",
-        url: WEBAPP_URL,
+        text: "📺 VER ANUNCIOS",
+        web_app: {
+          url: WEBAPP_URL,
+        },
       },
     ]);
   }
@@ -251,7 +253,7 @@ Selecciona una opción:
 }
 
 // ======================================================
-// ANUNCIOS
+// ANUNCIOS / MINI APP
 // ======================================================
 
 async function showAdsMessage(bot, chatId) {
@@ -282,13 +284,9 @@ Cuando completes los anuncios, pulsa:
           [
             {
               text: "📺 VER ANUNCIOS",
-              url: WEBAPP_URL,
-            },
-          ],
-          [
-            {
-              text: "🔄 COMPROBAR",
-              callback_data: "free_check_ads",
+              web_app: {
+                url: WEBAPP_URL,
+              },
             },
           ],
         ],
@@ -378,7 +376,7 @@ async function createKeyForMode(bot, chatId, mode) {
     user.role === "owner";
 
   // --------------------------------------------------
-  // COOLDOWN PARA USUARIOS NORMALES
+  // COOLDOWN
   // --------------------------------------------------
 
   if (!isAdmin) {
@@ -418,8 +416,10 @@ Debes completar los *${REQUIRED_ADS} anuncios* antes de generar una Key Free.`,
             inline_keyboard: [
               [
                 {
-                  text: "📺 COMPLETAR ANUNCIOS",
-                  url: WEBAPP_URL,
+                  text: "📺 VER ANUNCIOS",
+                  web_app: {
+                    url: WEBAPP_URL,
+                  },
                 },
               ],
             ],
@@ -614,7 +614,7 @@ async function showRevokeMenu(bot, chatId) {
     return;
   }
 
-  const buttons = activeKeys.map(([key, item]) => [
+  const buttons = activeKeys.map(([key]) => [
     {
       text: `🗑️ ${key.slice(0, 12)}...`,
       callback_data: `free_revoke:${key}`,
@@ -665,17 +665,18 @@ async function revokeKey(bot, chatId, key) {
     }
 
     const keyData = snapshot.val() || {};
+    const revokedAt = now();
 
     await keyRef.update({
       active: false,
-      revokedAt: now(),
+      revokedAt,
       revokedBy: String(chatId),
     });
 
     await db.ref("keyHistory").push({
       ...keyData,
       action: "revoked",
-      revokedAt: now(),
+      revokedAt,
       revokedBy: String(chatId),
     });
 
@@ -703,9 +704,10 @@ async function revokeKey(bot, chatId, key) {
 // ======================================================
 
 export default function registerFreeKey(bot) {
-  // --------------------------------------------------
+
+  // ====================================================
   // /keyfree
-  // --------------------------------------------------
+  // ====================================================
 
   bot.onText(/^\/keyfree(?:@\w+)?$/i, async (msg) => {
     const chatId = msg.chat.id;
@@ -762,6 +764,7 @@ Disponible nuevamente en:
       } else {
         await showAdsMessage(bot, chatId);
       }
+
     } catch (error) {
       console.error("❌ /keyfree:", error);
 
@@ -772,9 +775,9 @@ Disponible nuevamente en:
     }
   });
 
-  // --------------------------------------------------
-  // GENERAR
-  // --------------------------------------------------
+  // ====================================================
+  // CALLBACKS
+  // ====================================================
 
   bot.on("callback_query", async (query) => {
     const chatId = query.message?.chat?.id;
@@ -823,34 +826,6 @@ Disponible nuevamente en:
       return;
     }
 
-    if (data === "free_check_ads") {
-      const user = await getUser(chatId);
-
-      if (user.adsKeyUnlocked === true) {
-        await bot.sendMessage(
-          chatId,
-          "✅ *ANUNCIOS COMPLETADOS*\n\nTu Key Free está desbloqueada.",
-          {
-            parse_mode: "Markdown",
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  {
-                    text: "🔑 GENERAR KEY",
-                    callback_data: "free_generate",
-                  },
-                ],
-              ],
-            },
-          }
-        );
-      } else {
-        await showAdsMessage(bot, chatId);
-      }
-
-      return;
-    }
-
     if (data === "free_update") {
       await bot.sendMessage(
         chatId,
@@ -870,9 +845,9 @@ bash <(curl -fsSL ${UPDATE_URL})
     }
   });
 
-  // --------------------------------------------------
+  // ====================================================
   // /start adscompleted
-  // --------------------------------------------------
+  // ====================================================
 
   bot.onText(
     /^\/start(?:@\w+)?\s+adscompleted$/i,
@@ -906,6 +881,7 @@ Ahora puedes generar tu Key.`,
             },
           }
         );
+
       } catch (error) {
         console.error(
           "❌ Error /start adscompleted:",
@@ -920,5 +896,5 @@ Ahora puedes generar tu Key.`,
     }
   );
 
-  console.log("✅ Handler Key Free cargado con SQLite");
+  console.log("✅ Handler Key Free cargado con SQLite + Mini App");
 }
