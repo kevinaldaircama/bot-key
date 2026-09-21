@@ -12,10 +12,10 @@ const KEY_LIFETIME = 2 * 60 * 60 * 1000; // 2 horas
 const FREE_KEY_COOLDOWN = 24 * 60 * 60 * 1000; // 24 horas
 
 const INSTALL_URL =
-  "https://raw.githubusercontent.com/kevinaldaircama/bot-key/main/install.sh";
+  "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)";
 
 const UPDATE_URL =
-  "https://raw.githubusercontent.com/kevinaldaircama/bot-key/main/update.sh";
+  "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/update.sh";
 
 // ======================================================
 // UTILIDADES
