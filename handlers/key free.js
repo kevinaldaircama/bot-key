@@ -11,12 +11,6 @@ const REQUIRED_ADS = 5;
 const KEY_LIFETIME = 2 * 60 * 60 * 1000; // 2 horas
 const FREE_KEY_COOLDOWN = 24 * 60 * 60 * 1000; // 24 horas
 
-const INSTALL_URL =
-  "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)";
-
-const UPDATE_URL =
-  "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/update.sh";
-
 // ======================================================
 // UTILIDADES
 // ======================================================
@@ -76,7 +70,7 @@ async function getTelegramName(bot, chatId) {
 }
 
 // ======================================================
-// SQLITE
+// DATABASE
 // ======================================================
 
 async function getUser(chatId) {
@@ -160,32 +154,6 @@ async function generateKey(bot, chatId, mode) {
 }
 
 // ======================================================
-// CONTAR KEYS ACTIVAS
-// ======================================================
-
-async function getActiveFreeKeysCount() {
-  try {
-    const snapshot = await db.ref("keys").get();
-    const data = snapshot.val() || {};
-
-    const currentTime = now();
-
-    return Object.values(data).filter((item) => {
-      if (!item) return false;
-
-      return (
-        item.type === "free" &&
-        item.active === true &&
-        Number(item.expiresAt || 0) > currentTime
-      );
-    }).length;
-  } catch (error) {
-    console.error("❌ Error contando keys:", error);
-    return 0;
-  }
-}
-
-// ======================================================
 // MENÚ PRINCIPAL
 // ======================================================
 
@@ -225,24 +193,27 @@ async function showFreeKeyMenu(bot, chatId) {
     },
   ]);
 
-  keyboard.push([
-    {
-      text: "🔄 ACTUALIZAR",
-      callback_data: "free_update",
-    },
-  ]);
-
   await bot.sendMessage(
     chatId,
-    `🔐 *FREE KEY MANAGER*
+    `╔════════════════════╗
+       🔐 *FREE KEY MANAGER*
+╚════════════════════╝
 
 Selecciona una opción:
 
-📺 Los usuarios normales deben completar los anuncios.
-🔑 Los administradores pueden generar directamente.
+📺 *Usuarios normales*
+Completa los anuncios para desbloquear tu Key.
 
-⏱️ Duración de la Key Free: *2 horas*
-🕐 Cooldown: *24 horas*`,
+👑 *Administradores*
+Pueden generar la Key directamente.
+
+━━━━━━━━━━━━━━━━━━
+
+⏱️ Duración: *2 horas*
+🕐 Cooldown: *24 horas*
+
+⚡ *AUTO* = actualización automática
+🛠️ *NORMAL* = generación normal`,
     {
       parse_mode: "Markdown",
       reply_markup: {
@@ -253,7 +224,7 @@ Selecciona una opción:
 }
 
 // ======================================================
-// ANUNCIOS / MINI APP
+// ANUNCIOS
 // ======================================================
 
 async function showAdsMessage(bot, chatId) {
@@ -267,16 +238,19 @@ async function showAdsMessage(bot, chatId) {
 
   await bot.sendMessage(
     chatId,
-    `📺 *DESBLOQUEAR KEY FREE*
+    `╔════════════════════╗
+       📺 *DESBLOQUEAR KEY*
+╚════════════════════╝
 
-Debes completar *${REQUIRED_ADS} anuncios* para desbloquear tu Key Free.
+Debes completar *${REQUIRED_ADS} anuncios*.
 
-📊 Progreso actual:
+📊 Progreso:
 *${Math.min(adsCompleted, REQUIRED_ADS)} / ${REQUIRED_ADS}*
 
-Cuando completes los anuncios, pulsa:
+━━━━━━━━━━━━━━━━━━
 
-👉 *VOLVER AL BOT*`,
+Cuando termines los anuncios,
+pulsa *VOLVER AL BOT*.`,
     {
       parse_mode: "Markdown",
       reply_markup: {
@@ -323,12 +297,6 @@ async function showGenerateMenu(bot, chatId) {
     ],
     [
       {
-        text: "🔄 GENERAR UPDATE",
-        callback_data: "free_generate_update",
-      },
-    ],
-    [
-      {
         text: "🔑 MIS KEYS",
         callback_data: "free_mykeys",
       },
@@ -346,13 +314,21 @@ async function showGenerateMenu(bot, chatId) {
 
   await bot.sendMessage(
     chatId,
-    `🔑 *KEY FREE DESBLOQUEADA*
+    `╔════════════════════╗
+       🔑 *KEY FREE*
+╚════════════════════╝
 
-Ya puedes generar tu Key Free.
+Tu acceso está desbloqueado.
 
-⏱️ Duración: *2 horas*
+Selecciona el tipo:
 
-Selecciona el tipo de generación:`,
+⚡ *AUTO*
+Actualización automática.
+
+🛠️ *NORMAL*
+Generación normal.
+
+⏱️ Duración: *2 horas*`,
     {
       parse_mode: "Markdown",
       reply_markup: {
@@ -363,7 +339,7 @@ Selecciona el tipo de generación:`,
 }
 
 // ======================================================
-// CREAR KEY SEGÚN MODO
+// CREAR KEY
 // ======================================================
 
 async function createKeyForMode(bot, chatId, mode) {
@@ -375,9 +351,9 @@ async function createKeyForMode(bot, chatId, mode) {
     user.role === "admin" ||
     user.role === "owner";
 
-  // --------------------------------------------------
+  // ====================================================
   // COOLDOWN
-  // --------------------------------------------------
+  // ====================================================
 
   if (!isAdmin) {
     const lastFreeKey = Number(user.lastFreeKey || 0);
@@ -390,12 +366,15 @@ async function createKeyForMode(bot, chatId, mode) {
         chatId,
         `⏳ *KEY FREE EN COOLDOWN*
 
-Ya utilizaste tu Key Free recientemente.
+Ya utilizaste tu Key Free.
 
 🕐 Disponible nuevamente en:
+
 *${formatTime(remaining)}*
 
-📅 ${formatDate(lastFreeKey + FREE_KEY_COOLDOWN)}`,
+📅 ${formatDate(
+          lastFreeKey + FREE_KEY_COOLDOWN
+        )}`,
         {
           parse_mode: "Markdown",
         }
@@ -409,7 +388,8 @@ Ya utilizaste tu Key Free recientemente.
         chatId,
         `🔒 *KEY FREE BLOQUEADA*
 
-Debes completar los *${REQUIRED_ADS} anuncios* antes de generar una Key Free.`,
+Debes completar los
+*${REQUIRED_ADS} anuncios* antes de generar una Key.`,
         {
           parse_mode: "Markdown",
           reply_markup: {
@@ -431,9 +411,9 @@ Debes completar los *${REQUIRED_ADS} anuncios* antes de generar una Key Free.`,
     }
   }
 
-  // --------------------------------------------------
+  // ====================================================
   // GENERAR KEY
-  // --------------------------------------------------
+  // ====================================================
 
   try {
     const result = await generateKey(bot, chatId, mode);
@@ -446,15 +426,25 @@ Debes completar los *${REQUIRED_ADS} anuncios* antes de generar una Key Free.`,
       });
     }
 
+    const modeText =
+      mode === "auto"
+        ? "⚡ ACTUALIZACIÓN AUTOMÁTICA"
+        : "🛠️ GENERACIÓN NORMAL";
+
     await bot.sendMessage(
       chatId,
-      `🎉 *KEY FREE GENERADA*
+      `╔════════════════════╗
+       🎉 *KEY GENERADA*
+╚════════════════════╝
 
-🔑 *Key:*
+🔑 *KEY:*
+
 \`${result.key}\`
 
-⚙️ Modo:
-*${mode.toUpperCase()}*
+━━━━━━━━━━━━━━━━━━
+
+⚙️ Tipo:
+*${modeText}*
 
 ⏱️ Duración:
 *2 horas*
@@ -470,17 +460,16 @@ ${result.telegramName}
 
 ━━━━━━━━━━━━━━━━━━
 
-📥 *INSTALACIÓN*
+${
+  mode === "auto"
+    ? "⚡ *MODO AUTO ACTIVADO*\\n\\nLa Key está preparada para trabajar con la actualización automática."
+    : "🛠️ *MODO NORMAL ACTIVADO*\\n\\nLa Key corresponde al modo normal."
+}
 
-\`\`\`
-bash <(curl -fsSL ${INSTALL_URL})
-\`\`\`
+━━━━━━━━━━━━━━━━━━
 
-🔄 *ACTUALIZACIÓN*
-
-\`\`\`
-bash <(curl -fsSL ${UPDATE_URL})
-\`\`\``,
+🔐 No necesitas ejecutar ningún
+comando de actualización desde este bot.`,
       {
         parse_mode: "Markdown",
         reply_markup: {
@@ -493,8 +482,8 @@ bash <(curl -fsSL ${UPDATE_URL})
             ],
             [
               {
-                text: "🔄 ACTUALIZAR",
-                callback_data: "free_update",
+                text: "⬅️ VOLVER",
+                callback_data: "free_generate",
               },
             ],
           ],
@@ -530,7 +519,9 @@ async function showMyKeys(bot, chatId) {
   if (!activeKeys.length) {
     await bot.sendMessage(
       chatId,
-      `🔑 *MIS KEYS*
+      `╔════════════════════╗
+          🔑 *MIS KEYS*
+╚════════════════════╝
 
 No tienes ninguna Key Free activa.`,
       {
@@ -551,21 +542,39 @@ No tienes ninguna Key Free activa.`,
     return;
   }
 
-  let text = `🔑 *MIS KEYS ACTIVAS*\n\n`;
+  let text =
+    `╔════════════════════╗
+       🔑 *MIS KEYS ACTIVAS*
+╚════════════════════╝\n\n`;
 
   for (const item of activeKeys) {
     const remaining =
       Number(item.expiresAt) - currentTime;
 
+    const mode =
+      item.mode === "auto"
+        ? "⚡ AUTO"
+        : "🛠️ NORMAL";
+
     text +=
       `🔑 \`${item.key}\`\n` +
-      `⚙️ Modo: *${String(item.mode || "auto").toUpperCase()}*\n` +
+      `⚙️ Modo: *${mode}*\n` +
       `⏱️ Restante: *${formatTime(remaining)}*\n` +
       `📅 Expira: ${formatDate(item.expiresAt)}\n\n`;
   }
 
-  await bot.sendMessage(chatId, text, {
+  await bot.sendMessage(bot.chatId || chatId, text, {
     parse_mode: "Markdown",
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: "⬅️ VOLVER",
+            callback_data: "free_generate",
+          },
+        ],
+      ],
+    },
   });
 }
 
@@ -634,6 +643,10 @@ Selecciona la Key que deseas revocar:`,
     }
   );
 }
+
+// ======================================================
+// REVOCAR KEY
+// ======================================================
 
 async function revokeKey(bot, chatId, key) {
   const user = await getUser(chatId);
@@ -721,6 +734,7 @@ export default function registerFreeKey(bot) {
         user.role === "admin" ||
         user.role === "owner";
 
+      // ADMIN
       if (isAdmin) {
         await saveUser(chatId, {
           adsKeyUnlocked: true,
@@ -730,6 +744,7 @@ export default function registerFreeKey(bot) {
         return;
       }
 
+      // COOLDOWN
       const lastFreeKey = Number(user.lastFreeKey || 0);
 
       if (
@@ -759,6 +774,7 @@ Disponible nuevamente en:
         return;
       }
 
+      // DESBLOQUEADA
       if (user.adsKeyUnlocked === true) {
         await showGenerateMenu(bot, chatId);
       } else {
@@ -789,60 +805,62 @@ Disponible nuevamente en:
       await bot.answerCallbackQuery(query.id);
     } catch {}
 
+    // GENERAR
     if (data === "free_generate") {
       await showGenerateMenu(bot, chatId);
       return;
     }
 
+    // AUTO = ACTUALIZACIÓN AUTOMÁTICA
     if (data === "free_generate_auto") {
-      await createKeyForMode(bot, chatId, "auto");
+      await createKeyForMode(
+        bot,
+        chatId,
+        "auto"
+      );
       return;
     }
 
+    // NORMAL
     if (data === "free_generate_normal") {
-      await createKeyForMode(bot, chatId, "normal");
+      await createKeyForMode(
+        bot,
+        chatId,
+        "normal"
+      );
       return;
     }
 
-    if (data === "free_generate_update") {
-      await createKeyForMode(bot, chatId, "update");
-      return;
-    }
-
+    // MIS KEYS
     if (data === "free_mykeys") {
       await showMyKeys(bot, chatId);
       return;
     }
 
+    // REVOCAR
     if (data === "free_revoke_menu") {
       await showRevokeMenu(bot, chatId);
       return;
     }
 
+    // REVOCAR KEY ESPECÍFICA
     if (data.startsWith("free_revoke:")) {
-      const key = data.substring("free_revoke:".length);
+      const key = data.substring(
+        "free_revoke:".length
+      );
 
-      await revokeKey(bot, chatId, key);
-      return;
-    }
-
-    if (data === "free_update") {
-      await bot.sendMessage(
+      await revokeKey(
+        bot,
         chatId,
-        `🔄 *ACTUALIZACIÓN*
-
-Ejecuta:
-
-\`\`\`
-bash <(curl -fsSL ${UPDATE_URL})
-\`\`\``,
-        {
-          parse_mode: "Markdown",
-        }
+        key
       );
 
       return;
     }
+
+    // IMPORTANTE:
+    // Ya NO existe free_update.
+    // Ya NO se muestra botón ACTUALIZAR.
   });
 
   // ====================================================
@@ -862,7 +880,9 @@ bash <(curl -fsSL ${UPDATE_URL})
 
         await bot.sendMessage(
           chatId,
-          `✅ *ANUNCIOS COMPLETADOS*
+          `╔════════════════════╗
+      ✅ *ANUNCIOS COMPLETADOS*
+╚════════════════════╝
 
 🔓 Tu Key Free está desbloqueada.
 
@@ -896,5 +916,7 @@ Ahora puedes generar tu Key.`,
     }
   );
 
-  console.log("✅ Handler Key Free cargado con SQLite + Mini App");
+  console.log(
+    "✅ Handler Key Free cargado — AUTO/NORMAL sin botón actualizar"
+  );
 }
