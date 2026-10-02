@@ -10,12 +10,11 @@ export default function registerFreeKey(bot) {
     const WEBAPP_URL =
         "https://kevinaldaircama.github.io/bot-key";
 
-    // URL DEL INSTALADOR NORMAL
+    // Instalador Multi Script
     const INSTALL_URL =
         "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh";
 
-    // URL DEL ACTUALIZADOR
-    // CAMBIA ESTA URL POR LA DE TU SCRIPT REAL DE ACTUALIZACIÓN
+    // Actualizador Multi Script
     const UPDATE_URL =
         "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/update.sh";
 
@@ -59,6 +58,7 @@ export default function registerFreeKey(bot) {
         const snap =
             await userRef.get();
 
+
         if (!snap.exists()) {
 
             return {
@@ -68,6 +68,7 @@ export default function registerFreeKey(bot) {
             };
 
         }
+
 
         const user =
             snap.val();
@@ -275,7 +276,7 @@ export default function registerFreeKey(bot) {
 
 
         // =====================================================
-        // PLAN
+        // PLAN MOSTRADO
         // =====================================================
 
         const planName =
@@ -511,19 +512,23 @@ ${result.totalKeys}
                             [
 
                                 {
+
                                     text:
                                         "🤖 Auto",
 
                                     callback_data:
                                         `free_mode_auto_${result.key}`
+
                                 },
 
                                 {
+
                                     text:
                                         "⚙️ Normal",
 
                                     callback_data:
                                         `free_mode_normal_${result.key}`
+
                                 }
 
                             ],
@@ -531,11 +536,13 @@ ${result.totalKeys}
                             [
 
                                 {
+
                                     text:
                                         "🔄 Actualizar",
 
                                     callback_data:
                                         `free_update_${result.key}`
+
                                 }
 
                             ],
@@ -543,11 +550,13 @@ ${result.totalKeys}
                             [
 
                                 {
+
                                     text:
                                         "🗑 Revocar Key",
 
                                     callback_data:
                                         `key_revoke_${result.key}`
+
                                 }
 
                             ]
@@ -566,6 +575,7 @@ ${result.totalKeys}
                 "ERROR GENERANDO KEY FREE:",
                 error
             );
+
 
             return bot.sendMessage(
 
@@ -622,6 +632,7 @@ ${result.totalKeys}
                     msg.chat.id
                 );
 
+
             const startParam =
                 match &&
                 match[1]
@@ -645,6 +656,7 @@ ${result.totalKeys}
                     db.ref(
                         `users/${chatId}`
                     );
+
 
                 const snap =
                     await userRef.get();
@@ -853,17 +865,11 @@ los 5 anuncios.`,
     // =========================================================
 
     bot.on(
-
         "callback_query",
-
         async query => {
 
-            if (
-                !query.data
-            ) {
-
+            if (!query.data) {
                 return;
-
             }
 
 
@@ -892,49 +898,38 @@ los 5 anuncios.`,
                     `export INSTALL_KEY="${key}"; bash <(curl -fsSL ${INSTALL_URL})`;
 
 
-                await bot.answerCallbackQuery(
+                try {
 
-                    query.id,
-
-                    {
-
-                        text:
-                            "🤖 Instalador Auto generado.",
-
-                        show_alert:
-                            false
-
-                    }
-
-                );
+                    await bot.answerCallbackQuery(
+                        query.id
+                    );
 
 
-                return bot.sendMessage(
+                    return bot.sendMessage(
 
-                    query.message.chat.id,
+                        query.message.chat.id,
 
-`<b>🤖 INSTALADOR AUTO</b>
+`<code>${command}</code>`,
 
-━━━━━━━━━━━━━━━━━━
+                        {
 
-🔑 <b>Key:</b>
+                            parse_mode:
+                                "HTML"
 
-<code>${key}</code>
+                        }
 
-━━━━━━━━━━━━━━━━━━
+                    );
 
-📋 <b>Copia y pega:</b>
+                } catch (error) {
 
-<code>${command}</code>`,
+                    console.error(
+                        "AUTO BUTTON ERROR:",
+                        error
+                    );
 
-                    {
+                }
 
-                        parse_mode:
-                            "HTML"
-
-                    }
-
-                );
+                return;
 
             }
 
@@ -960,49 +955,38 @@ los 5 anuncios.`,
                     `export INSTALL_KEY="${key}"; bash <(curl -fsSL ${INSTALL_URL})`;
 
 
-                await bot.answerCallbackQuery(
+                try {
 
-                    query.id,
-
-                    {
-
-                        text:
-                            "⚙️ Instalador Normal generado.",
-
-                        show_alert:
-                            false
-
-                    }
-
-                );
+                    await bot.answerCallbackQuery(
+                        query.id
+                    );
 
 
-                return bot.sendMessage(
+                    return bot.sendMessage(
 
-                    query.message.chat.id,
+                        query.message.chat.id,
 
-`<b>⚙️ INSTALADOR NORMAL</b>
+`<code>${command}</code>`,
 
-━━━━━━━━━━━━━━━━━━
+                        {
 
-🔑 <b>Key:</b>
+                            parse_mode:
+                                "HTML"
 
-<code>${key}</code>
+                        }
 
-━━━━━━━━━━━━━━━━━━
+                    );
 
-📋 <b>Copia y pega:</b>
+                } catch (error) {
 
-<code>${command}</code>`,
+                    console.error(
+                        "NORMAL BUTTON ERROR:",
+                        error
+                    );
 
-                    {
+                }
 
-                        parse_mode:
-                            "HTML"
-
-                    }
-
-                );
+                return;
 
             }
 
@@ -1028,49 +1012,38 @@ los 5 anuncios.`,
                     `export INSTALL_KEY="${key}"; bash <(curl -fsSL ${UPDATE_URL})`;
 
 
-                await bot.answerCallbackQuery(
+                try {
 
-                    query.id,
-
-                    {
-
-                        text:
-                            "🔄 Actualizador generado.",
-
-                        show_alert:
-                            false
-
-                    }
-
-                );
+                    await bot.answerCallbackQuery(
+                        query.id
+                    );
 
 
-                return bot.sendMessage(
+                    return bot.sendMessage(
 
-                    query.message.chat.id,
+                        query.message.chat.id,
 
-`<b>🔄 ACTUALIZAR</b>
+`<code>${command}</code>`,
 
-━━━━━━━━━━━━━━━━━━
+                        {
 
-🔑 <b>Key:</b>
+                            parse_mode:
+                                "HTML"
 
-<code>${key}</code>
+                        }
 
-━━━━━━━━━━━━━━━━━━
+                    );
 
-📋 <b>Copia y pega:</b>
+                } catch (error) {
 
-<code>${command}</code>`,
+                    console.error(
+                        "UPDATE BUTTON ERROR:",
+                        error
+                    );
 
-                    {
+                }
 
-                        parse_mode:
-                            "HTML"
-
-                    }
-
-                );
+                return;
 
             }
 
@@ -1138,7 +1111,7 @@ los 5 anuncios.`,
                 }
 
 
-                const keyData =
+                const data =
                     snap.val();
 
 
@@ -1147,7 +1120,7 @@ los 5 anuncios.`,
                 // =================================================
 
                 if (
-                    keyData.owner !==
+                    data.owner !==
                     chatId
                 ) {
 
