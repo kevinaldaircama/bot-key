@@ -437,12 +437,6 @@ ${escapeHtml(result.reseller)}
 
 ━━━━━━━━━━━━━━━━━━
 
-🔑 <b>TU KEY</b>
-
-<code>${escapeHtml(result.key)}</code>
-
-━━━━━━━━━━━━━━━━━━
-
 ⏳ <b>DURACIÓN</b>
 
 La Key estará disponible durante:
