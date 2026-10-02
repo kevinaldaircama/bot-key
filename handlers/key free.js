@@ -28,6 +28,22 @@ export default function registerFreeKey(bot) {
 
 
     // =========================================================
+    // ESCAPAR HTML PARA TELEGRAM
+    // =========================================================
+
+    function escapeHtml(text) {
+
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+
+    }
+
+
+    // =========================================================
     // OBTENER NOMBRE / USUARIO DE TELEGRAM
     // =========================================================
 
@@ -90,7 +106,7 @@ export default function registerFreeKey(bot) {
 
 
         // =====================================================
-        // NOMBRE / USUARIO TELEGRAM
+        // NOMBRE / USUARIO
         // =====================================================
 
         const reseller =
@@ -248,20 +264,20 @@ export default function registerFreeKey(bot) {
             keysSnapshot.forEach(
                 item => {
 
-                    const data =
+                    const keyData =
                         item.val();
 
                     if (
 
-                        data.owner ===
+                        keyData.owner ===
                             chatId &&
 
                         Number(
-                            data.deleteAt || 0
+                            keyData.deleteAt || 0
                         ) >
                             Date.now() &&
 
-                        data.used !== true
+                        keyData.used !== true
 
                     ) {
 
@@ -467,13 +483,13 @@ Solo tendrás que completar nuevamente los
 
 👤 <b>Usuario</b>
 
-${result.reseller}
+${escapeHtml(result.reseller)}
 
 ━━━━━━━━━━━━━━━━━━
 
 🔑 <b>TU KEY</b>
 
-<code>${result.key}</code>
+<code>${escapeHtml(result.key)}</code>
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -873,7 +889,7 @@ los 5 anuncios.`,
             }
 
 
-            const data =
+            const callbackData =
                 query.data;
 
 
@@ -882,13 +898,13 @@ los 5 anuncios.`,
             // =================================================
 
             if (
-                data.startsWith(
+                callbackData.startsWith(
                     "free_mode_auto_"
                 )
             ) {
 
                 const key =
-                    data.replace(
+                    callbackData.replace(
                         "free_mode_auto_",
                         ""
                     );
@@ -905,11 +921,17 @@ los 5 anuncios.`,
                     );
 
 
+                    // Escapar < > & para que Telegram
+                    // no intente interpretarlos como HTML
+                    const safeCommand =
+                        escapeHtml(command);
+
+
                     return bot.sendMessage(
 
                         query.message.chat.id,
 
-`<code>${command}</code>`,
+`<code>${safeCommand}</code>`,
 
                         {
 
@@ -939,13 +961,13 @@ los 5 anuncios.`,
             // =================================================
 
             if (
-                data.startsWith(
+                callbackData.startsWith(
                     "free_mode_normal_"
                 )
             ) {
 
                 const key =
-                    data.replace(
+                    callbackData.replace(
                         "free_mode_normal_",
                         ""
                     );
@@ -962,11 +984,15 @@ los 5 anuncios.`,
                     );
 
 
+                    const safeCommand =
+                        escapeHtml(command);
+
+
                     return bot.sendMessage(
 
                         query.message.chat.id,
 
-`<code>${command}</code>`,
+`<code>${safeCommand}</code>`,
 
                         {
 
@@ -996,13 +1022,13 @@ los 5 anuncios.`,
             // =================================================
 
             if (
-                data.startsWith(
+                callbackData.startsWith(
                     "free_update_"
                 )
             ) {
 
                 const key =
-                    data.replace(
+                    callbackData.replace(
                         "free_update_",
                         ""
                     );
@@ -1019,11 +1045,15 @@ los 5 anuncios.`,
                     );
 
 
+                    const safeCommand =
+                        escapeHtml(command);
+
+
                     return bot.sendMessage(
 
                         query.message.chat.id,
 
-`<code>${command}</code>`,
+`<code>${safeCommand}</code>`,
 
                         {
 
@@ -1053,7 +1083,7 @@ los 5 anuncios.`,
             // =================================================
 
             if (
-                !data.startsWith(
+                !callbackData.startsWith(
                     "key_revoke_"
                 )
             ) {
@@ -1070,7 +1100,7 @@ los 5 anuncios.`,
 
 
             const key =
-                data.replace(
+                callbackData.replace(
                     "key_revoke_",
                     ""
                 );
@@ -1111,7 +1141,7 @@ los 5 anuncios.`,
                 }
 
 
-                const data =
+                const keyData =
                     snap.val();
 
 
@@ -1120,8 +1150,8 @@ los 5 anuncios.`,
                 // =================================================
 
                 if (
-                    data.owner !==
-                    chatId
+                    String(keyData.owner) !==
+                    String(chatId)
                 ) {
 
                     return bot.answerCallbackQuery(
@@ -1199,7 +1229,7 @@ los 5 anuncios.`,
 
 ━━━━━━━━━━━━━━━━━━
 
-🔑 <code>${key}</code>
+🔑 <code>${escapeHtml(key)}</code>
 
 ━━━━━━━━━━━━━━━━━━
 
