@@ -10,17 +10,26 @@ export default function registerFreeKey(bot) {
     const WEBAPP_URL =
         "https://kevinaldaircama.github.io/bot-key";
 
-    // Cantidad de anuncios necesarios
     const REQUIRED_ADS = 5;
 
-    // Duración de la Key
-    // 2 horas
+    // Duración de la Key: 2 horas
     const KEY_LIFETIME =
         2 * 60 * 60 * 1000;
 
 
     // =========================================================
-    // OBTENER NOMBRE / USUARIO DE TELEGRAM
+    // URLS DE INSTALADORES
+    // =========================================================
+
+    const INSTALL_URL =
+        "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh";
+
+    const UPDATE_URL =
+        "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/update.sh";
+
+
+    // =========================================================
+    // OBTENER NOMBRE / USUARIO TELEGRAM
     // =========================================================
 
     function getTelegramName(user, chatId) {
@@ -43,14 +52,10 @@ export default function registerFreeKey(bot) {
     async function generateKey(chatId) {
 
         const userRef =
-            db.ref(
-                `users/${chatId}`
-            );
-
+            db.ref(`users/${chatId}`);
 
         const snap =
             await userRef.get();
-
 
         if (!snap.exists()) {
 
@@ -61,7 +66,6 @@ export default function registerFreeKey(bot) {
             };
 
         }
-
 
         const user =
             snap.val();
@@ -74,10 +78,8 @@ export default function registerFreeKey(bot) {
         const isOwner =
             user.role === "owner";
 
-
         const isAdmin =
             user.role === "admin";
-
 
         const isStaff =
             isOwner ||
@@ -85,7 +87,7 @@ export default function registerFreeKey(bot) {
 
 
         // =====================================================
-        // NOMBRE / USUARIO TELEGRAM
+        // USUARIO / RESELLER
         // =====================================================
 
         const reseller =
@@ -94,13 +96,12 @@ export default function registerFreeKey(bot) {
                 chatId
             );
 
-
         const username =
             reseller;
 
 
         // =====================================================
-        // VERIFICAR ACCESO POR ANUNCIOS
+        // VERIFICAR ANUNCIOS
         // =====================================================
 
         if (!isStaff) {
@@ -110,11 +111,8 @@ export default function registerFreeKey(bot) {
             ) {
 
                 return {
-
                     ok: false,
-
                     noAccess: true
-
                 };
 
             }
@@ -184,11 +182,7 @@ export default function registerFreeKey(bot) {
         // =====================================================
         // CONSUMIR ACCESO DE ANUNCIOS
         //
-        // IMPORTANTE:
-        // NO HAY COOLDOWN DE 24 HORAS.
-        //
-        // Después de generar una Key deberá volver
-        // a completar los anuncios para generar otra.
+        // NO EXISTE COOLDOWN DE 24 HORAS
         // =====================================================
 
         if (!isStaff) {
@@ -214,9 +208,7 @@ export default function registerFreeKey(bot) {
         // =====================================================
 
         await db
-            .ref(
-                `history/${chatId}`
-            )
+            .ref(`history/${chatId}`)
             .push({
 
                 type:
@@ -241,7 +233,6 @@ export default function registerFreeKey(bot) {
         const keysSnapshot =
             await db.ref("keys").get();
 
-
         let totalKeys =
             0;
 
@@ -255,7 +246,6 @@ export default function registerFreeKey(bot) {
 
                     const data =
                         item.val();
-
 
                     if (
 
@@ -282,18 +272,6 @@ export default function registerFreeKey(bot) {
 
 
         // =====================================================
-        // PLAN MOSTRADO
-        // =====================================================
-
-        const planName =
-            isOwner
-                ? "👑 OWNER"
-                : isAdmin
-                    ? "🛡️ ADMIN"
-                    : "🎁 FREE";
-
-
-        // =====================================================
         // RESULTADO
         // =====================================================
 
@@ -310,8 +288,6 @@ export default function registerFreeKey(bot) {
 
             reseller,
 
-            planName,
-
             totalKeys
 
         };
@@ -320,12 +296,10 @@ export default function registerFreeKey(bot) {
 
 
     // =========================================================
-    // MOSTRAR WEBAPP DE ANUNCIOS
+    // MOSTRAR ANUNCIOS
     // =========================================================
 
-    async function sendAdRequired(
-        chatId
-    ) {
+    async function sendAdRequired(chatId) {
 
         return bot.sendMessage(
 
@@ -347,25 +321,16 @@ Para obtener una nueva Key debes completar:
 
 Al completar los 5 anuncios podrás generar:
 
-🔑 <b>1 Key FREE</b>
+🔑 <b>1 KEY FREE</b>
 
 ━━━━━━━━━━━━━━━━━━
 
 ♻️ <b>SIN LÍMITE DE 24 HORAS</b>
 
-Puedes volver a obtener otra Key cuando quieras.
+Puedes obtener otra Key cuando quieras.
 
-Solo tendrás que completar nuevamente los
-<b>5 anuncios</b>.
-
-━━━━━━━━━━━━━━━━━━
-
-⚡ <b>Proceso:</b>
-
-1️⃣ Ver 5 anuncios
-2️⃣ Generar tu Key
-3️⃣ Usar tu Key
-4️⃣ Cuando necesites otra, vuelves a completar los anuncios`,
+Solo debes completar nuevamente los
+<b>5 anuncios</b>.`,
 
             {
 
@@ -409,9 +374,7 @@ Solo tendrás que completar nuevamente los
     // MOSTRAR KEY
     // =========================================================
 
-    async function showKey(
-        chatId
-    ) {
+    async function showKey(chatId) {
 
         try {
 
@@ -451,10 +414,8 @@ Solo tendrás que completar nuevamente los
                     result.message,
 
                     {
-
                         parse_mode:
                             "HTML"
-
                     }
 
                 );
@@ -463,7 +424,7 @@ Solo tendrás que completar nuevamente los
 
 
             // =================================================
-            // MENSAJE DE BIENVENIDA + KEY
+            // MENSAJE PRINCIPAL
             // =================================================
 
             return bot.sendMessage(
@@ -476,7 +437,7 @@ Solo tendrás que completar nuevamente los
 
 👋 <b>Tu Key fue generada correctamente.</b>
 
-🎁 <b>PLAN: ${result.planName}</b>
+🎁 <b>PLAN: FREE</b>
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -494,12 +455,10 @@ ${result.reseller}
 
 ⏳ <b>DURACIÓN</b>
 
-La Key estará disponible durante:
-
 <b>2 HORAS</b>
 
-🗑️ También será eliminada automáticamente
-cuando sea utilizada.
+🗑️ La Key será eliminada automáticamente
+al utilizarse o cuando expire.
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -513,28 +472,16 @@ ${result.totalKeys}
 
 No existe límite de 24 horas.
 
-Cuando necesites otra Key simplemente vuelve
-a completar los <b>5 anuncios</b>.
+Cuando quieras otra Key,
+vuelve a completar los <b>5 anuncios</b>.
 
 ━━━━━━━━━━━━━━━━━━
 
-⚙️ <b>SELECCIONA TU MODO</b>
+⚙️ <b>SELECCIONA UNA OPCIÓN</b>
 
-🤖 Auto
-⚙️ Normal
-🔄 Actualizar
-
-━━━━━━━━━━━━━━━━━━
-
-💻 <b>INSTALADOR MULTI SCRIPT</b>
-
-<code>export INSTALL_KEY="${result.key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh)</code>
-
-━━━━━━━━━━━━━━━━━━
-
-⚡ <b>INSTALADOR @sshprivanoxbot</b>
-
-<code>export INSTALL_KEY="${result.key}"; bash &lt;(curl -fsSL https://raw.githubusercontent.com/kevinaldaircama/privanox-code/main/install_go.sh)</code>`,
+🤖 Auto — instalador automático
+⚙️ Normal — instalador normal
+🔄 Actualizar — actualizar instalación`,
 
                 {
 
@@ -612,7 +559,6 @@ a completar los <b>5 anuncios</b>.
                 error
             );
 
-
             return bot.sendMessage(
 
                 chatId,
@@ -640,7 +586,6 @@ a completar los <b>5 anuncios</b>.
                 String(
                     msg.chat.id
                 );
-
 
             await showKey(
                 chatId
@@ -719,7 +664,7 @@ a completar los <b>5 anuncios</b>.
 
 
                 // =================================================
-                // OWNER / ADMIN
+                // CUENTAS STAFF
                 // =================================================
 
                 if (
@@ -764,17 +709,11 @@ Ya completaste los anuncios.
 
 🔑 Usa:
 
-<code>/keyfree</code>
-
-━━━━━━━━━━━━━━━━━━
-
-No necesitas volver a ver los anuncios.`,
+<code>/keyfree</code>`,
 
                         {
-
                             parse_mode:
                                 "HTML"
-
                         }
 
                     );
@@ -783,7 +722,7 @@ No necesitas volver a ver los anuncios.`,
 
 
                 // =================================================
-                // DESBLOQUEAR KEY
+                // DESBLOQUEAR
                 // =================================================
 
                 const completedAt =
@@ -840,8 +779,6 @@ No necesitas volver a ver los anuncios.`,
 
 🎁 <b>PLAN FREE</b>
 
-━━━━━━━━━━━━━━━━━━
-
 🎬 Anuncios:
 
 <b>5 / 5</b>
@@ -850,7 +787,7 @@ No necesitas volver a ver los anuncios.`,
 
 🔓 <b>KEY DESBLOQUEADA</b>
 
-Ya puedes generar tu Key FREE.
+Ya puedes generar tu Key.
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -860,18 +797,14 @@ Ya puedes generar tu Key FREE.
 
 ━━━━━━━━━━━━━━━━━━
 
-♻️ <b>IMPORTANTE</b>
+♻️ Puedes volver a obtener otra Key cuando quieras.
 
-No existe límite de 24 horas.
-
-Cuando quieras otra Key, vuelve a completar
-los 5 anuncios.`,
+Solo debes completar nuevamente los
+<b>5 anuncios</b>.`,
 
                     {
-
                         parse_mode:
                             "HTML"
-
                     }
 
                 );
@@ -882,7 +815,6 @@ los 5 anuncios.`,
                     "ADS START ERROR:",
                     error
                 );
-
 
                 await bot.sendMessage(
 
@@ -900,7 +832,7 @@ los 5 anuncios.`,
 
 
     // =========================================================
-    // BOTONES AUTO / NORMAL / ACTUALIZAR
+    // BOTONES
     // =========================================================
 
     bot.on(
@@ -922,6 +854,12 @@ los 5 anuncios.`,
                 query.data;
 
 
+            const chatId =
+                String(
+                    query.message.chat.id
+                );
+
+
             // =====================================================
             // AUTO
             // =====================================================
@@ -932,23 +870,59 @@ los 5 anuncios.`,
                 )
             ) {
 
+                const key =
+                    data.replace(
+                        "free_mode_auto_",
+                        ""
+                    );
+
+
+                const command =
+                    `export INSTALL_KEY="${key}"; bash <(curl -fsSL ${INSTALL_URL})`;
+
+
                 await bot.answerCallbackQuery(
 
                     query.id,
 
                     {
-
                         text:
-                            "🤖 Modo Auto seleccionado.",
-
+                            "🤖 Instalador Auto generado.",
                         show_alert:
                             false
-
                     }
 
                 );
 
-                return;
+
+                return bot.sendMessage(
+
+                    chatId,
+
+`<b>🤖 INSTALADOR AUTO</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🔑 Key:
+
+<code>${key}</code>
+
+━━━━━━━━━━━━━━━━━━
+
+📥 <b>COMANDO</b>
+
+<code>${command}</code>
+
+━━━━━━━━━━━━━━━━━━
+
+✅ La Key ya está incluida automáticamente.`,
+
+                    {
+                        parse_mode:
+                            "HTML"
+                    }
+
+                );
 
             }
 
@@ -963,23 +937,59 @@ los 5 anuncios.`,
                 )
             ) {
 
+                const key =
+                    data.replace(
+                        "free_mode_normal_",
+                        ""
+                    );
+
+
+                const command =
+                    `export INSTALL_KEY="${key}"; bash <(curl -fsSL ${INSTALL_URL})`;
+
+
                 await bot.answerCallbackQuery(
 
                     query.id,
 
                     {
-
                         text:
-                            "⚙️ Modo Normal seleccionado.",
-
+                            "⚙️ Instalador Normal generado.",
                         show_alert:
                             false
-
                     }
 
                 );
 
-                return;
+
+                return bot.sendMessage(
+
+                    chatId,
+
+`<b>⚙️ INSTALADOR NORMAL</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🔑 <b>Key</b>
+
+<code>${key}</code>
+
+━━━━━━━━━━━━━━━━━━
+
+📥 <b>INSTALADOR</b>
+
+<code>${command}</code>
+
+━━━━━━━━━━━━━━━━━━
+
+✅ Tu Key ya está incluida.`,
+
+                    {
+                        parse_mode:
+                            "HTML"
+                    }
+
+                );
 
             }
 
@@ -994,29 +1004,65 @@ los 5 anuncios.`,
                 )
             ) {
 
+                const key =
+                    data.replace(
+                        "free_update_",
+                        ""
+                    );
+
+
+                const command =
+                    `export INSTALL_KEY="${key}"; bash <(curl -fsSL ${UPDATE_URL})`;
+
+
                 await bot.answerCallbackQuery(
 
                     query.id,
 
                     {
-
                         text:
-                            "🔄 Actualizando...",
-
+                            "🔄 Actualizador generado.",
                         show_alert:
                             false
-
                     }
 
                 );
 
-                return;
+
+                return bot.sendMessage(
+
+                    chatId,
+
+`<b>🔄 ACTUALIZAR</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🔑 <b>Key</b>
+
+<code>${key}</code>
+
+━━━━━━━━━━━━━━━━━━
+
+📥 <b>COMANDO DE ACTUALIZACIÓN</b>
+
+<code>${command}</code>
+
+━━━━━━━━━━━━━━━━━━
+
+✅ Tu Key ya está incluida automáticamente.`,
+
+                    {
+                        parse_mode:
+                            "HTML"
+                    }
+
+                );
 
             }
 
 
             // =====================================================
-            // REVOCAR KEY
+            // REVOCAR
             // =====================================================
 
             if (
@@ -1028,12 +1074,6 @@ los 5 anuncios.`,
                 return;
 
             }
-
-
-            const chatId =
-                String(
-                    query.message.chat.id
-                );
 
 
             const key =
@@ -1083,7 +1123,7 @@ los 5 anuncios.`,
 
 
                 // =================================================
-                // VERIFICAR PROPIETARIO
+                // PROPIETARIO
                 // =================================================
 
                 if (
@@ -1111,7 +1151,7 @@ los 5 anuncios.`,
 
 
                 // =================================================
-                // ELIMINAR KEY
+                // ELIMINAR
                 // =================================================
 
                 await ref.remove();
@@ -1139,10 +1179,6 @@ los 5 anuncios.`,
                     });
 
 
-                // =================================================
-                // CONFIRMACIÓN
-                // =================================================
-
                 await bot.answerCallbackQuery(
 
                     query.id,
@@ -1160,7 +1196,11 @@ los 5 anuncios.`,
                 );
 
 
-                await bot.editMessageText(
+                // =================================================
+                // MENSAJE FINAL
+                // =================================================
+
+                return bot.editMessageText(
 
 `<b>🗑 KEY REVOCADA</b>
 
@@ -1174,9 +1214,9 @@ los 5 anuncios.`,
 
 ━━━━━━━━━━━━━━━━━━
 
-♻️ Puedes obtener otra Key cuando quieras.
+♻️ Puedes obtener otra cuando quieras.
 
-Solo debes volver a completar los
+Completa nuevamente los
 <b>5 anuncios</b>.`,
 
                     {
