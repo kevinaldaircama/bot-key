@@ -10,25 +10,20 @@ export default function registerFreeKey(bot) {
     const WEBAPP_URL =
         "https://kevinaldaircama.github.io/bot-key";
 
-    // Instalador Multi Script
     const INSTALL_URL =
         "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh";
 
-    // Actualizador Multi Script
     const UPDATE_URL =
         "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/update.sh";
 
-    // Cantidad de anuncios necesarios
     const REQUIRED_ADS = 5;
 
-    // Duración de la Key
-    // 2 horas
     const KEY_LIFETIME =
         2 * 60 * 60 * 1000;
 
 
     // =========================================================
-    // ESCAPAR HTML PARA TELEGRAM
+    // ESCAPAR HTML
     // =========================================================
 
     function escapeHtml(text) {
@@ -44,7 +39,7 @@ export default function registerFreeKey(bot) {
 
 
     // =========================================================
-    // OBTENER NOMBRE / USUARIO DE TELEGRAM
+    // OBTENER NOMBRE
     // =========================================================
 
     function getTelegramName(user, chatId) {
@@ -67,9 +62,7 @@ export default function registerFreeKey(bot) {
     async function generateKey(chatId) {
 
         const userRef =
-            db.ref(
-                `users/${chatId}`
-            );
+            db.ref(`users/${chatId}`);
 
         const snap =
             await userRef.get();
@@ -79,8 +72,7 @@ export default function registerFreeKey(bot) {
 
             return {
                 ok: false,
-                message:
-                    "❌ Usuario no registrado."
+                message: "❌ Usuario no registrado."
             };
 
         }
@@ -89,10 +81,6 @@ export default function registerFreeKey(bot) {
         const user =
             snap.val();
 
-
-        // =====================================================
-        // ROLES
-        // =====================================================
 
         const isOwner =
             user.role === "owner";
@@ -105,10 +93,6 @@ export default function registerFreeKey(bot) {
             isAdmin;
 
 
-        // =====================================================
-        // NOMBRE / USUARIO
-        // =====================================================
-
         const reseller =
             getTelegramName(
                 user,
@@ -120,7 +104,7 @@ export default function registerFreeKey(bot) {
 
 
         // =====================================================
-        // VERIFICAR ACCESO POR ANUNCIOS
+        // VERIFICAR ANUNCIOS
         // =====================================================
 
         if (!isStaff) {
@@ -198,9 +182,7 @@ export default function registerFreeKey(bot) {
 
 
         // =====================================================
-        // CONSUMIR ACCESO DE ANUNCIOS
-        //
-        // NO EXISTE COOLDOWN DE 24 HORAS
+        // CONSUMIR DESBLOQUEO
         // =====================================================
 
         if (!isStaff) {
@@ -226,9 +208,7 @@ export default function registerFreeKey(bot) {
         // =====================================================
 
         await db
-            .ref(
-                `history/${chatId}`
-            )
+            .ref(`history/${chatId}`)
             .push({
 
                 type:
@@ -257,9 +237,7 @@ export default function registerFreeKey(bot) {
             0;
 
 
-        if (
-            keysSnapshot.exists()
-        ) {
+        if (keysSnapshot.exists()) {
 
             keysSnapshot.forEach(
                 item => {
@@ -292,7 +270,7 @@ export default function registerFreeKey(bot) {
 
 
         // =====================================================
-        // PLAN MOSTRADO
+        // PLAN
         // =====================================================
 
         const planName =
@@ -302,10 +280,6 @@ export default function registerFreeKey(bot) {
                     ? "🛡️ ADMIN"
                     : "🎁 FREE";
 
-
-        // =====================================================
-        // RESULTADO
-        // =====================================================
 
         return {
 
@@ -330,12 +304,10 @@ export default function registerFreeKey(bot) {
 
 
     // =========================================================
-    // MOSTRAR WEBAPP DE ANUNCIOS
+    // ANUNCIOS
     // =========================================================
 
-    async function sendAdRequired(
-        chatId
-    ) {
+    async function sendAdRequired(chatId) {
 
         return bot.sendMessage(
 
@@ -410,25 +382,15 @@ Solo tendrás que completar nuevamente los
     // MOSTRAR KEY
     // =========================================================
 
-    async function showKey(
-        chatId
-    ) {
+    async function showKey(chatId) {
 
         try {
 
             const result =
-                await generateKey(
-                    chatId
-                );
+                await generateKey(chatId);
 
 
-            // =================================================
-            // NECESITA ANUNCIOS
-            // =================================================
-
-            if (
-                result.noAccess
-            ) {
+            if (result.noAccess) {
 
                 return sendAdRequired(
                     chatId
@@ -437,13 +399,7 @@ Solo tendrás que completar nuevamente los
             }
 
 
-            // =================================================
-            // ERROR
-            // =================================================
-
-            if (
-                !result.ok
-            ) {
+            if (!result.ok) {
 
                 return bot.sendMessage(
 
@@ -452,20 +408,14 @@ Solo tendrás que completar nuevamente los
                     result.message,
 
                     {
-
                         parse_mode:
                             "HTML"
-
                     }
 
                 );
 
             }
 
-
-            // =================================================
-            // MENSAJE PRINCIPAL
-            // =================================================
 
             return bot.sendMessage(
 
@@ -592,7 +542,6 @@ ${result.totalKeys}
                 error
             );
 
-
             return bot.sendMessage(
 
                 chatId,
@@ -617,13 +566,9 @@ ${result.totalKeys}
         async msg => {
 
             const chatId =
-                String(
-                    msg.chat.id
-                );
+                String(msg.chat.id);
 
-            await showKey(
-                chatId
-            );
+            await showKey(chatId);
 
         }
 
@@ -638,20 +583,13 @@ ${result.totalKeys}
 
         /^\/start(?:@\w+)?(?:\s+(.+))?$/i,
 
-        async (
-            msg,
-            match
-        ) => {
+        async (msg, match) => {
 
             const chatId =
-                String(
-                    msg.chat.id
-                );
-
+                String(msg.chat.id);
 
             const startParam =
-                match &&
-                match[1]
+                match && match[1]
                     ? match[1].trim()
                     : "";
 
@@ -669,18 +607,13 @@ ${result.totalKeys}
             try {
 
                 const userRef =
-                    db.ref(
-                        `users/${chatId}`
-                    );
-
+                    db.ref(`users/${chatId}`);
 
                 const snap =
                     await userRef.get();
 
 
-                if (
-                    !snap.exists()
-                ) {
+                if (!snap.exists()) {
 
                     return bot.sendMessage(
 
@@ -703,11 +636,8 @@ ${result.totalKeys}
 
                 if (
 
-                    user.role ===
-                        "owner" ||
-
-                    user.role ===
-                        "admin"
+                    user.role === "owner" ||
+                    user.role === "admin"
 
                 ) {
 
@@ -723,12 +653,11 @@ ${result.totalKeys}
 
 
                 // =================================================
-                // EVITAR DOBLE DESBLOQUEO
+                // YA DESBLOQUEADO
                 // =================================================
 
                 if (
-                    user.adsKeyUnlocked ===
-                    true
+                    user.adsKeyUnlocked === true
                 ) {
 
                     return bot.sendMessage(
@@ -750,10 +679,8 @@ Ya completaste los anuncios.
 No necesitas volver a ver los anuncios.`,
 
                         {
-
                             parse_mode:
                                 "HTML"
-
                         }
 
                     );
@@ -762,7 +689,7 @@ No necesitas volver a ver los anuncios.`,
 
 
                 // =================================================
-                // DESBLOQUEAR KEY
+                // DESBLOQUEAR
                 // =================================================
 
                 const completedAt =
@@ -788,9 +715,7 @@ No necesitas volver a ver los anuncios.`,
                 // =================================================
 
                 await db
-                    .ref(
-                        `history/${chatId}`
-                    )
+                    .ref(`history/${chatId}`)
                     .push({
 
                         type:
@@ -845,10 +770,8 @@ Cuando quieras otra Key, vuelve a completar
 los 5 anuncios.`,
 
                     {
-
                         parse_mode:
                             "HTML"
-
                     }
 
                 );
@@ -859,7 +782,6 @@ los 5 anuncios.`,
                     "ADS START ERROR:",
                     error
                 );
-
 
                 await bot.sendMessage(
 
@@ -921,8 +843,9 @@ los 5 anuncios.`,
                     );
 
 
-                    // Escapar < > & para que Telegram
-                    // no intente interpretarlos como HTML
+                    const safeKey =
+                        escapeHtml(key);
+
                     const safeCommand =
                         escapeHtml(command);
 
@@ -931,7 +854,31 @@ los 5 anuncios.`,
 
                         query.message.chat.id,
 
-`<code>${safeCommand}</code>`,
+`<b>🤖 INSTALACIÓN AUTOMÁTICA</b>
+
+━━━━━━━━━━━━━━━━━━
+
+⚡ <b>Instalador automático</b>
+
+La Key ya está incluida dentro del comando.
+
+<code>${safeCommand}</code>
+
+━━━━━━━━━━━━━━━━━━
+
+🐧 <b>Ubuntu recomendado</b>
+
+✅ Compatible con versiones LTS
+
+━━━━━━━━━━━━━━━━━━
+
+🌐 <b>Antes de instalar</b>
+
+Configura un subdominio apuntando a la IP de tu VPS mediante un registro A.
+
+⚠️ Cloudflare debe estar en DNS Only.
+
+━━━━━━━━━━━━━━━━━━`,
 
                         {
 
@@ -974,7 +921,7 @@ los 5 anuncios.`,
 
 
                 const command =
-                    `export INSTALL_KEY="${key}"; bash <(curl -fsSL ${INSTALL_URL})`;
+                    `bash <(curl -fsSL ${INSTALL_URL})`;
 
 
                 try {
@@ -984,6 +931,9 @@ los 5 anuncios.`,
                     );
 
 
+                    const safeKey =
+                        escapeHtml(key);
+
                     const safeCommand =
                         escapeHtml(command);
 
@@ -992,7 +942,25 @@ los 5 anuncios.`,
 
                         query.message.chat.id,
 
-`<code>${safeCommand}</code>`,
+`<b>📦 INSTALACIÓN NORMAL</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🔑 <b>KEY</b>
+
+<code>${safeKey}</code>
+
+━━━━━━━━━━━━━━━━━━
+
+💻 <b>INSTALADOR</b>
+
+<code>${safeCommand}</code>
+
+━━━━━━━━━━━━━━━━━━
+
+📌 Introduce la Key cuando el instalador la solicite.
+
+━━━━━━━━━━━━━━━━━━`,
 
                         {
 
@@ -1035,7 +1003,7 @@ los 5 anuncios.`,
 
 
                 const command =
-                    `export INSTALL_KEY="${key}"; bash <(curl -fsSL ${UPDATE_URL})`;
+                    `bash <(curl -fsSL ${UPDATE_URL})`;
 
 
                 try {
@@ -1045,6 +1013,9 @@ los 5 anuncios.`,
                     );
 
 
+                    const safeKey =
+                        escapeHtml(key);
+
                     const safeCommand =
                         escapeHtml(command);
 
@@ -1053,7 +1024,29 @@ los 5 anuncios.`,
 
                         query.message.chat.id,
 
-`<code>${safeCommand}</code>`,
+`<b>🔄 ACTUALIZAR MULTI SCRIPT</b>
+
+━━━━━━━━━━━━━━━━━━
+
+🔑 <b>KEY</b>
+
+<code>${safeKey}</code>
+
+━━━━━━━━━━━━━━━━━━
+
+⚡ <b>COMANDO DE ACTUALIZACIÓN</b>
+
+<code>${safeCommand}</code>
+
+━━━━━━━━━━━━━━━━━━
+
+📌 Introduce la Key cuando el actualizador la solicite.
+
+━━━━━━━━━━━━━━━━━━
+
+⚠️ No cierres la conexión SSH durante la actualización.
+
+━━━━━━━━━━━━━━━━━━`,
 
                         {
 
@@ -1109,18 +1102,13 @@ los 5 anuncios.`,
             try {
 
                 const ref =
-                    db.ref(
-                        `keys/${key}`
-                    );
-
+                    db.ref(`keys/${key}`);
 
                 const snap =
                     await ref.get();
 
 
-                if (
-                    !snap.exists()
-                ) {
+                if (!snap.exists()) {
 
                     return bot.answerCallbackQuery(
 
@@ -1185,9 +1173,7 @@ los 5 anuncios.`,
                 // =================================================
 
                 await db
-                    .ref(
-                        `history/${chatId}`
-                    )
+                    .ref(`history/${chatId}`)
                     .push({
 
                         type:
