@@ -2,10 +2,10 @@ import db from "../db.js";
 import { randomUUID } from "crypto";
 
 const INSTALL_URL =
-    "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh";
+    "https://kavynox.kevintechtutorials.site/install.sh";
 
 const UPDATE_URL =
-    "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/update.sh";
+    "https://kavynox.kevintechtutorials.site/update.sh";
 
 
 // ============================================================
