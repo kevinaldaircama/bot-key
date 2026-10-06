@@ -14,7 +14,7 @@ export default function registerFreeKey(bot) {
         "https://kavynox.kevintechtutorials.site/install.sh";
 
     const UPDATE_URL =
-        "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/update.sh";
+        "https://kavynox.kevintechtutorials.site/update.sh";
 
     const REQUIRED_ADS = 5;
 
