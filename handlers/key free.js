@@ -11,7 +11,7 @@ export default function registerFreeKey(bot) {
         "https://kevinaldaircama.github.io/bot-key";
 
     const INSTALL_URL =
-        "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/install.sh";
+        "https://kavynox.kevintechtutorials.site/install.sh";
 
     const UPDATE_URL =
         "https://raw.githubusercontent.com/kevinaldaircama/multi-script/main/update.sh";
