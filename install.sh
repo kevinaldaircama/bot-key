@@ -1288,6 +1288,7 @@ create_env() {
     cat > "$ENV_FILE" <<EOF
 BOT_TOKEN=$bot_token
 OWNER_ID=$owner_id
+AUTHORIZED_CONTACT_IDS=$authorized_contact_ids
 
 # License API
 LICENSE_API_KEY=$license_api_key
@@ -1471,6 +1472,7 @@ configure_project() {
     local repo="$DEFAULT_REPO"
     local bot_token=""
     local owner_id=""
+    local authorized_contact_ids="${AUTHORIZED_CONTACT_IDS:-}"
     local cloudflare_token=""
     local cloudflare_zone=""
     local api_domain=""
@@ -1504,6 +1506,8 @@ configure_project() {
 
         [[ "$owner_id" =~ ^[0-9]+$ ]] ||
             die "OWNER_ID inválido."
+
+        read -r -p "IDs de compra autorizados (admin/sub dueño, separados por coma; ENTER para omitir): " authorized_contact_ids
 
         echo
         ask_api_domain

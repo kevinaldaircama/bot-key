@@ -48,3 +48,16 @@ El historial del bot combina:
 Muestra los últimos 15 eventos y acepta registros antiguos que usen `createdAt` en lugar de `time`.
 
 No es necesario editar `history.js` manualmente.
+
+
+## Cambios de la edición modificada
+
+- Sub dueños: el propietario puede agregarlos desde Configuración > Usuarios; reciben acceso administrativo ilimitado.
+- Las solicitudes de acceso continúan notificándose únicamente al propietario principal; los sub dueños no reciben avisos de solicitudes ni mensajes de creación de cupones.
+- Al banear o retirar acceso se intenta notificar al usuario afectado.
+- `/planes` ofrece botones de compra y muestra contactos autorizados (dueño, admins/sub dueños activos y los IDs definidos durante la instalación).
+- Configuración incluye ranking de usuarios por cantidad de claves generadas.
+- Dos rechazos generan advertencia y el tercer rechazo aplica baneo permanente.
+- No se añadió CORS: la compra se resuelve con botones nativos de Telegram y no necesita solicitudes de navegador a la API.
+
+Durante la instalación se puede indicar `AUTHORIZED_CONTACT_IDS` como IDs de Telegram separados por comas.
