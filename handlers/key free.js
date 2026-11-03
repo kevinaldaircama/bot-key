@@ -86,7 +86,7 @@ export default function registerFreeKey(bot) {
             user.role === "owner";
 
         const isAdmin =
-            user.role === "admin";
+            (user.role === "admin" || user.role === "subowner");
 
         const isStaff =
             isOwner ||
@@ -631,7 +631,7 @@ ${result.totalKeys}
                 if (
 
                     user.role === "owner" ||
-                    user.role === "admin"
+                    (user.role === "admin" || user.role === "subowner")
 
                 ) {
 

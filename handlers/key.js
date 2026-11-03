@@ -78,7 +78,7 @@ async function getAuthorizedUser(chatId) {
         };
     }
 
-    if (user.role !== "owner" && user.role !== "admin") {
+    if (user.role !== "owner" && user.role !== "admin" && user.role !== "subowner") {
         return {
             error: "No autorizado."
         };

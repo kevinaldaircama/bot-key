@@ -116,6 +116,15 @@ Selecciona el tiempo de acceso para este usuario.
             const userId = data.split("_")[1];
 
             await db.ref(`requests/${userId}`).remove();
+            const userRef = db.ref(`users/${userId}`);
+            const userSnap = await userRef.get();
+            const userData = userSnap.val() || {};
+            const rejects = Number(userData.rejectCount || 0) + 1;
+            const permanentlyBanned = rejects >= 3;
+            await userRef.update({
+                rejectCount: rejects,
+                ...(permanentlyBanned ? { banned: true, approved: false, role: "user", permanentBan: true } : {})
+            });
 
             await bot.editMessageText(
 
@@ -124,6 +133,9 @@ Selecciona el tiempo de acceso para este usuario.
 ━━━━━━━━━━━━━━━━━━
 
 El usuario fue rechazado correctamente.
+
+Rechazos acumulados: ${rejects}/3
+${permanentlyBanned ? "🚫 Baneado permanentemente." : rejects === 2 ? "⚠️ Se registró la segunda advertencia." : ""}
 
 ━━━━━━━━━━━━━━━━━━`,
 
@@ -160,7 +172,7 @@ El usuario fue rechazado correctamente.
 
 `❌ Tu solicitud fue rechazada por el administrador.
 
-Puedes volver a intentarlo más adelante.`
+${permanentlyBanned ? "🚫 Has sido baneado permanentemente por acumular 3 rechazos." : rejects === 2 ? "⚠️ ADVERTENCIA: llevas 2 rechazos. Un tercer rechazo causará un baneo permanente." : `Rechazos: ${rejects}/3. Puedes volver a intentarlo más adelante.`}`
 
             );
 

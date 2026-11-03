@@ -122,7 +122,8 @@ const ownerOnly = [
 "users_allow",      
 "users_remove",      
 "users_ban",      
-"users_unban"      
+"users_unban",
+"settings_ranking"      
 ];      
           
 if (ownerOnly.includes(query.data) && me.role !== "owner") {          
@@ -173,6 +174,9 @@ text:"🎟 Cupones",
 callback_data:"settings_coupons"
 }
 ],
+[
+{text:"🏆 Ranking de generadores", callback_data:"settings_ranking"}
+],
        
 [          
 {          
@@ -193,6 +197,26 @@ break;
 // MENSAJES          
 // ===================================          
           
+case "settings_ranking": {
+    await bot.answerCallbackQuery(query.id);
+    const usersSnap = await db.ref("users").get();
+    const keysSnap = await db.ref("keys").get();
+    const counts = new Map();
+    if (keysSnap.exists()) keysSnap.forEach(item => {
+        const owner = String(item.val()?.owner || "");
+        if (owner) counts.set(owner, (counts.get(owner) || 0) + 1);
+    });
+    const users = [];
+    if (usersSnap.exists()) usersSnap.forEach(item => {
+        const u = item.val() || {};
+        users.push({id:item.key, name:u.name || "Usuario", count:counts.get(item.key) || 0});
+    });
+    users.sort((a,b) => b.count-a.count);
+    const ranking = users.slice(0,20).map((u,i) => `${i+1}. ${u.name} — <code>${u.id}</code>
+   🔑 ${u.count} generadas`).join("\n\n") || "Todavía no hay usuarios.";
+    return bot.editMessageText(`🏆 <b>RANKING DE GENERADORES</b>\n\n${ranking}`, {chat_id:chatId,message_id:query.message.message_id,parse_mode:"HTML",reply_markup:{inline_keyboard:[[{text:"⬅️ Volver",callback_data:"menu_settings"}]]}});
+}
+
 case "settings_messages":          
           
 await bot.answerCallbackQuery(query.id);          
@@ -298,7 +322,11 @@ callback_data:"users_unban"
 {      
 text:"❌ Quitar acceso",      
 callback_data:"users_remove"      
-}      
+},
+{
+text:"👑 Agregar sub dueño",
+callback_data:"users_subowner"
+}
 ],      
       
 [      
@@ -355,6 +383,12 @@ break;
 // BANEAR          
 // ===================================          
           
+case "users_subowner":
+userAction[chatId] = "subowner";
+await bot.answerCallbackQuery(query.id);
+await bot.sendMessage(chatId, "👑 <b>AGREGAR SUB DUEÑO</b>\n\nEnvíe el ID de Telegram del usuario.", {parse_mode:"HTML"});
+break;
+
 case "users_ban":          
           
 userAction[chatId] = "ban";          
@@ -798,7 +832,13 @@ if (user.banned && action !== "unban") {
     );      
 }      
         
-switch (action) {        
+switch (action) {
+
+case "subowner":
+    await ref.update({ role:"subowner", approved:true, banned:false, expire:"Ilimitado", permanentBan:false });
+    try { await bot.sendMessage(userId, "👑 ¡Has sido agregado como sub dueño! Ya puedes utilizar el panel administrativo.", {parse_mode:"HTML"}); } catch (e) { console.warn("No se pudo notificar al sub dueño:", e.message); }
+    await bot.sendMessage(chatId, `✅ Usuario <code>${userId}</code> agregado como sub dueño.`, {parse_mode:"HTML"});
+    break;
         
 case "allow":      
       
@@ -862,7 +902,8 @@ case "ban":
 await ref.update({        
 approved:false,        
 banned:true        
-});        
+});
+try { await bot.sendMessage(userId, "🚫 Tu acceso ha sido revocado y tu cuenta fue baneada por un administrador."); } catch (e) { console.warn("No se pudo notificar al usuario:", e.message); }        
         
 await bot.sendMessage(        
         
@@ -911,7 +952,8 @@ await ref.update({
 approved:false,        
 banned:false,        
 role: "user"       
-});        
+});
+try { await bot.sendMessage(userId, "⚠️ Tu acceso de administrador ha sido retirado. Ya no puedes utilizar el panel administrativo."); } catch (e) { console.warn("No se pudo notificar al usuario:", e.message); }        
         
 await bot.sendMessage(        
         

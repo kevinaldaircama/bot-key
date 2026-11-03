@@ -23,7 +23,7 @@ export default function registerReseller(bot) {
 
         if (!user.approved) return;
 
-        if (user.role !== "owner" && user.role !== "admin") return;
+        if (user.role !== "owner" && user.role !== "admin" && user.role !== "subowner") return;
 
         waitingReseller.set(chatId, true);
 

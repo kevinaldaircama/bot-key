@@ -156,7 +156,7 @@ Si crees que se trata de un error, comunícate con el dueño del bot.`,
                 // ====================================================
 
                 if (
-                    data.role === "admin" &&
+                    (data.role === "admin" || data.role === "subowner") &&
                     data.approved
                 ) {
 

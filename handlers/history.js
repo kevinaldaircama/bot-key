@@ -1293,7 +1293,7 @@ bot.on(
 
             const isStaff =
                 role === "owner" ||
-                role === "admin";
+                (role === "admin" || role === "subowner");
 
             const events = [];
 
