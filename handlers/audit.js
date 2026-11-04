@@ -28,8 +28,10 @@ async function getStaffRole(chatId, config) {
       user.owner === true
     ) return "owner";
 
+    if (user.role === "subowner") return "subowner";
+
     if (
-      (user.role === "admin" || user.role === "subowner") ||
+      user.role === "admin" ||
       user.isAdmin === true ||
       user.admin === true
     ) return "admin";

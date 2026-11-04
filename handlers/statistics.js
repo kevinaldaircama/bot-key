@@ -16,10 +16,10 @@ export default function registerStatistics(bot) {
 
         const user = userSnap.val();
 
-        if (user.role !== "owner") {
+        if (!["owner", "subowner"].includes(user.role) || !user.approved || user.banned) {
 
             return bot.answerCallbackQuery(query.id, {
-                text: "Solo el Dueño puede acceder.",
+                text: "Solo el dueño o sub dueño puede acceder.",
                 show_alert: true
             });
 
@@ -43,6 +43,7 @@ export default function registerStatistics(bot) {
                 if (u.role === "owner") totalOwners++;
 
                 if (u.role === "admin") totalAdmins++;
+                if (u.role === "subowner") totalAdmins++;
 
             });
 
@@ -99,7 +100,7 @@ ${totalUsers}
 
 ${totalOwners}
 
-🛡️ <b>Admins</b>
+🛡️ <b>Admins y sub dueños</b>
 
 ${totalAdmins}
 

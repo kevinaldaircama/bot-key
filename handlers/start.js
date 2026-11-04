@@ -459,7 +459,7 @@ ${user.name || "Usuario"}
 
 🎖️ <b>Rango</b>
 
-Admin
+${user.role === "subowner" ? "Sub dueño" : "Admin"}
 
 📅 <b>Expira</b>
 
@@ -488,17 +488,9 @@ ${totalKeys}
                             text: "🔑 Crear Key",
                             callback_data: "menu_key"
                         },
-                        {
-                            text: "🚀 Instalador",
-                            callback_data: "menu_install"
-                        }
                     ],
 
                     [
-                        {
-                            text: "🖥 Mis VPS",
-                            callback_data: "menu_vps"
-                        },
                         {
                             text: "📁 Mis Dominios",
                             callback_data: "menu_domains"
@@ -520,7 +512,8 @@ ${totalKeys}
                         {
                             text: "👥 Resellers",
                             callback_data: "menu_reseller"
-                        }
+                        },
+                        ...(user.role === "subowner" ? [{ text: "📊 Estadísticas", callback_data: "menu_stats" }] : [])
                     ],
 
                     [
@@ -532,7 +525,8 @@ ${totalKeys}
                             text: "📈 Mi Uso",
                             callback_data: "menu_usage"
                         }
-                    ]
+                    ],
+                    ...(user.role === "subowner" ? [[{ text: "⚙️ Configuración", callback_data: "menu_settings" }]] : [])
 
                 ]
 

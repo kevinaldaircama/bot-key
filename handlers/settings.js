@@ -117,20 +117,15 @@ show_alert:true
 });          
 }          
           
-const ownerOnly = [      
-"settings_users",      
-"users_allow",      
-"users_remove",      
-"users_ban",      
-"users_unban",
-"settings_ranking"      
-];      
-          
-if (ownerOnly.includes(query.data) && me.role !== "owner") {          
-return bot.answerCallbackQuery(query.id,{          
-text:"Solo el dueño puede administrar usuarios.",          
-show_alert:true          
-});          
+const staffRoles = ["owner", "subowner"];
+const ownerOnly = ["users_subowner"];
+if (query.data === "menu_settings" || query.data === "settings_users" || query.data === "settings_ranking" || query.data.startsWith("users_") || query.data === "settings_coupons" || query.data === "settings_messages") {
+    if (!staffRoles.includes(me.role) || !me.approved || me.banned) {
+        return bot.answerCallbackQuery(query.id, { text: "No tienes permiso para esta opción.", show_alert: true });
+    }
+}
+if (ownerOnly.includes(query.data) && me.role !== "owner") {
+    return bot.answerCallbackQuery(query.id, { text: "Solo el dueño puede agregar sub dueños.", show_alert: true });
 }          
           
 switch (query.data) {          

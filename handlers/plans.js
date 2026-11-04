@@ -22,7 +22,7 @@ export default function registerPlans(bot) {
       const lines = PLANS.map((plan, i) => [
         `📅 <b>${plan.label}</b>`,
         `🛡️ Admin: <b>$${money(plan.admin)}</b> | 🇵🇪 <b>S/ ${money(plan.admin * tc)}</b>`,
-        `👑 Dueño/Sub dueño: <b>$${money(plan.owner)}</b> | 🇵🇪 <b>S/ ${money(plan.owner * tc)}</b>`,
+        `👑 Sub dueño: <b>$${money(plan.owner)}</b> | 🇵🇪 <b>S/ ${money(plan.owner * tc)}</b>`,
       ].join("\n")).join("\n\n");
       await bot.sendMessage(chatId, `🚀 <b>MULTI SCRIPT VPN PREMIUM</b>\n\n━━━━━━━━━━━━━━━━━━\n\n💎 <b>PLANES ADMIN / DUEÑO</b>\n\n${lines}\n\n━━━━━━━━━━━━━━━━━━\n💱 1 USD = S/ ${money(tc)}\n\nSelecciona comprar acceso para contactar a un administrador autorizado.`, {
         parse_mode: "HTML",
@@ -50,12 +50,12 @@ export default function registerPlans(bot) {
     if (usersSnap.exists()) usersSnap.forEach(item => {
       const u = item.val() || {};
       if ((["owner", "admin", "subowner"].includes(u.role) && u.approved !== false && !u.banned) || configured.has(String(item.key))) {
-        contacts.push({ id: String(item.key), name: u.name || "Administrador", role: u.role || "Autorizado" });
+        contacts.push({ id: String(item.key), name: u.name || "Usuario", role: u.role || "Autorizado" });
       }
     });
-    for (const id of configured) if (!contacts.some(c => c.id === id)) contacts.push({ id, name: "Contacto autorizado", role: "Autorizado" });
-    const rows = contacts.slice(0, 30).map(c => [{ text: `${c.role === "owner" ? "👑" : "🛡️"} ${c.name}`, url: `tg://user?id=${c.id}` }]);
+    for (const id of configured) if (!contacts.some(c => c.id === id)) contacts.push({ id, name: "Contacto", role: "Autorizado" });
+    const rows = contacts.slice(0, 30).map(c => [{ text: `${c.name}`, url: `tg://user?id=${c.id}` }]);
     if (!rows.length) return bot.sendMessage(query.message.chat.id, "❌ No hay administradores de compra configurados. Contacta al dueño.");
-    await bot.sendMessage(query.message.chat.id, `💳 <b>COMPRA DE ACCESO</b>\n\nPlan: <b>${plan.label}</b>\n\nSelecciona un dueño, sub dueño o administrador autorizado para coordinar tu compra.`, { parse_mode: "HTML", reply_markup: { inline_keyboard: rows } });
+    await bot.sendMessage(query.message.chat.id, `💳 <b>COMPRA DE ACCESO</b>\n\nPlan: <b>${plan.label}</b>\n\nSelecciona el nombre de la persona autorizada para coordinar tu compra.`, { parse_mode: "HTML", reply_markup: { inline_keyboard: rows } });
   });
 }

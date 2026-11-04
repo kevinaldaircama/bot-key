@@ -119,7 +119,7 @@ inline_keyboard:[
 
 👤 <b>${user.name}</b>
 
-🎖️ <b>Rango:</b> Admin
+🎖️ <b>Rango:</b> ${user.role === "subowner" ? "Sub dueño" : "Admin"}
 
 🔑 <b>Keys:</b> ${totalKeys}
 
@@ -156,13 +156,15 @@ inline_keyboard:[
 ],
 
 [
-{text:"👥 Resellers",callback_data:"menu_reseller"}
+{text:"👥 Resellers",callback_data:"menu_reseller"},
+...(user.role === "subowner" ? [{text:"📊 Estadísticas",callback_data:"menu_stats"}] : [])
 ],
 
 [
 {text:"📜 Historial",callback_data:"menu_history"},
 {text:"📈 Mi Uso",callback_data:"menu_usage"}
 ],
+...(user.role === "subowner" ? [[{text:"⚙️ Configuración",callback_data:"menu_settings"}]] : [])
 ]
 
 }
