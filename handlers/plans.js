@@ -82,7 +82,17 @@ export default function registerPlans(bot) {
       if (!contact.name) contact.name = `ID ${contact.id}`;
     }
 
-    const rows = contacts.slice(0, 30).map(c => [{ text: c.name, url: `tg://user?id=${c.id}` }]);
+    const roleLabels = {
+      owner: "Dueño",
+      admin: "Admin",
+      subowner: "Sub dueño",
+      Autorizado: "Autorizado"
+    };
+    // Mostrar nombre y rango en el botón, por ejemplo: "Kevin tech · Admin".
+    const rows = contacts.slice(0, 30).map(c => {
+      const role = roleLabels[c.role] || c.role || "Autorizado";
+      return [{ text: `${c.name} · ${role}`.slice(0, 64), url: `tg://user?id=${c.id}` }];
+    });
     if (!rows.length) return bot.sendMessage(query.message.chat.id, "❌ No hay administradores de compra configurados. Contacta al dueño.");
     await bot.sendMessage(query.message.chat.id, `💳 <b>COMPRA DE ACCESO</b>\n\nPlan: <b>${plan.label}</b>\n\nSelecciona el nombre de la persona autorizada para coordinar tu compra.`, { parse_mode: "HTML", reply_markup: { inline_keyboard: rows } });
   });
