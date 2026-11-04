@@ -81,6 +81,13 @@ export default function registerFreeKey(bot) {
         const user =
             snap.val();
 
+        if (user.banned) {
+            return {
+                ok: false,
+                message: "🚫 Tu cuenta está baneada. No puedes generar Keys FREE hasta que el dueño te desbanee."
+            };
+        }
+
 
         const isOwner =
             user.role === "owner";

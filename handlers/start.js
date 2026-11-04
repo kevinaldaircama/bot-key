@@ -617,12 +617,30 @@ Una vez aprobada tu solicitud podrás generar Keys, administrar dominios y utili
 
                     [
                         {
+                            text: "ℹ️ Información",
+                            callback_data: "user_info"
+                        },
+                        {
+                            text: "🆔 Mi ID",
+                            callback_data: "user_id"
+                        }
+                    ],
+                    [
+                        {
+                            text: "🎟️ Canjear cupón",
+                            callback_data: "redeem_coupon"
+                        },
+                        {
+                            text: "👤 Contactarme",
+                            url: "https://t.me/senseicamachito"
+                        }
+                    ],
+                    [
+                        {
                             text: "📨 Solicitar acceso",
                             callback_data: "request_access"
                         }
-                    ],
-
-
+                    ]
 
                 ]
 
@@ -941,30 +959,8 @@ Escribe el código del cupón.
                 // ================================================
 
                 case "request_access":
-
-                    await bot.answerCallbackQuery(
-                        query.id
-                    );
-
-
-                    await bot.sendMessage(
-                        chatId,
-
-`📨 <b>SOLICITUD DE ACCESO</b>
-
-━━━━━━━━━━━━━━━━━━
-
-Tu solicitud fue enviada correctamente.
-
-⏳ Espera a que el propietario o un administrador apruebe tu acceso.
-
-Recibirás acceso una vez seas autorizado.`,
-
-                        {
-                            parse_mode: "HTML"
-                        }
-                    );
-
+                    // La solicitud y la notificación al dueño se gestionan
+                    // en handlers/request.js. No enviar un mensaje adicional.
                     break;
 
             }

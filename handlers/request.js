@@ -7,12 +7,10 @@ export default function registerRequest(bot) {
 
         if (query.data !== "request_access") return;
 
-        await bot.answerCallbackQuery(query.id);
-
         const chatId = String(query.message.chat.id);
 
         const userRef = db.ref(`users/${chatId}`);
-        const user = (await userRef.get()).val();
+        const user = (await userRef.get()).val() || {};
 
         const requestRef = db.ref(`requests/${chatId}`);
 
@@ -43,58 +41,11 @@ export default function registerRequest(bot) {
 
         });
 
-        // Mensaje al usuario
-
-        await bot.editMessageText(
-
-`📨 <b>Solicitud Enviada</b>
-
-━━━━━━━━━━━━━━━━━━
-
-✅ Tu solicitud fue enviada correctamente.
-
-👤 <b>Nombre</b>
-
-${user.name}
-
-🆔 <b>ID</b>
-
-<code>${chatId}</code>
-
-━━━━━━━━━━━━━━━━━━
-
-⏳ Ahora solo debes esperar la aprobación del Dueño.
-
-Recibirás una notificación automáticamente.`,
-
-        {
-
-            chat_id: chatId,
-
-            message_id: query.message.message_id,
-
-            parse_mode: "HTML",
-
-            reply_markup: {
-
-                inline_keyboard: [
-
-                    [
-
-                        {
-
-                            text: "👤 Contactarme",
-
-                            url: "https://t.me/senseicamachito"
-
-                        }
-
-                    ]
-
-                ]
-
-            }
-
+        // Confirmación breve en el botón, sin enviar el bloque de texto
+        // de "SOLICITUD DE ACCESO" al usuario.
+        await bot.answerCallbackQuery(query.id, {
+            text: "Solicitud enviada. Espera la aprobación.",
+            show_alert: false
         });
 
         // Aviso al Dueño

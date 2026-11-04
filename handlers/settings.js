@@ -964,8 +964,10 @@ parse_mode:"HTML"
 break;        
   case "unban":      
       
-await ref.update({      
-banned:false
+await ref.update({
+banned: false,
+rejectCount: 0,
+permanentBan: false
 });      
       
 await bot.sendMessage(      

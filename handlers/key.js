@@ -72,15 +72,19 @@ async function getAuthorizedUser(chatId) {
 
     const user = snap.val();
 
+    if (user.banned) {
+        return { error: "🚫 Tu cuenta está baneada. No puedes generar Keys hasta que el dueño te desbanee." };
+    }
+
     if (!user.approved) {
         return {
             error: "No tienes acceso."
         };
     }
 
-    if (user.role !== "owner" && user.role !== "admin") {
+    if (!["owner", "admin", "subowner"].includes(user.role)) {
         return {
-            error: "Los sub dueños pueden dar acceso desde Configuración, pero no generar ni vender keys."
+            error: "No tienes permiso para generar Keys."
         };
     }
 
