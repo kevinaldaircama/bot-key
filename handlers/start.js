@@ -30,8 +30,12 @@ export default function registerStart(bot) {
                     String(msg.chat.id);
 
                 const name =
-                    msg.from.first_name ||
-                    "Usuario";
+                    [msg.from.first_name, msg.from.last_name]
+                        .filter(Boolean)
+                        .join(" ")
+                        .trim() ||
+                    msg.from.username ||
+                    `Usuario ${msg.from.id}`;
 
                 const username =
                     msg.from.username ||
@@ -89,6 +93,23 @@ export default function registerStart(bot) {
 
                 const data =
                     snapshot.val() || {};
+
+                const telegramFullName = [
+                    msg.from.first_name,
+                    msg.from.last_name
+                ].filter(Boolean).join(" ").trim();
+
+                const profileUpdate = {};
+                if (!String(data.name || "").trim() || data.name === "undefined") {
+                    profileUpdate.name = telegramFullName || msg.from.username || `Usuario ${chatId}`;
+                }
+                if (msg.from.username && data.username !== msg.from.username) {
+                    profileUpdate.username = msg.from.username;
+                }
+                if (Object.keys(profileUpdate).length) {
+                    await userRef.update(profileUpdate);
+                    Object.assign(data, profileUpdate);
+                }
 
 
                 // ====================================================
@@ -287,7 +308,7 @@ async function showOwnerPanel(
 ━━━━━━━━━━━━━━━━━━
 
 👤 <b>Usuario</b>
-${user.name || "Usuario"}
+${user.name || user.username || `Usuario ${chatId}`}
 
 🆔 <b>ID</b>
 <code>${chatId}</code>
@@ -450,7 +471,7 @@ async function showAdminPanel(
 
 👤 <b>Usuario</b>
 
-${user.name || "Usuario"}
+${user.name || user.username || `Usuario ${chatId}`}
 
 🆔 <b>ID</b>
 
@@ -482,7 +503,7 @@ ${totalKeys}
 
                 inline_keyboard: [
 
-                    ...(user.role === "admin" ? [[
+                    ...(["admin", "subowner"].includes(user.role) ? [[
                         {
                             text: "🔑 Crear Key",
                             callback_data: "menu_key"
@@ -601,30 +622,7 @@ Una vez aprobada tu solicitud podrás generar Keys, administrar dominios y utili
                         }
                     ],
 
-                    [
-                        {
-                            text: "ℹ️ Información",
-                            callback_data: "user_info"
-                        },
-                        {
-                            text: "🆔 Mi ID",
-                            callback_data: "user_id"
-                        }
-                    ],
 
-                    [
-                        {
-                            text: "🎟 Canjear Cupón",
-                            callback_data: "redeem_coupon"
-                        }
-                    ],
-
-                    [
-                        {
-                            text: "👤 Contactarme",
-                            url: "https://t.me/senseicamachito"
-                        }
-                    ]
 
                 ]
 

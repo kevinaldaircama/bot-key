@@ -188,6 +188,10 @@ callback_data:"settings_users"
 [
 {text:"🏆 Ranking de generadores", callback_data:"settings_ranking"}
 ],
+...(isOwner ? [
+    [{ text:"📨 Mensajes", callback_data:"settings_messages" }],
+    [{ text:"🎟️ Cupones", callback_data:"settings_coupons" }]
+] : []),
        
 [          
 {          

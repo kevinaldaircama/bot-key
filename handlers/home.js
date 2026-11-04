@@ -48,7 +48,7 @@ export default function registerHome(bot) {
 
 ━━━━━━━━━━━━━━━━━━
 
-👤 <b>${user.name}</b>
+👤 <b>${user.name || user.username || `Usuario ${chatId}`}</b>
 
 🎖️ <b>Rango:</b> Dueño
 
@@ -118,7 +118,7 @@ inline_keyboard:[
 
 ━━━━━━━━━━━━━━━━━━
 
-👤 <b>${user.name}</b>
+👤 <b>${user.name || user.username || `Usuario ${chatId}`}</b>
 
 🎖️ <b>Rango:</b> ${user.role === "subowner" ? "Sub dueño" : "Admin"}
 
@@ -147,7 +147,7 @@ reply_markup:{
 inline_keyboard:[
 
 [
-...(user.role === "admin" ? [{text:"🔑 Crear Key",callback_data:"menu_key"}] : []),
+...(["admin", "subowner"].includes(user.role) ? [{text:"🔑 Crear Key",callback_data:"menu_key"}] : []),
 {text:"📁 Mis Dominios",callback_data:"menu_domains"}
 ],
     

@@ -53,12 +53,30 @@ export default function registerApprove(bot) {
 
         }
 
+        let displayName = "";
+        const currentUser = (await db.ref(`users/${userId}`).get()).val() || {};
+        displayName = String(currentUser.name || "").trim();
+        if (!displayName || displayName === "undefined" || displayName === "Usuario") {
+            try {
+                const telegramUser = await bot.getChat(userId);
+                displayName = [
+                    telegramUser.first_name,
+                    telegramUser.last_name
+                ].filter(Boolean).join(" ").trim()
+                    || telegramUser.username
+                    || `Usuario ${userId}`;
+            } catch {
+                displayName = `Usuario ${userId}`;
+            }
+        }
+
         await db.ref(`users/${userId}`).update({
-    approved: true,
-    banned: false,
-    role: approvedRole,
-    expire
-});
+            name: displayName,
+            approved: true,
+            banned: false,
+            role: approvedRole,
+            expire
+        });
 
         const requestRef = db.ref(`requests/${userId}`);
 const requestSnap = await requestRef.get();
