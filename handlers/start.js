@@ -359,6 +359,12 @@ Seleccione una opción.`,
                             callback_data: "menu_usage"
                         }
                     ],
+                    [
+                        {
+                            text: "⚙️ Configuración",
+                            callback_data: "menu_settings"
+                        }
+                    ]
 
                 ]
 
@@ -476,12 +482,12 @@ ${totalKeys}
 
                 inline_keyboard: [
 
-                    [
+                    ...(user.role === "admin" ? [[
                         {
                             text: "🔑 Crear Key",
                             callback_data: "menu_key"
-                        },
-                    ],
+                        }
+                    ]] : []),
 
                     [
                         {

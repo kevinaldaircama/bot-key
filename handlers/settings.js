@@ -1,5 +1,6 @@
-import db from "../db.js";          
-import { pendingApprovals } from "./callback.js";          
+import db from "../db.js";
+import config from "../config.js";          
+import { pendingApprovals, pendingApprovalRoles } from "./callback.js";          
 const messageState = {};          
 const userAction = {};       
 const couponState = {};
@@ -124,9 +125,21 @@ const settingsActions = query.data === "menu_settings" ||
     query.data === "settings_coupons" ||
     query.data === "settings_messages";
 
-if (settingsActions && (me.role !== "subowner" || !me.approved || me.banned)) {
+// El ID configurado como dueño siempre conserva permisos completos,
+ // aunque la base de datos tenga un rol antiguo o desactualizado.
+const isOwner = chatId === String(config.OWNER_ID) || me.role === "owner";
+const canUseSettings = isOwner || me.role === "subowner";
+
+if (settingsActions && (!canUseSettings || (!isOwner && (!me.approved || me.banned)))) {
     return bot.answerCallbackQuery(query.id, {
-        text: "La configuración está disponible únicamente para sub dueños.",
+        text: "La configuración está disponible para el dueño y los sub dueños.",
+        show_alert: true
+    });
+}
+
+if (query.data === "users_subowner" && !isOwner) {
+    return bot.answerCallbackQuery(query.id, {
+        text: "Solo el dueño puede agregar sub dueños.",
         show_alert: true
     });
 }
@@ -323,6 +336,13 @@ callback_data:"users_remove"
 },
 ],      
       
+...(isOwner ? [[
+{
+text:"👑 Dar acceso a sub dueño",
+callback_data:"users_subowner"
+}
+]] : []),
+
 [      
 {      
 text:"📋 Todos",      
@@ -380,7 +400,7 @@ break;
 case "users_subowner":
 userAction[chatId] = "subowner";
 await bot.answerCallbackQuery(query.id);
-await bot.sendMessage(chatId, "👑 <b>AGREGAR SUB DUEÑO</b>\n\nEnvíe el ID de Telegram del usuario.", {parse_mode:"HTML"});
+await bot.sendMessage(chatId, "👑 <b>DAR ACCESO A SUB DUEÑO</b>\n\nEnvíe el ID de Telegram del usuario. Después podrá elegir la duración del acceso, igual que al aprobar un usuario.", {parse_mode:"HTML"});
 break;
 
 case "users_ban":          
@@ -829,9 +849,29 @@ if (user.banned && action !== "unban") {
 switch (action) {
 
 case "subowner":
-    await ref.update({ role:"subowner", approved:true, banned:false, expire:"Ilimitado", permanentBan:false });
-    try { await bot.sendMessage(userId, "👑 ¡Has sido agregado como sub dueño! Ya puedes utilizar el panel administrativo.", {parse_mode:"HTML"}); } catch (e) { console.warn("No se pudo notificar al sub dueño:", e.message); }
-    await bot.sendMessage(chatId, `✅ Usuario <code>${userId}</code> agregado como sub dueño.`, {parse_mode:"HTML"});
+    if (user.role === "owner" || user.role === "subowner") {
+        return bot.sendMessage(chatId, "⚠️ Ese usuario ya tiene un rango administrativo.");
+    }
+    pendingApprovals.set(String(msg.from.id), userId);
+    pendingApprovalRoles.set(String(msg.from.id), "subowner");
+    await bot.sendMessage(chatId,
+`👑 <b>Dar acceso a sub dueño</b>
+
+━━━━━━━━━━━━━━━━━━
+
+Selecciona la duración del acceso para este sub dueño.`,
+    {
+        parse_mode: "HTML",
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: "7 Días", callback_data: "days_7" }, { text: "30 Días", callback_data: "days_30" }],
+                [{ text: "60 Días", callback_data: "days_60" }, { text: "90 Días", callback_data: "days_90" }],
+                [{ text: "365 Días", callback_data: "days_365" }],
+                [{ text: "♾️ Ilimitado", callback_data: "days_0" }],
+                [{ text: "❌ Cancelar", callback_data: "cancel_request" }]
+            ]
+        }
+    });
     break;
         
 case "allow":      

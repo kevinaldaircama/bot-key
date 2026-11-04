@@ -24,7 +24,12 @@ export default function registerPlans(bot) {
         `🛡️ Admin: <b>$${money(plan.admin)}</b> | 🇵🇪 <b>S/ ${money(plan.admin * tc)}</b>`,
         `👑 Sub dueño: <b>$${money(plan.owner)}</b> | 🇵🇪 <b>S/ ${money(plan.owner * tc)}</b>`,
       ].join("\n")).join("\n\n");
-      await bot.sendMessage(chatId, `🚀 <b>MULTI SCRIPT VPN PREMIUM</b>\n\n━━━━━━━━━━━━━━━━━━\n\n💎 <b>PLANES ADMIN / DUEÑO</b>\n\n${lines}\n\n━━━━━━━━━━━━━━━━━━\n💱 1 USD = S/ ${money(tc)}\n\nSelecciona comprar acceso para contactar a un administrador autorizado.`, {
+      await bot.sendMessage(chatId, `🚀 <b>MULTI SCRIPT VPN PREMIUM</b>\n\n━━━━━━━━━━━━━━━━━━\n\n💎 <b>PLANES ADMIN / DUEÑO</b>\n\n${lines}\n\n━━━━━━━━━━━━━━━━━━\n💱 1 USD = S/ ${money(tc)}\n\n<b>Permisos por rango:</b>
+• Los Admin pueden generar y vender keys.
+• Los Sub dueños pueden dar acceso a usuarios.
+• Los Dueños pueden realizar todas las funciones.
+
+Selecciona comprar acceso para contactar a una persona autorizada.`, {
         parse_mode: "HTML",
         reply_markup: { inline_keyboard: [
           ...PLANS.map((p, i) => [{ text: `💳 Comprar ${p.label}`, callback_data: `plan_buy_${i}` }]),

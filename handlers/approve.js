@@ -1,5 +1,6 @@
 import db from "../db.js";
-import { pendingApprovals } from "./callback.js";
+import config from "../config.js";
+import { pendingApprovals, pendingApprovalRoles } from "./callback.js";
 
 export default function registerApprove(bot) {
 
@@ -7,25 +8,38 @@ export default function registerApprove(bot) {
 
         if (!query.data.startsWith("days_")) return;
 
-        await bot.answerCallbackQuery(query.id);
-
         const ownerId = String(query.from.id);
 
         if (!pendingApprovals.has(ownerId)) {
-
             return bot.answerCallbackQuery(query.id, {
-
                 text: "La solicitud ya expiró.",
-
                 show_alert: true
-
             });
-
         }
 
         const days = Number(query.data.split("_")[1]);
+        if (!Number.isInteger(days) || ![0, 7, 30, 60, 90, 365].includes(days)) {
+            return bot.answerCallbackQuery(query.id, {
+                text: "Duración no válida.",
+                show_alert: true
+            });
+        }
 
         const userId = pendingApprovals.get(ownerId);
+        const approvedRole = pendingApprovalRoles.get(ownerId) || "admin";
+
+        // Solo el dueño configurado puede conceder el rango de sub dueño.
+        if (approvedRole === "subowner" && ownerId !== String(config.OWNER_ID)) {
+            pendingApprovals.delete(ownerId);
+            pendingApprovalRoles.delete(ownerId);
+            return bot.answerCallbackQuery(query.id, {
+                text: "Solo el dueño puede crear sub dueños.",
+                show_alert: true
+            });
+        }
+
+        const roleLabel = approvedRole === "subowner" ? "Sub dueño" : "Admin";
+        await bot.answerCallbackQuery(query.id);
 
         let expire = "Ilimitado";
 
@@ -42,7 +56,7 @@ export default function registerApprove(bot) {
         await db.ref(`users/${userId}`).update({
     approved: true,
     banned: false,
-    role: "admin",
+    role: approvedRole,
     expire
 });
 
@@ -54,6 +68,7 @@ if (requestSnap.exists()) {
 }
 
         pendingApprovals.delete(ownerId);
+        pendingApprovalRoles.delete(ownerId);
 
         await bot.editMessageText(
 
@@ -71,7 +86,7 @@ ${days === 0 ? "♾️ Ilimitado" : `${days} días`}
 
 🛡️ <b>Rol</b>
 
-Admin
+${roleLabel}
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -116,7 +131,7 @@ El usuario ya puede acceder al panel.`,
 
 🛡️ <b>Rol</b>
 
-Admin
+${roleLabel}
 
 📅 <b>Duración</b>
 

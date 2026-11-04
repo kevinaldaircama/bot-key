@@ -40,7 +40,7 @@ export default function registerHome(bot) {
         // DUEÑO
         // =============================
 
-        if (chatId === config.OWNER_ID) {
+        if (chatId === String(config.OWNER_ID) || user.role === "owner") {
 
             return bot.editMessageText(
 
@@ -147,7 +147,7 @@ reply_markup:{
 inline_keyboard:[
 
 [
-{text:"🔑 Crear Key",callback_data:"menu_key"},
+...(user.role === "admin" ? [{text:"🔑 Crear Key",callback_data:"menu_key"}] : []),
 {text:"📁 Mis Dominios",callback_data:"menu_domains"}
 ],
     

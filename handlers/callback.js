@@ -1,8 +1,9 @@
 import db from "../db.js";
 
 const pendingApprovals = new Map();
+const pendingApprovalRoles = new Map();
 
-export { pendingApprovals };
+export { pendingApprovals, pendingApprovalRoles };
 
 export default function registerCallback(bot) {
 
@@ -187,6 +188,7 @@ ${permanentlyBanned ? "🚫 Has sido baneado permanentemente por acumular 3 rech
         if (data === "cancel_request") {
 
             pendingApprovals.delete(String(query.from.id));
+            pendingApprovalRoles.delete(String(query.from.id));
 
             await bot.editMessageText(
 

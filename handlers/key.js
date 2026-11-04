@@ -78,9 +78,9 @@ async function getAuthorizedUser(chatId) {
         };
     }
 
-    if (user.role !== "owner" && user.role !== "admin" && user.role !== "subowner") {
+    if (user.role !== "owner" && user.role !== "admin") {
         return {
-            error: "No autorizado."
+            error: "Los sub dueños pueden dar acceso desde Configuración, pero no generar ni vender keys."
         };
     }
 
