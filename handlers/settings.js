@@ -117,17 +117,28 @@ show_alert:true
 });          
 }          
           
-const staffRoles = ["owner", "subowner"];
-const ownerOnly = ["users_subowner"];
-if (query.data === "menu_settings" || query.data === "settings_users" || query.data === "settings_ranking" || query.data.startsWith("users_") || query.data === "settings_coupons" || query.data === "settings_messages") {
-    if (!staffRoles.includes(me.role) || !me.approved || me.banned) {
-        return bot.answerCallbackQuery(query.id, { text: "No tienes permiso para esta opción.", show_alert: true });
-    }
+const settingsActions = query.data === "menu_settings" ||
+    query.data === "settings_users" ||
+    query.data === "settings_ranking" ||
+    query.data.startsWith("users_") ||
+    query.data === "settings_coupons" ||
+    query.data === "settings_messages";
+
+if (settingsActions && (me.role !== "subowner" || !me.approved || me.banned)) {
+    return bot.answerCallbackQuery(query.id, {
+        text: "La configuración está disponible únicamente para sub dueños.",
+        show_alert: true
+    });
 }
-if (ownerOnly.includes(query.data) && me.role !== "owner") {
-    return bot.answerCallbackQuery(query.id, { text: "Solo el dueño puede agregar sub dueños.", show_alert: true });
-}          
-          
+
+if (me.role === "subowner" &&
+    ["settings_messages", "settings_coupons", "users_subowner", "broadcast_all"].includes(query.data)) {
+    return bot.answerCallbackQuery(query.id, {
+        text: "No tienes permiso para esta opción.",
+        show_alert: true
+    });
+}
+
 switch (query.data) {          
           
 // ===================================          
@@ -154,21 +165,13 @@ reply_markup:{
 inline_keyboard:[          
           
 [          
-{          
-text:"📨 Mensajes",          
-callback_data:"settings_messages"          
-},          
+          
 {          
 text:"👥 Usuarios",          
 callback_data:"settings_users"          
 }          
 ],          
-[
-{
-text:"🎟 Cupones",
-callback_data:"settings_coupons"
-}
-],
+
 [
 {text:"🏆 Ranking de generadores", callback_data:"settings_ranking"}
 ],
@@ -318,10 +321,6 @@ callback_data:"users_unban"
 text:"❌ Quitar acceso",      
 callback_data:"users_remove"      
 },
-{
-text:"👑 Agregar sub dueño",
-callback_data:"users_subowner"
-}
 ],      
       
 [      

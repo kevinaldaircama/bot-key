@@ -50,11 +50,39 @@ export default function registerPlans(bot) {
     if (usersSnap.exists()) usersSnap.forEach(item => {
       const u = item.val() || {};
       if ((["owner", "admin", "subowner"].includes(u.role) && u.approved !== false && !u.banned) || configured.has(String(item.key))) {
-        contacts.push({ id: String(item.key), name: u.name || "Usuario", role: u.role || "Autorizado" });
+        const storedName = String(u.name || "").trim() === "Usuario" ? "" : String(u.name || "").trim();
+        const usernameRaw = String(u.username || "").trim();
+        const username = usernameRaw === "Sin username" ? "" : usernameRaw.replace(/^@/, "");
+        contacts.push({
+          id: String(item.key),
+          name: storedName || (username ? `@${username}` : ""),
+          role: u.role || "Autorizado"
+        });
       }
     });
-    for (const id of configured) if (!contacts.some(c => c.id === id)) contacts.push({ id, name: "Contacto", role: "Autorizado" });
-    const rows = contacts.slice(0, 30).map(c => [{ text: `${c.name}`, url: `tg://user?id=${c.id}` }]);
+    for (const id of configured) {
+      if (!contacts.some(c => c.id === id)) {
+        contacts.push({ id, name: "", role: "Autorizado" });
+      }
+    }
+
+    // Completar el nombre desde Telegram si no está guardado en la base de datos.
+    for (const contact of contacts) {
+      if (contact.name) continue;
+      try {
+        const telegramUser = await bot.getChat(contact.id);
+        const fullName = [telegramUser.first_name, telegramUser.last_name]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+        contact.name = fullName || (telegramUser.username ? `@${telegramUser.username}` : "");
+      } catch (error) {
+        console.warn(`[PLANES] No se pudo obtener el nombre de ${contact.id}:`, error.message);
+      }
+      if (!contact.name) contact.name = `ID ${contact.id}`;
+    }
+
+    const rows = contacts.slice(0, 30).map(c => [{ text: c.name, url: `tg://user?id=${c.id}` }]);
     if (!rows.length) return bot.sendMessage(query.message.chat.id, "❌ No hay administradores de compra configurados. Contacta al dueño.");
     await bot.sendMessage(query.message.chat.id, `💳 <b>COMPRA DE ACCESO</b>\n\nPlan: <b>${plan.label}</b>\n\nSelecciona el nombre de la persona autorizada para coordinar tu compra.`, { parse_mode: "HTML", reply_markup: { inline_keyboard: rows } });
   });

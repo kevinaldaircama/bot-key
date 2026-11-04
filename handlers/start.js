@@ -360,13 +360,6 @@ Seleccione una opción.`,
                         }
                     ],
 
-                    [
-                        {
-                            text: "⚙️ Configuración",
-                            callback_data: "menu_settings"
-                        }
-                    ]
-
                 ]
 
             }

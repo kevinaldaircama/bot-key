@@ -95,9 +95,7 @@ inline_keyboard:[
 {text:"📜 Historial",callback_data:"menu_history"},
 {text:"📈 Mi Uso",callback_data:"menu_usage"}
 ],
-[    
-{text:"⚙️ Configuración",callback_data:"menu_settings"}    
-]
+
 
 ]
 
